@@ -1,0 +1,49 @@
+import type { CSSProperties } from "react";
+import type { StringName } from "./scalePositions.types";
+
+export const LIGHT_THEME: CSSProperties = {
+  "--bg": "#f5f0e8",
+  "--surface": "#ede8dc",
+  "--border": "#c8bfaa",
+  "--text": "#1a1612",
+  "--muted": "#8a8070",
+  "--accent": "#8b1a1a",
+  "--root-col": "#c0392b",
+  "--two-nps": "#c8a060",
+  "--faint": "#c8bfaa",
+  "--fret-bar": "#d8cebb",
+  "--str-E": "#8a7a58",
+  "--str-A": "#a09060",
+  "--str-D": "#b0a878",
+  "--str-G": "#c0b898",
+  "--str-Be": "#c8bfaa",
+};
+
+export const DARK_THEME: CSSProperties = {
+  "--bg": "#141210",
+  "--surface": "#1e1a16",
+  "--border": "#352e24",
+  "--text": "#e8e0d0",
+  "--muted": "#6a6058",
+  "--accent": "#c8604a",
+  "--root-col": "#c0392b",
+  "--two-nps": "#c8a060",
+  "--faint": "#3a3228",
+  "--fret-bar": "#2a2418",
+  "--str-E": "#5a5040",
+  "--str-A": "#6a6048",
+  "--str-D": "#7a7058",
+  "--str-G": "#8a8068",
+  "--str-Be": "#6a6258",
+};
+
+export const STRING_LINE: Record<StringName, { height: string; colorVar: string }> = {
+  E: { height: "2px", colorVar: "var(--str-E)" },
+  A: { height: "1.5px", colorVar: "var(--str-A)" },
+  D: { height: "1.5px", colorVar: "var(--str-D)" },
+  G: { height: "1px", colorVar: "var(--str-G)" },
+  B: { height: "1px", colorVar: "var(--str-Be)" },
+  e: { height: "0.5px", colorVar: "var(--str-Be)" },
+};
+
+export const TWO_NPS_LINE = { height: "1.5px", colorVar: "var(--two-nps)" };

@@ -1,13 +1,13 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { ScalePositions } from "~/components/ScalePositions";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Shred Dojo — Scale Positions" },
+    { name: "description", content: "14-position scale viewer for natural minor and major scales" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <ScalePositions />;
 }
