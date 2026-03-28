@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scale Positions — 14 Positions</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Code+Pro:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #f5f0e8;
+    --surface:  #ede8dc;
+    --border:   #c8bfaa;
+    --text:     #1a1612;
+    --muted:    #8a8070;
+    --accent:   #8b1a1a;
+    --root-col: #c0392b;
+    --two-nps:  #c8a060;
+    --faint:    #c8bfaa;
+    --fret-bar: #d8cebb;
+    --str-E:    #8a7a58;
+    --str-A:    #a09060;
+    --str-D:    #b0a878;
+    --str-G:    #c0b898;
+    --str-Be:   #c8bfaa;
+  }
+
+  body.dark {
+    --bg:       #141210;
+    --surface:  #1e1a16;
+    --border:   #352e24;
+    --text:     #e8e0d0;
+    --muted:    #6a6058;
+    --accent:   #c8604a;
+    --root-col: #c0392b;
+    --two-nps:  #c8a060;
+    --faint:    #3a3228;
+    --fret-bar: #2a2418;
+    --str-E:    #5a5040;
+    --str-A:    #6a6048;
+    --str-D:    #7a7058;
+    --str-G:    #8a8068;
+    --str-Be:   #6a6258;
+    background:  #141210 !important;
+    color:       #e8e0d0 !important;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { transition: background 0.2s; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Code Pro', monospace;
+    padding: 2rem 1.5rem 5rem;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  /* ── Header ── */
+  header {
+    max-width: 980px; margin: 0 auto 2.5rem;
+    display: flex; align-items: flex-end;
+    justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    border-bottom: 2px solid var(--text); padding-bottom: 1.5rem;
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif; font-weight: 600;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: 0.04em; text-transform: uppercase; line-height: 1;
+  }
+  h1 em { color: var(--accent); font-style: normal; }
+  .header-meta {
+    font-size: 0.62rem; color: var(--muted);
+    letter-spacing: 0.14em; text-transform: uppercase;
+    text-align: right; line-height: 2;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    max-width: 980px; margin: 0 auto 1.5rem;
+    display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;
+    border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;
+  }
+  .ctrl-label {
+    font-size: 0.58rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--muted);
+    margin-right: 0.25rem;
+  }
+  .btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--text); cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.35rem 0.85rem; transition: all 0.1s;
+  }
+  .btn:hover  { border-color: var(--text); }
+  .btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .spacer     { flex: 1; }
+
+  /* ── Legend ── */
+  .legend {
+    max-width: 980px; margin: 0 auto 1.5rem;
+    display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+  }
+  .leg { display: flex; align-items: center; gap: 0.45rem;
+         font-size: 0.58rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .leg-dot.root  { background: var(--root-col); }
+  .leg-dot.penta { background: var(--text); }
+  .leg-dot.dia   { background: var(--bg); border: 1.5px solid var(--text); }
+  .leg-line      { width: 20px; height: 2px; background: var(--two-nps); }
+
+  /* ── Grid ── */
+  .grid {
+    max-width: 980px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+  .cell {
+    padding: 0.9rem 1rem 0.7rem;
+    border: 1px solid var(--border);
+    margin: -1px 0 0 -1px;
+    cursor: pointer; transition: background 0.1s;
+  }
+  .cell:hover    { background: var(--surface); }
+  .cell.selected { background: var(--surface); border-color: var(--text); z-index: 2; position: relative; }
+
+  .cell-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 0.45rem;
+  }
+  .cell-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.68rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted);
+  }
+  .cell-label strong { color: var(--accent); font-weight: 400; font-size: 0.82rem; }
+  .cell-badge {
+    font-size: 0.5rem; padding: 0.1rem 0.35rem;
+    border: 1px solid var(--border); color: var(--muted); letter-spacing: 0.05em;
+  }
+
+  /* ── Fretboard ── */
+  .fb { width: 100%; }
+
+  .fb-nums {
+    display: flex; padding-left: 1.9rem; margin-bottom: 0.15rem;
+  }
+  .fb-num { flex: 1; text-align: center; font-size: 0.45rem; color: var(--faint); }
+
+  .fb-row { display: flex; align-items: center; height: 29px; }
+
+  .fb-name {
+    width: 1.9rem; font-size: 0.5rem; color: var(--muted);
+    text-align: right; padding-right: 0.4rem; flex-shrink: 0;
+  }
+  .fb-row.two-nps .fb-name { color: var(--accent); }
+
+  .fb-frets {
+    flex: 1; display: flex; position: relative;
+    align-items: center; height: 100%;
+  }
+
+  /* Fret lines — single gradient on ::before, identical spacing guaranteed */
+  .fb-frets::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent 0%,
+      transparent calc(100% / var(--fret-w) - 1px),
+      var(--fret-bar) calc(100% / var(--fret-w) - 1px),
+      var(--fret-bar) calc(100% / var(--fret-w))
+    );
+  }
+
+  /* String line — ::after, centered horizontally, thickness varies by string */
+  .fb-frets::after {
+    content: ''; position: absolute;
+    top: 50%; left: 0; right: 0; transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .fb-row[data-s="E"]  .fb-frets::after { height: 2px;    background: var(--str-E);  }
+  .fb-row[data-s="A"]  .fb-frets::after { height: 1.5px;  background: var(--str-A);  }
+  .fb-row[data-s="D"]  .fb-frets::after { height: 1.5px;  background: var(--str-D);  }
+  .fb-row[data-s="G"]  .fb-frets::after { height: 1px;    background: var(--str-G);  }
+  .fb-row[data-s="B"]  .fb-frets::after { height: 1px;    background: var(--str-Be); }
+  .fb-row[data-s="e"]  .fb-frets::after { height: 0.5px;  background: var(--str-Be); }
+  .fb-row.two-nps      .fb-frets::after { height: 1.5px;  background: var(--two-nps); }
+
+  .fb-fret {
+    flex: 1; height: 29px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+  }
+
+  .dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.47rem; position: relative; z-index: 2;
+    transition: opacity 0.12s, transform 0.12s;
+  }
+  .dot.root  { background: var(--root-col); color: #fff; }
+  .dot.penta { background: var(--text);     color: var(--bg); }
+  .dot.dia   { background: var(--bg); color: var(--text); border: 1.5px solid var(--text); }
+  .dot.off   { opacity: 0; transform: scale(0.2); pointer-events: none; }
+
+  /* ── Detail panel ── */
+  .detail {
+    max-width: 980px; margin: 1.5rem auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    padding: 1.1rem 1.4rem; display: none;
+  }
+  .detail.open { display: block; }
+  .detail-title {
+    font-family: 'Oswald', sans-serif; font-size: 0.95rem;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.6rem;
+  }
+  .detail-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .detail-col { font-size: 0.65rem; line-height: 1.75; color: var(--muted); min-width: 10rem; }
+  .detail-col b { display: block; font-size: 0.55rem; letter-spacing: 0.12em;
+                  text-transform: uppercase; color: var(--text); margin-bottom: 0.15rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="pageTitle">Natural <em>Minor</em><br>Scale Positions</h1>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.75rem">
+    <button class="btn" id="darkBtn" onclick="toggleDark()" style="font-size:0.65rem;padding:0.3rem 0.7rem;letter-spacing:0.1em">◐ Dark</button>
+    <div class="header-meta" style="text-transform:none; letter-spacing:0.05em; font-size:0.63rem; line-height:1.7; max-width:18rem; text-align:right;">
+      Based on Pebber Brown's 14-position system.<br>
+      Each scale shown as pure 3nps shapes and symmetric variants where the low and high E strings match.
+    </div>
+  </div>
+</header>
+
+<div class="controls" style="border-bottom:none; padding-bottom:0.75rem; margin-bottom:0.75rem;">
+  <span class="ctrl-label">Scale</span>
+  <button class="btn active" id="scMinor" onclick="setScale('minor')">Minor</button>
+  <button class="btn"        id="scMajor" onclick="setScale('major')">Major</button>
+</div>
+
+<div class="controls">
+  <span class="ctrl-label">Show</span>
+  <button class="btn active" id="bAll"   onclick="setNotes('all')">All</button>
+  <button class="btn"        id="bPenta" onclick="setNotes('penta')">Pentatonic</button>
+  <button class="btn"        id="bDia"   onclick="setNotes('dia')">Diatonic +</button>
+  <div class="spacer"></div>
+  <span class="ctrl-label">System</span>
+  <button class="btn active" id="sBoth" onclick="setSys('both')">Both</button>
+  <button class="btn"        id="s3nps" onclick="setSys('3nps')">3nps only</button>
+  <button class="btn"        id="sSym"  onclick="setSys('sym')">Symmetric only</button>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="leg-dot root"></div>Root</div>
+  <div class="leg"><div class="leg-dot penta"></div>Pentatonic</div>
+  <div class="leg"><div class="leg-dot dia"></div><span id="diaLabel">Diatonic only (2, 6)</span></div>
+  <div class="leg"><div class="leg-line"></div>2nps string</div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="detail" id="detail">
+  <div class="detail-title" id="dtitle"></div>
+  <div class="detail-row">
+    <div class="detail-col"><b>Scaletone</b><span id="dtone"></span></div>
+    <div class="detail-col"><b>System</b><span id="dsys"></span></div>
+    <div class="detail-col"><b>2nps string</b><span id="d2nps"></span></div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// SCALE CONFIGS
+// Each config defines the 7 degrees, their semitone offsets from root,
+// and which degrees belong to the pentatonic subset.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SCALES = {
+  minor: {
+    // Natural minor: W H W W H W W
+    // Half steps at: 2→b3 (1 fret) and 6→b7 (1 fret)
+    // The 6th is a MINOR 6th (b6) — labelled "6" in the PDF
+    scale: ['R','2','b3','4','5','6','b7'],
+    semi:  { R:0, '2':2, 'b3':3, '4':5, '5':7, '6':8, 'b7':10 },
+    penta: new Set(['R','b3','4','5','b7']),  // minor pentatonic — omits 2 and 6
+    diaLabel: 'Diatonic only (2, 6)',
+    title: 'Natural <em>Minor</em>',
+  },
+  major: {
+    // Major: W W H W W W H
+    // Half steps at: 3→4 (1 fret) and 7→R (1 fret)
+    scale: ['R','2','3','4','5','6','7'],
+    semi:  { R:0, '2':2, '3':4, '4':5, '5':7, '6':9, '7':11 },
+    penta: new Set(['R','2','3','5','6']),    // major pentatonic — omits 4 and 7
+    diaLabel: 'Diatonic only (4, 7)',
+    title: 'Natural <em>Major</em>',
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GUITAR CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const OPEN  = [0, 5, 10, 15, 19, 24];   // E  A  D  G  B  e (semitones above open low E)
+const SNAME = ['E','A','D','G','B','e']; // low → high
+const ROOT_FRET = 3;                     // root at fret 3 on low E (G)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHAPE COMPUTATION
+// All functions accept a `cfg` (scale config) so they work for both scales.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Find which fret on `stringIdx` plays `degree`, staying as close to `refFret` as possible.
+function findFret(degree, stringIdx, refFret, cfg) {
+  const rootPitch = OPEN[0] + ROOT_FRET;
+  const notePitch = (rootPitch + cfg.semi[degree]) % 12;
+  const openPitch = OPEN[stringIdx] % 12;
+  const baseFret  = (notePitch - openPitch + 12) % 12;
+
+  const candidates = [baseFret, baseFret + 12, baseFret + 24]
+    .filter(f => f >= 0 && f <= 22);
+
+  return candidates.reduce((best, f) =>
+    Math.abs(f - refFret) < Math.abs(best - refFret) ? f : best
+  );
+}
+
+// Build a pure 3nps shape for the given scale config.
+// startDegIdx = index into cfg.scale of the degree that sits on low E.
+function build3nps(startDegIdx, cfg) {
+  let degCursor = startDegIdx;
+  let refFret   = ROOT_FRET + cfg.semi[cfg.scale[startDegIdx]];
+
+  return SNAME.map((name, si) => {
+    const degrees = [0, 1, 2].map(i => cfg.scale[(degCursor + i) % 7]);
+
+    let ref = refFret;
+    const notes = degrees.map(deg => {
+      const fret = findFret(deg, si, ref, cfg);
+      ref = fret + 1;
+      return { fret, deg, penta: cfg.penta.has(deg) };
+    });
+
+    degCursor = (degCursor + 3) % 7;
+    refFret   = notes[notes.length - 1].fret + 1;
+
+    return { name, notes };
+  });
+}
+
+// Build the symmetric variant:
+// B string drops its last note (→ 2nps), e string becomes identical to E string.
+function buildSym(startDegIdx, cfg) {
+  const strings = build3nps(startDegIdx, cfg);
+  strings[4].notes = strings[4].notes.slice(0, 2);           // B: 2nps
+  strings[5].notes = strings[0].notes.map(n => ({ ...n }));  // e = E
+  return strings;
+}
+
+// Convert absolute frets to relative (leftmost note = fret 0).
+function toRelative(strings) {
+  const minFret = Math.min(...strings.flatMap(s => s.notes.map(n => n.fret)));
+  return strings.map(s => ({
+    ...s,
+    notes: s.notes.map(n => ({ ...n, fret: n.fret - minFret }))
+  }));
+}
+
+// Build all 14 positions for a given scale config.
+function buildAllPositions(cfg) {
+  const positions = [];
+  for (let st = 0; st < 7; st++) {
+    positions.push({
+      scaletone: st + 1,
+      startDeg:  cfg.scale[st],
+      system:    '3nps',
+      strings:   toRelative(build3nps(st, cfg)),
+      twoNps:    null,
+    });
+    positions.push({
+      scaletone: st + 1,
+      startDeg:  cfg.scale[st],
+      system:    'sym',
+      strings:   toRelative(buildSym(st, cfg)),
+      twoNps:    'B',
+    });
+  }
+  return positions;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+let scaleMode  = 'minor';  // 'minor' | 'major'
+let noteFilter = 'all';    // 'all' | 'penta' | 'dia'
+let sysFilter  = 'both';   // 'both' | '3nps' | 'sym'
+let selected   = null;
+
+// Current positions — rebuilt when scale changes
+let POSITIONS = buildAllPositions(SCALES.minor);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+
+function dotClass(note) {
+  if (note.deg === 'R') return 'root';
+  return note.penta ? 'penta' : 'dia';
+}
+
+function dotVisible(note) {
+  if (noteFilter === 'all')   return true;
+  if (noteFilter === 'penta') return note.penta;
+  if (noteFilter === 'dia')   return !note.penta;
+  return true;
+}
+
+function renderFretboard(pos) {
+  const maxFret = Math.max(...pos.strings.flatMap(s => s.notes.map(n => n.fret)));
+  const W = maxFret + 2;
+
+  let h = '<div class="fb"><div class="fb-nums">';
+  for (let f = 0; f < W; f++) h += `<div class="fb-num">${f}</div>`;
+  h += '</div>';
+
+  for (const str of [...pos.strings].reverse()) { // high e first
+    const is2nps = str.notes.length === 2;
+    h += `<div class="fb-row${is2nps ? ' two-nps' : ''}" data-s="${str.name}" style="--fret-w:${W}">`;
+    h += `<div class="fb-name">${str.name}</div><div class="fb-frets">`;
+
+    for (let f = 0; f < W; f++) {
+      h += '<div class="fb-fret">';
+      const note = str.notes.find(n => n.fret === f);
+      if (note) {
+        const cls = dotClass(note);
+        const vis = dotVisible(note) ? '' : ' off';
+        h += `<div class="dot ${cls}${vis}">${note.deg}</div>`;
+      }
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+function render() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  const visible = POSITIONS.filter(p =>
+    sysFilter === 'both' || p.system === sysFilter
+  );
+
+  for (const pos of visible) {
+    const idx  = POSITIONS.indexOf(pos);
+    const cell = document.createElement('div');
+    cell.className = `cell${selected === idx ? ' selected' : ''}`;
+    cell.onclick   = () => select(idx);
+    cell.innerHTML = `
+      <div class="cell-header">
+        <div class="cell-label">St ${pos.scaletone} <strong>· ${pos.startDeg}</strong></div>
+        <span class="cell-badge">${pos.system}</span>
+      </div>
+      ${renderFretboard(pos)}`;
+    grid.appendChild(cell);
+  }
+}
+
+function select(idx) {
+  selected = (selected === idx) ? null : idx;
+  render();
+
+  const panel = document.getElementById('detail');
+  if (selected === null) { panel.classList.remove('open'); return; }
+
+  const pos   = POSITIONS[selected];
+  const sname = scaleMode === 'minor' ? 'natural minor' : 'major';
+  panel.classList.add('open');
+
+  document.getElementById('dtitle').textContent =
+    `Scaletone ${pos.scaletone} · starts on ${pos.startDeg} · ${pos.system === '3nps' ? 'pure 3nps' : 'symmetric'}`;
+  document.getElementById('dtone').textContent =
+    `Degree ${pos.scaletone} of ${sname} scale on low E`;
+  document.getElementById('dsys').textContent = pos.system === '3nps'
+    ? 'Pure 3nps — every string has 3 consecutive scale degrees'
+    : 'Symmetric — low E and high e are identical; B string is 2nps';
+  document.getElementById('d2nps').textContent = pos.twoNps
+    ? 'B string — drops its last degree to make e = E'
+    : 'None — all 6 strings are 3nps';
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setScale(mode) {
+  scaleMode = mode;
+  selected  = null;  // clear selection when switching scales
+
+  // Rebuild positions for the new scale
+  POSITIONS = buildAllPositions(SCALES[mode]);
+
+  // Update title and legend
+  document.getElementById('pageTitle').innerHTML =
+    (mode === 'minor' ? 'Natural <em>Minor</em>' : 'Natural <em>Major</em>') + '<br>Scale Positions';
+  document.getElementById('diaLabel').textContent = SCALES[mode].diaLabel;
+
+  // Update detail panel
+  document.getElementById('detail').classList.remove('open');
+
+  // Toggle button states
+  document.getElementById('scMinor').classList.toggle('active', mode === 'minor');
+  document.getElementById('scMajor').classList.toggle('active', mode === 'major');
+
+  render();
+}
+
+function setNotes(f) {
+  noteFilter = f;
+  ['bAll','bPenta','bDia'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(f === 'all' ? 'bAll' : f === 'penta' ? 'bPenta' : 'bDia').classList.add('active');
+  render();
+}
+
+function setSys(f) {
+  sysFilter = f;
+  ['sBoth','s3nps','sSym'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(f === 'both' ? 'sBoth' : f === '3nps' ? 's3nps' : 'sSym').classList.add('active');
+  render();
+}
+
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('darkBtn').textContent = isDark ? '◑ Light' : '◐ Dark';
+}
+
+render();
+</script>
+</body>
+</html>
