@@ -48,7 +48,6 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 | `--muted` | `#8a8070` | `#6a6058` | Secondary / label text |
 | `--accent` | `#8b1a1a` | `#c8604a` | Highlights, active states |
 | `--root-col` | `#c0392b` | `#c0392b` | Root note dots |
-| `--two-nps` | `#c8a060` | `#c8a060` | 2nps string highlight |
 | `--faint` | `#c8bfaa` | `#3a3228` | Fret numbers, ghost elements |
 | `--fret-bar` | `#d8cebb` | `#2a2418` | Fretboard bar lines |
 
@@ -88,8 +87,6 @@ The main component (`app/components/ScalePositions.tsx`) owns all state:
 **Cross-system fret alignment** — every `ScalePosition` has a `startFret: number` field equal to `rawMinFret % 12` (the absolute minimum fret before `toRelative()` normalization, mod 12). When two systems are paired in the grid, `gridItems` computes a `fretOffset` for each cell by comparing their `startFret` values: the position with the higher `startFret` gets `fretOffset = diff`, shifting its dots to the right so both fretboards show the same physical neck region. The offset is threaded as a prop through `PositionCell` → `Fretboard` → `StringRow`; `StringRow` uses `n.fret === f - fretOffset` for note lookup, and `Fretboard` expands `fretCount` by `fretOffset`. `ShapeModal` always uses `fretOffset=0` (single position, no alignment needed). For minor scale, CAGED shapes E, C, and G extend one fret lower than their paired 3nps/sym positions (offset=1); D and A are naturally aligned (offset=0).
 
 **Fretboard size variants** — `Fretboard`, `StringRow`, and `Dot` accept a `large` boolean prop. When `large={true}`: string rows are `h-[42px]` (vs `29px`), dots are `w-7 h-7` (vs `w-5 h-5`), and text sizes scale up proportionally. Used by `ShapeModal` for the enlarged view.
-
-**2nps string highlighting** — controlled by the position's `twoNps` field (not note count). Only sym positions set `twoNps` ("G" or "B"); 3nps and CAGED positions set it to `null`. The legend hides the 2nps entry when only CAGED is selected.
 
 **Modal navigation** — `ShapeModal` cycles through positions sharing the same `system` as the initially clicked shape. Navigation updates both `modalIdx` and `selectedIdx` in sync.
 

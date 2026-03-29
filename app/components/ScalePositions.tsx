@@ -3,7 +3,6 @@ import {
   DARK_THEME,
   LIGHT_THEME,
   STRING_LINE,
-  TWO_NPS_LINE,
 } from "./scalePositions.theme";
 import type {
   NoteFilter,
@@ -60,10 +59,8 @@ function ControlButton({
 
 function Legend({
   diaLabel,
-  showTwoNps,
 }: {
   diaLabel: string;
-  showTwoNps: boolean;
 }) {
   return (
     <div className="max-w-[980px] mx-auto mb-6 flex flex-wrap gap-6 items-center">
@@ -136,7 +133,6 @@ function StringRow({
   fretCount,
   noteFilter,
   chordTones,
-  isTwoNps,
   large = false,
   fretOffset = 0,
 }: {
@@ -144,11 +140,10 @@ function StringRow({
   fretCount: number;
   noteFilter: NoteFilter;
   chordTones: Set<string>;
-  isTwoNps: boolean;
   large?: boolean;
   fretOffset?: number;
 }) {
-  const line = isTwoNps ? TWO_NPS_LINE : STRING_LINE[str.name];
+  const line = STRING_LINE[str.name];
   const rowH = large ? "h-[42px]" : "h-[29px]";
 
   function isVisible(note: ScaleNote): boolean {
@@ -165,7 +160,7 @@ function StringRow({
         className={[
           large ? "w-[2.4rem] text-[0.65rem]" : "w-[1.9rem] text-[0.5rem]",
           "text-right pr-[0.4rem] shrink-0",
-          isTwoNps ? "text-[var(--accent)]" : "text-[var(--muted)]",
+          "text-[var(--muted)]",
         ].join(" ")}
       >
         {str.name}
@@ -215,14 +210,12 @@ function Fretboard({
   strings,
   noteFilter,
   chordTones,
-  twoNps,
   large = false,
   fretOffset = 0,
 }: {
   strings: ScaleString[];
   noteFilter: NoteFilter;
   chordTones: Set<string>;
-  twoNps: string | null;
   large?: boolean;
   fretOffset?: number;
 }) {
@@ -255,7 +248,6 @@ function Fretboard({
           fretCount={fretCount}
           noteFilter={noteFilter}
           chordTones={chordTones}
-          isTwoNps={twoNps === str.name}
           large={large}
           fretOffset={fretOffset}
         />
@@ -332,7 +324,6 @@ function PositionCell({
           strings={pos.strings}
           noteFilter={noteFilter}
           chordTones={chordTones}
-          twoNps={pos.twoNps}
           fretOffset={fretOffset}
         />
       </div>
@@ -477,7 +468,6 @@ function ShapeModal({
               strings={pos.strings}
               noteFilter={noteFilter}
               chordTones={chordTones}
-              twoNps={pos.twoNps}
               large
             />
           </div>
@@ -512,7 +502,7 @@ function ShapeModal({
             {pos.system === "3nps"
               ? "Pure 3nps — every string has 3 consecutive scale degrees"
               : pos.system === "sym"
-                ? "Symmetric — low E and high e are identical; B string is 2nps"
+                ? "Symmetric — low E and high e are identical"
                 : "CAGED — 5 movable shapes based on open chord forms"}
           </div>
         </div>
@@ -560,10 +550,11 @@ export function ScalePositions() {
   const [isDark, setIsDark] = useState(false);
   const [scaleMode, setScaleMode] = useState<ScaleMode>("major");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
-  const [selectedSystems, setSelectedSystems] = useState<System[]>([
-    "3nps",
-    "caged",
-  ]);
+  const [selectedSystems, setSelectedSystems] = useState<System[]>(() =>
+    typeof window !== "undefined" && window.innerWidth < 640
+      ? ["3nps"]
+      : ["3nps", "caged"],
+  );
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [modalIdx, setModalIdx] = useState<number | null>(null);
 
@@ -698,9 +689,6 @@ export function ScalePositions() {
   const modalPos = modalIdx !== null ? (allPositions[modalIdx] ?? null) : null;
   const modalSystemIdx = modalPos ? modalSystemPositions.indexOf(modalPos) : 0;
 
-  const showTwoNpsLegend =
-    selectedSystems.includes("3nps") || selectedSystems.includes("sym");
-
   return (
     <div
       style={isDark ? DARK_THEME : LIGHT_THEME}
@@ -790,7 +778,7 @@ export function ScalePositions() {
       </div>
 
       {/* Legend */}
-      <Legend diaLabel={cfg.diaLabel} showTwoNps={showTwoNpsLegend} />
+      <Legend diaLabel={cfg.diaLabel} />
 
       {/* Grid */}
       <div className="max-w-[980px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
@@ -799,8 +787,18 @@ export function ScalePositions() {
             return (
               <div
                 key={key}
-                className="p-[0.9rem_1rem_0.7rem] border border-dashed -mt-px -ml-px border-[var(--border)]"
-              />
+                className="border border-dashed -mt-px -ml-px border-[var(--border)] flex items-center justify-center min-h-[8rem]"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(-45deg, transparent, transparent 6px, var(--fret-bar) 6px, var(--fret-bar) 7px)",
+                }}
+              >
+                <div className="flex flex-col items-center gap-[0.4rem] opacity-40">
+                  <div className="font-display text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">
+                    No CAGED shape
+                  </div>
+                </div>
+              </div>
             );
           }
           const globalIdx = allPositions.indexOf(pos);

@@ -199,7 +199,6 @@ export function buildCagedPositions(cfg: ScaleConfig): ScalePosition[] {
       startDeg: cfg.scale[scaletone - 1],
       system: "caged" as const,
       strings: toRelative(rawStrings),
-      twoNps: null,
       shapeName: shape.name,
       startFret: rawMinFret % 12,
     };
@@ -216,7 +215,6 @@ export function buildAllPositions(cfg: ScaleConfig): ScalePosition[] {
       startDeg: cfg.scale[st],
       system: "3nps",
       strings: toRelative(raw3nps),
-      twoNps: null,
       startFret: rawMin3nps % 12,
     });
 
@@ -227,7 +225,6 @@ export function buildAllPositions(cfg: ScaleConfig): ScalePosition[] {
       startDeg: cfg.scale[st],
       system: "sym",
       strings: toRelative(rawSym),
-      twoNps: symTwoNoteString(st, cfg) === 3 ? "G" : "B",
       startFret: rawMinSym % 12,
     });
   }

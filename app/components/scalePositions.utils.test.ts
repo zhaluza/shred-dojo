@@ -190,7 +190,6 @@ describe("buildCagedPositions", () => {
       for (const p of positions) {
         expect(p.system).toBe("caged");
         expect(p.shapeName).toBeDefined();
-        expect(p.twoNps).toBeNull();
       }
     }
   });
@@ -321,17 +320,5 @@ describe("buildAllPositions", () => {
     expect(positions.filter((p) => p.system === "sym")).toHaveLength(7);
   });
 
-  it("sym positions have twoNps matching symTwoNoteString", () => {
-    for (const cfg of [SCALES.minor, SCALES.major]) {
-      const positions = buildAllPositions(cfg);
-      for (const p of positions) {
-        if (p.system === "sym") {
-          const expected = symTwoNoteString(p.scaletone - 1, cfg) === 3 ? "G" : "B";
-          expect(p.twoNps).toBe(expected);
-        } else {
-          expect(p.twoNps).toBeNull();
-        }
-      }
-    }
-  });
+
 });

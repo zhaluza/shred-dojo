@@ -9,7 +9,6 @@ export const LIGHT_THEME: CSSProperties = {
   "--muted": "#8a8070",
   "--accent": "#8b1a1a",
   "--root-col": "#c0392b",
-  "--two-nps": "#c8a060",
   "--faint": "#c8bfaa",
   "--fret-bar": "#d8cebb",
   "--sys-3nps": "#8b1a1a",
@@ -30,7 +29,6 @@ export const DARK_THEME: CSSProperties = {
   "--muted": "#6a6058",
   "--accent": "#c8604a",
   "--root-col": "#c0392b",
-  "--two-nps": "#c8a060",
   "--faint": "#3a3228",
   "--fret-bar": "#2a2418",
   "--sys-3nps": "#c8604a",
@@ -52,4 +50,3 @@ export const STRING_LINE: Record<StringName, { height: string; colorVar: string 
   e: { height: "0.5px", colorVar: "var(--str-Be)" },
 };
 
-export const TWO_NPS_LINE = { height: "1.5px", colorVar: "var(--two-nps)" };

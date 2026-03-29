@@ -21,7 +21,6 @@ export interface ScalePosition {
   startDeg: Degree;
   system: System;
   strings: ScaleString[];
-  twoNps: StringName | null;
   shapeName?: CagedShapeName;
   startFret: number; // rawMinFret % 12, used for cross-system fret alignment
 }
