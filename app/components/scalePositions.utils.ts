@@ -1,4 +1,5 @@
 import type {
+  CagedShapeName,
   Degree,
   ScaleConfig,
   ScaleMode,
@@ -116,6 +117,91 @@ export function toRelative(strings: ScaleString[]): ScaleString[] {
     ...s,
     notes: s.notes.map((n) => ({ ...n, fret: n.fret - minFret })),
   }));
+}
+
+// ─── CAGED shapes ────────────────────────────────────────────────────────────
+
+interface CagedShapeDef {
+  name: CagedShapeName;
+  rootStrings: StringName[];
+  major: number[][]; // intervals per string [E, A, D, G, B, e]
+  minor: number[][];
+}
+
+// Ordered E → D → C → A → G (low-to-high on the neck)
+const CAGED_SHAPES: CagedShapeDef[] = [
+  {
+    name: "E",
+    rootStrings: ["E", "D", "e"],
+    major: [[7, 1, 2], [3, 4, 5], [6, 7, 1], [2, 3, 4], [5, 6], [7, 1, 2]],
+    minor: [[1, 2, 3], [4, 5, 6], [7, 1], [2, 3, 4], [5, 6, 7], [1, 2, 3]],
+  },
+  {
+    name: "D",
+    rootStrings: ["D", "B"],
+    major: [[2, 3, 4], [5, 6], [7, 1, 2], [3, 4, 5], [6, 7, 1], [2, 3, 4]],
+    minor: [[2, 3, 4], [5, 6, 7], [1, 2, 3], [4, 5, 6], [7, 1], [2, 3, 4]],
+  },
+  {
+    name: "C",
+    rootStrings: ["A", "B"],
+    major: [[3, 4, 5], [6, 7, 1], [2, 3, 4], [5, 6], [7, 1, 2], [3, 4, 5]],
+    minor: [[4, 5, 6], [7, 1], [2, 3, 4], [5, 6, 7], [1, 2, 3], [4, 5, 6]],
+  },
+  {
+    name: "A",
+    rootStrings: ["A", "G"],
+    major: [[5, 6], [7, 1, 2], [3, 4, 5], [6, 7, 1], [2, 3, 4], [5, 6]],
+    minor: [[5, 6, 7], [1, 2, 3], [4, 5, 6], [7, 1], [2, 3, 4], [5, 6, 7]],
+  },
+  {
+    name: "G",
+    rootStrings: ["E", "G", "e"],
+    major: [[6, 7, 1], [2, 3, 4], [5, 6], [7, 1, 2], [3, 4, 5], [6, 7, 1]],
+    minor: [[7, 1], [2, 3, 4], [5, 6, 7], [1, 2, 3], [4, 5, 6], [7, 1]],
+  },
+];
+
+function buildCagedShape(shape: CagedShapeDef, cfg: ScaleConfig): ScaleString[] {
+  const isMajor = cfg.scale.includes("3" as Degree);
+  const intervals = isMajor ? shape.major : shape.minor;
+
+  // Start at fret 14 so shapes have room to cluster without notes being
+  // forced to a wrong octave. Propagate ref between strings to keep
+  // all notes in the same fret region. Shapes are normalized by toRelative.
+  let prevRef = 14;
+
+  return SNAME.map((name, si) => {
+    const degrees = intervals[si].map((n) => cfg.scale[n - 1]);
+
+    let ref = prevRef;
+    const notes: ScaleNote[] = degrees.map((deg) => {
+      const fret = findFret(deg, si, ref, cfg);
+      ref = fret + 1;
+      return { fret, deg, penta: cfg.penta.has(deg) };
+    });
+
+    prevRef = notes[0].fret;
+    return { name, notes };
+  });
+}
+
+export function buildCagedPositions(cfg: ScaleConfig): ScalePosition[] {
+  return CAGED_SHAPES.map((shape) => {
+    const isMajor = cfg.scale.includes("3" as Degree);
+    const intervals = isMajor ? shape.major : shape.minor;
+    const scaletone = intervals[0][0]; // first degree on E string
+    const strings = toRelative(buildCagedShape(shape, cfg));
+
+    return {
+      scaletone,
+      startDeg: cfg.scale[scaletone - 1],
+      system: "caged" as const,
+      strings,
+      twoNps: null,
+      shapeName: shape.name,
+    };
+  });
 }
 
 export function buildAllPositions(cfg: ScaleConfig): ScalePosition[] {

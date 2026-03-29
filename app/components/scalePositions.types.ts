@@ -1,9 +1,9 @@
 export type Degree = "R" | "2" | "b3" | "3" | "4" | "5" | "b6" | "6" | "b7" | "7";
 export type ScaleMode = "minor" | "major";
 export type NoteFilter = "all" | "penta" | "chord";
-export type SysFilter = "both" | "3nps" | "sym";
 export type StringName = "E" | "A" | "D" | "G" | "B" | "e";
-export type System = "3nps" | "sym";
+export type System = "3nps" | "sym" | "caged";
+export type CagedShapeName = "C" | "A" | "G" | "E" | "D";
 
 export interface ScaleNote {
   fret: number;
@@ -22,6 +22,7 @@ export interface ScalePosition {
   system: System;
   strings: ScaleString[];
   twoNps: StringName | null;
+  shapeName?: CagedShapeName;
 }
 
 export interface ScaleConfig {

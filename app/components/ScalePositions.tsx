@@ -11,9 +11,9 @@ import type {
   ScaleNote,
   ScalePosition,
   ScaleString,
-  SysFilter,
+  System,
 } from "./scalePositions.types";
-import { buildAllPositions, SCALES } from "./scalePositions.utils";
+import { buildAllPositions, buildCagedPositions, SCALES } from "./scalePositions.utils";
 
 // ─── ControlButton ────────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ function ControlButton({
 
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
-function Legend({ diaLabel }: { diaLabel: string }) {
+function Legend({ diaLabel, showTwoNps }: { diaLabel: string; showTwoNps: boolean }) {
   return (
     <div className="max-w-[980px] mx-auto mb-6 flex flex-wrap gap-6 items-center">
       <div className="flex items-center gap-[0.45rem] text-[0.58rem] text-[var(--muted)] tracking-[0.08em] uppercase">
@@ -67,17 +67,27 @@ function Legend({ diaLabel }: { diaLabel: string }) {
         />
         {diaLabel}
       </div>
-      <div className="flex items-center gap-[0.45rem] text-[0.58rem] text-[var(--muted)] tracking-[0.08em] uppercase">
-        <div className="w-[20px] h-[2px] bg-[var(--two-nps)] shrink-0" />
-        2nps string
-      </div>
+      {showTwoNps && (
+        <div className="flex items-center gap-[0.45rem] text-[0.58rem] text-[var(--muted)] tracking-[0.08em] uppercase">
+          <div className="w-[20px] h-[2px] bg-[var(--two-nps)] shrink-0" />
+          2nps string
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Dot ──────────────────────────────────────────────────────────────────────
 
-function Dot({ note, visible }: { note: ScaleNote; visible: boolean }) {
+function Dot({
+  note,
+  visible,
+  large = false,
+}: {
+  note: ScaleNote;
+  visible: boolean;
+  large?: boolean;
+}) {
   let colorClasses: string;
   if (note.deg === "R") {
     colorClasses = "bg-[var(--root-col)] text-white";
@@ -95,7 +105,8 @@ function Dot({ note, visible }: { note: ScaleNote; visible: boolean }) {
   return (
     <div
       className={[
-        "w-5 h-5 rounded-full flex items-center justify-center text-[0.47rem] relative z-[2]",
+        large ? "w-7 h-7 text-[0.62rem]" : "w-5 h-5 text-[0.47rem]",
+        "rounded-full flex items-center justify-center relative z-[2]",
         "transition-[opacity,transform] duration-[120ms]",
         colorClasses,
         visible ? "" : "opacity-0 scale-[0.2] pointer-events-none",
@@ -117,14 +128,17 @@ function StringRow({
   noteFilter,
   chordTones,
   isTwoNps,
+  large = false,
 }: {
   str: ScaleString;
   fretCount: number;
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   isTwoNps: boolean;
+  large?: boolean;
 }) {
   const line = isTwoNps ? TWO_NPS_LINE : STRING_LINE[str.name];
+  const rowH = large ? "h-[42px]" : "h-[29px]";
 
   function isVisible(note: ScaleNote): boolean {
     if (noteFilter === "all") return true;
@@ -134,11 +148,12 @@ function StringRow({
   }
 
   return (
-    <div className="flex items-center h-[29px]" data-string={str.name}>
+    <div className={`flex items-center ${rowH}`} data-string={str.name}>
       {/* String name */}
       <div
         className={[
-          "w-[1.9rem] text-[0.5rem] text-right pr-[0.4rem] shrink-0",
+          large ? "w-[2.4rem] text-[0.65rem]" : "w-[1.9rem] text-[0.5rem]",
+          "text-right pr-[0.4rem] shrink-0",
           isTwoNps ? "text-[var(--accent)]" : "text-[var(--muted)]",
         ].join(" ")}
       >
@@ -170,9 +185,9 @@ function StringRow({
           return (
             <div
               key={f}
-              className="flex-1 h-[29px] flex items-center justify-center relative z-[1]"
+              className={`flex-1 ${rowH} flex items-center justify-center relative z-[1]`}
             >
-              {note && <Dot note={note} visible={isVisible(note)} />}
+              {note && <Dot note={note} visible={isVisible(note)} large={large} />}
             </div>
           );
         })}
@@ -188,11 +203,13 @@ function Fretboard({
   noteFilter,
   chordTones,
   twoNps,
+  large = false,
 }: {
   strings: ScaleString[];
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   twoNps: string | null;
+  large?: boolean;
 }) {
   const maxFret = Math.max(...strings.flatMap((s) => s.notes.map((n) => n.fret)));
   const fretCount = maxFret + 2;
@@ -200,11 +217,11 @@ function Fretboard({
   return (
     <div className="w-full">
       {/* Fret numbers */}
-      <div className="flex pl-[1.9rem] mb-[0.15rem]">
+      <div className={`flex ${large ? "pl-[2.4rem]" : "pl-[1.9rem]"} mb-[0.15rem]`}>
         {Array.from({ length: fretCount }, (_, f) => (
           <div
             key={f}
-            className="flex-1 text-center text-[0.45rem] text-[var(--faint)]"
+            className={`flex-1 text-center ${large ? "text-[0.6rem]" : "text-[0.45rem]"} text-[var(--faint)]`}
           >
             {f}
           </div>
@@ -219,7 +236,8 @@ function Fretboard({
           fretCount={fretCount}
           noteFilter={noteFilter}
           chordTones={chordTones}
-          isTwoNps={str.notes.length === 2}
+          isTwoNps={twoNps === str.name}
+          large={large}
         />
       ))}
     </div>
@@ -253,12 +271,23 @@ function PositionCell({
     >
       <div className="flex justify-between items-center mb-[0.45rem]">
         <div className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
-          Start on{" "}
-          <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
-            {pos.startDeg}
-          </strong>
+          {pos.shapeName ? (
+            <>
+              <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
+                {pos.shapeName}
+              </strong>{" "}
+              Shape
+            </>
+          ) : (
+            <>
+              Start on{" "}
+              <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
+                {pos.startDeg}
+              </strong>
+            </>
+          )}
         </div>
-        <span className="text-[0.5rem] px-[0.35rem] py-[0.1rem] border border-[var(--border)] text-[var(--muted)] tracking-[0.05em]">
+        <span className="text-[0.5rem] px-[0.35rem] py-[0.1rem] border border-[var(--border)] text-[var(--muted)] tracking-[0.05em] uppercase">
           {pos.system}
         </span>
       </div>
@@ -267,66 +296,208 @@ function PositionCell({
   );
 }
 
-// ─── DetailPanel ──────────────────────────────────────────────────────────────
+// ─── ShapeModal ───────────────────────────────────────────────────────────────
 
-function DetailPanel({
+function ShapeModal({
   pos,
+  systemIdx,
+  systemTotal,
+  onClose,
+  onPrev,
+  onNext,
+  noteFilter,
+  chordTones,
   scaleMode,
 }: {
-  pos: ScalePosition | null;
+  pos: ScalePosition;
+  systemIdx: number;
+  systemTotal: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  noteFilter: NoteFilter;
+  chordTones: Set<string>;
   scaleMode: ScaleMode;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
+  // Keyboard navigation
   useEffect(() => {
-    if (pos && ref.current) {
-      ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") onPrev();
+      else if (e.key === "ArrowRight") onNext();
+      else if (e.key === "Escape") onClose();
     }
-  }, [pos]);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onPrev, onNext, onClose]);
 
-  if (!pos) return null;
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  // Focus trap — focus the panel on mount so keyboard events register
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
 
   const sname = scaleMode === "minor" ? "natural minor" : "major";
 
   return (
     <div
-      ref={ref}
-      className="max-w-[980px] mx-auto mt-6 bg-[var(--surface)] p-[1.1rem_1.4rem]"
-      style={{
-        border: "1px solid var(--border)",
-        borderLeft: "3px solid var(--accent)",
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(10, 8, 6, 0.82)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
     >
-      <div className="font-display text-[0.95rem] tracking-[0.1em] uppercase mb-[0.6rem]">
-        Scaletone {pos.scaletone} · starts on {pos.startDeg} ·{" "}
-        {pos.system === "3nps" ? "pure 3nps" : "symmetric"}
-      </div>
-      <div className="flex gap-8 flex-wrap">
-        <div className="text-[0.65rem] leading-[1.75] text-[var(--muted)] min-w-[10rem]">
-          <b className="block text-[0.55rem] tracking-[0.12em] uppercase text-[var(--text)] mb-[0.15rem]">
-            Scaletone
-          </b>
-          Degree {pos.scaletone} of {sname} scale on low E
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative w-full max-w-[740px] bg-[var(--surface)] outline-none"
+        style={{
+          border: "1px solid var(--border)",
+          borderTop: "3px solid var(--accent)",
+          boxShadow: "0 32px 96px rgba(0,0,0,0.55)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="flex items-start justify-between px-5 pt-4 pb-3"
+          style={{ borderBottom: "1px solid var(--border)" }}
+        >
+          <div>
+            <div className="font-display text-[0.55rem] tracking-[0.18em] uppercase text-[var(--muted)] mb-[0.3rem]">
+              {pos.system === "3nps" ? "Pure 3nps" : pos.system === "sym" ? "Symmetric" : "CAGED"} system
+            </div>
+            <div className="font-display text-[1.05rem] tracking-[0.07em] uppercase leading-none">
+              {pos.shapeName ? (
+                <>
+                  <span className="text-[var(--accent)]">{pos.shapeName}</span> Shape
+                </>
+              ) : (
+                <>
+                  Scaletone {pos.scaletone}
+                  <span className="text-[var(--accent)]"> · {pos.startDeg}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 pt-[0.15rem]">
+            <div className="font-display text-[0.55rem] tracking-[0.14em] uppercase text-[var(--muted)]">
+              {systemIdx + 1} / {systemTotal}
+            </div>
+            <button
+              onClick={onClose}
+              className="font-display text-[0.65rem] tracking-[0.1em] uppercase border cursor-pointer transition-colors duration-100 px-3 py-[0.35rem] bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]"
+            >
+              ✕ Close
+            </button>
+          </div>
         </div>
-        <div className="text-[0.65rem] leading-[1.75] text-[var(--muted)] min-w-[10rem]">
-          <b className="block text-[0.55rem] tracking-[0.12em] uppercase text-[var(--text)] mb-[0.15rem]">
-            System
-          </b>
-          {pos.system === "3nps"
-            ? "Pure 3nps — every string has 3 consecutive scale degrees"
-            : "Symmetric — low E and high e are identical; B string is 2nps"}
+
+        {/* Fretboard area */}
+        <div className="flex items-center gap-2 px-3 py-6">
+          {/* Prev */}
+          <button
+            onClick={onPrev}
+            aria-label="Previous shape"
+            className="shrink-0 w-10 h-10 flex items-center justify-center border cursor-pointer transition-colors duration-100 bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] font-display text-[1rem]"
+          >
+            ←
+          </button>
+
+          {/* Large fretboard */}
+          <div className="flex-1 min-w-0">
+            <Fretboard
+              strings={pos.strings}
+              noteFilter={noteFilter}
+              chordTones={chordTones}
+              twoNps={pos.twoNps}
+              large
+            />
+          </div>
+
+          {/* Next */}
+          <button
+            onClick={onNext}
+            aria-label="Next shape"
+            className="shrink-0 w-10 h-10 flex items-center justify-center border cursor-pointer transition-colors duration-100 bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] font-display text-[1rem]"
+          >
+            →
+          </button>
         </div>
-        <div className="text-[0.65rem] leading-[1.75] text-[var(--muted)] min-w-[10rem]">
-          <b className="block text-[0.55rem] tracking-[0.12em] uppercase text-[var(--text)] mb-[0.15rem]">
-            2nps string
-          </b>
-          {pos.twoNps
-            ? "B string — drops its last degree to make e = E"
-            : "None — all 6 strings are 3nps"}
+
+        {/* Detail info */}
+        <div
+          className="flex gap-6 flex-wrap px-5 pt-3 pb-4"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <div className="text-[0.65rem] leading-[1.75] text-[var(--muted)] min-w-[9rem]">
+            <b className="block text-[0.55rem] tracking-[0.12em] uppercase text-[var(--text)] mb-[0.15rem]">
+              {pos.shapeName ? "Shape" : "Scaletone"}
+            </b>
+            {pos.shapeName
+              ? `${pos.shapeName} shape — based on open ${pos.shapeName} chord form`
+              : `Degree ${pos.scaletone} of ${sname} scale on low E`}
+          </div>
+          <div className="text-[0.65rem] leading-[1.75] text-[var(--muted)] min-w-[12rem]">
+            <b className="block text-[0.55rem] tracking-[0.12em] uppercase text-[var(--text)] mb-[0.15rem]">
+              System
+            </b>
+            {pos.system === "3nps"
+              ? "Pure 3nps — every string has 3 consecutive scale degrees"
+              : pos.system === "sym"
+                ? "Symmetric — low E and high e are identical; B string is 2nps"
+                : "CAGED — 5 movable shapes based on open chord forms"}
+          </div>
+          {pos.system !== "caged" && (
+            <div className="text-[0.65rem] leading-[1.75] text-[var(--muted)] min-w-[9rem]">
+              <b className="block text-[0.55rem] tracking-[0.12em] uppercase text-[var(--text)] mb-[0.15rem]">
+                2nps string
+              </b>
+              {pos.twoNps
+                ? "B string — drops its last degree to make e = E"
+                : "None — all 6 strings are 3nps"}
+            </div>
+          )}
+        </div>
+
+        {/* Keyboard hint */}
+        <div
+          className="px-5 pb-3 text-[0.48rem] tracking-[0.1em] uppercase text-[var(--muted)]"
+        >
+          ← → arrow keys to navigate · esc to close
         </div>
       </div>
     </div>
   );
+}
+
+// ─── System selector helpers ─────────────────────────────────────────────────
+
+const SYSTEM_ORDER: System[] = ["3nps", "sym", "caged"];
+const SYSTEM_LABELS: Record<System, string> = {
+  "3nps": "3nps",
+  sym: "Symmetric",
+  caged: "CAGED",
+};
+
+function toggleSystem(current: System[], clicked: System): System[] {
+  if (current.includes(clicked)) {
+    // Don't deselect if it's the only one
+    if (current.length === 1) return current;
+    return current.filter((s) => s !== clicked);
+  }
+  if (current.length < 2) {
+    return [...current, clicked];
+  }
+  // 2 already selected — replace the oldest (first)
+  return [current[1], clicked];
 }
 
 // ─── ScalePositions ───────────────────────────────────────────────────────────
@@ -335,8 +506,9 @@ export function ScalePositions() {
   const [isDark, setIsDark] = useState(false);
   const [scaleMode, setScaleMode] = useState<ScaleMode>("minor");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
-  const [sysFilter, setSysFilter] = useState<SysFilter>("both");
+  const [selectedSystems, setSelectedSystems] = useState<System[]>(["3nps", "sym"]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [modalIdx, setModalIdx] = useState<number | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("shred-dojo-dark");
@@ -355,31 +527,101 @@ export function ScalePositions() {
     });
   }
 
-  const positions = useMemo(
-    () => buildAllPositions(SCALES[scaleMode]),
-    [scaleMode]
+  const cfg = SCALES[scaleMode];
+  const chordTones = cfg.chordTones;
+
+  // Build all positions (3nps + sym + caged)
+  const allPositions = useMemo(() => {
+    const threeAndSym = buildAllPositions(cfg);
+    const caged = buildCagedPositions(cfg);
+    return [...threeAndSym, ...caged];
+  }, [cfg]);
+
+  // Sort selected systems by SYSTEM_ORDER for consistent column placement
+  const orderedSystems = useMemo(
+    () => SYSTEM_ORDER.filter((s) => selectedSystems.includes(s)),
+    [selectedSystems]
   );
 
-  const visiblePositions = useMemo(
-    () =>
-      sysFilter === "both" ? positions : positions.filter((p) => p.system === sysFilter),
-    [positions, sysFilter]
-  );
+  // Group positions by system
+  const positionsBySystem = useMemo(() => {
+    const map = new Map<System, ScalePosition[]>();
+    for (const sys of SYSTEM_ORDER) {
+      map.set(sys, allPositions.filter((p) => p.system === sys));
+    }
+    return map;
+  }, [allPositions]);
+
+  // Build grid rows: paired by scaletone when 2 systems selected
+  const gridItems = useMemo(() => {
+    if (orderedSystems.length === 1) {
+      // Single system — flat list
+      return (positionsBySystem.get(orderedSystems[0]) ?? []).map((pos) => ({
+        pos,
+        key: `${pos.scaletone}-${pos.system}`,
+      }));
+    }
+
+    // Two systems — pair by scaletone (1-7)
+    const [sysA, sysB] = orderedSystems;
+    const posA = positionsBySystem.get(sysA) ?? [];
+    const posB = positionsBySystem.get(sysB) ?? [];
+    const items: { pos: ScalePosition | null; key: string }[] = [];
+
+    for (let st = 1; st <= 7; st++) {
+      const a = posA.find((p) => p.scaletone === st) ?? null;
+      const b = posB.find((p) => p.scaletone === st) ?? null;
+      items.push({ pos: a, key: `${st}-${sysA}` });
+      items.push({ pos: b, key: `${st}-${sysB}` });
+    }
+    return items;
+  }, [orderedSystems, positionsBySystem]);
 
   function handleScaleChange(mode: ScaleMode) {
     setScaleMode(mode);
     setSelectedIdx(null);
+    setModalIdx(null);
   }
 
-  function handleSelect(globalIdx: number) {
-    setSelectedIdx((prev) => (prev === globalIdx ? null : globalIdx));
+  function handleSystemToggle(sys: System) {
+    setSelectedSystems((prev) => toggleSystem(prev, sys));
+    setSelectedIdx(null);
+    setModalIdx(null);
   }
 
-  const selectedPos =
-    selectedIdx !== null ? positions[selectedIdx] ?? null : null;
+  function handleSelect(pos: ScalePosition) {
+    const globalIdx = allPositions.indexOf(pos);
+    setSelectedIdx(globalIdx);
+    setModalIdx(globalIdx);
+  }
 
-  const cfg = SCALES[scaleMode];
-  const chordTones = cfg.chordTones;
+  function handleModalClose() {
+    setModalIdx(null);
+  }
+
+  // Returns all positions with the same system as the one currently in the modal
+  const modalSystemPositions = useMemo(() => {
+    if (modalIdx === null) return [];
+    const sys = allPositions[modalIdx]?.system;
+    return allPositions.filter((p) => p.system === sys);
+  }, [allPositions, modalIdx]);
+
+  function handleModalNav(dir: -1 | 1) {
+    if (modalIdx === null) return;
+    const sys = allPositions[modalIdx].system;
+    const sysPositions = allPositions.filter((p) => p.system === sys);
+    const sysIdx = sysPositions.indexOf(allPositions[modalIdx]);
+    const nextSysIdx = (sysIdx + dir + sysPositions.length) % sysPositions.length;
+    const nextPos = sysPositions[nextSysIdx];
+    const nextGlobalIdx = allPositions.indexOf(nextPos);
+    setSelectedIdx(nextGlobalIdx);
+    setModalIdx(nextGlobalIdx);
+  }
+
+  const modalPos = modalIdx !== null ? allPositions[modalIdx] ?? null : null;
+  const modalSystemIdx = modalPos ? modalSystemPositions.indexOf(modalPos) : 0;
+
+  const showTwoNpsLegend = selectedSystems.includes("3nps") || selectedSystems.includes("sym");
 
   return (
     <div
@@ -389,7 +631,7 @@ export function ScalePositions() {
       {/* Header */}
       <header className="max-w-[980px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
         <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none">
-          Natural{" "}
+          {scaleMode === "minor" ? "Natural " : ""}
           <em className="text-[var(--accent)] not-italic">
             {scaleMode === "minor" ? "Minor" : "Major"}
           </em>
@@ -404,10 +646,9 @@ export function ScalePositions() {
             small
           />
           <div className="text-[0.63rem] text-[var(--muted)] tracking-[0.05em] leading-[1.7] max-w-[18rem] text-right">
-            Based on Pebber Brown's 14-position system.
+            Diatonic scale shapes across three systems: 3nps, symmetric, and CAGED.
             <br />
-            Each scale shown as pure 3nps shapes and symmetric variants where the
-            low and high E strings match.
+            Select one or two systems to compare side by side.
           </div>
         </div>
       </header>
@@ -453,36 +694,37 @@ export function ScalePositions() {
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           System
         </span>
-        <ControlButton
-          label="Both"
-          active={sysFilter === "both"}
-          onClick={() => setSysFilter("both")}
-        />
-        <ControlButton
-          label="3nps only"
-          active={sysFilter === "3nps"}
-          onClick={() => setSysFilter("3nps")}
-        />
-        <ControlButton
-          label="Symmetric only"
-          active={sysFilter === "sym"}
-          onClick={() => setSysFilter("sym")}
-        />
+        {SYSTEM_ORDER.map((sys) => (
+          <ControlButton
+            key={sys}
+            label={SYSTEM_LABELS[sys]}
+            active={selectedSystems.includes(sys)}
+            onClick={() => handleSystemToggle(sys)}
+          />
+        ))}
       </div>
 
       {/* Legend */}
-      <Legend diaLabel={cfg.diaLabel} />
+      <Legend diaLabel={cfg.diaLabel} showTwoNps={showTwoNpsLegend} />
 
       {/* Grid */}
       <div className="max-w-[980px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
-        {visiblePositions.map((pos) => {
-          const globalIdx = positions.indexOf(pos);
+        {gridItems.map(({ pos, key }) => {
+          if (!pos) {
+            return (
+              <div
+                key={key}
+                className="p-[0.9rem_1rem_0.7rem] border border-dashed -mt-px -ml-px border-[var(--border)]"
+              />
+            );
+          }
+          const globalIdx = allPositions.indexOf(pos);
           return (
             <PositionCell
-              key={`${pos.scaletone}-${pos.system}`}
+              key={key}
               pos={pos}
               isSelected={selectedIdx === globalIdx}
-              onClick={() => handleSelect(globalIdx)}
+              onClick={() => handleSelect(pos)}
               noteFilter={noteFilter}
               chordTones={chordTones}
             />
@@ -490,8 +732,31 @@ export function ScalePositions() {
         })}
       </div>
 
-      {/* Detail panel */}
-      <DetailPanel pos={selectedPos} scaleMode={scaleMode} />
+      {/* Shape modal */}
+      {modalPos && (
+        <ShapeModal
+          pos={modalPos}
+          systemIdx={modalSystemIdx}
+          systemTotal={modalSystemPositions.length}
+          onClose={handleModalClose}
+          onPrev={() => handleModalNav(-1)}
+          onNext={() => handleModalNav(1)}
+          noteFilter={noteFilter}
+          chordTones={chordTones as Set<string>}
+          scaleMode={scaleMode}
+        />
+      )}
+      <footer className="max-w-[980px] mx-auto mt-16 pt-5 border-t border-[var(--border)] text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] text-center">
+        Incorporates concepts taught by{" "}
+        <a
+          href="https://www.youtube.com/@PebberBrown"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--accent)] hover:underline"
+        >
+          Pebber Brown
+        </a>
+      </footer>
     </div>
   );
 }

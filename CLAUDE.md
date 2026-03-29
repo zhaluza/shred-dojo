@@ -65,9 +65,31 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 
 **Grid / cells** — `grid grid-cols-2 max-[560px]:grid-cols-1 gap-0` with cells using `-mt-px -ml-px` for collapsed borders. Selected cell adds `relative z-[2]`.
 
+**Modal overlay pattern** — `fixed inset-0 z-50` backdrop with `rgba(10,8,6,0.82)` + `backdropFilter: blur(4px)`. Modal panel uses `--surface` bg, `border: 1px solid var(--border)`, `borderTop: 3px solid var(--accent)`. Lock body scroll with `document.body.style.overflow = 'hidden'` on mount, restore on unmount.
+
 **Pseudo-element pattern** — never use `::before`/`::after` via CSS. Instead:
 - Background gradients: `backgroundImage` inline style on the element itself
 - Decorative lines: explicit `<div className="absolute ...">` with `height` + `backgroundColor` inline styles
+
+## ScalePositions component architecture
+
+The main component (`app/components/ScalePositions.tsx`) owns all state:
+
+- `scaleMode` / `noteFilter` / `selectedSystems` — filter controls
+- `selectedIdx` — which cell is highlighted in the grid (persists after modal closes)
+- `modalIdx` — which position is open in the modal (`null` = closed); set on cell click, cleared on modal close or scale change
+
+**Scale systems** — three systems available: `"3nps"`, `"sym"`, and `"caged"`. Users can select 1 or 2 at a time via toggle buttons. The `selectedSystems` state is a `System[]` (length 1-2); clicking a 3rd system replaces the oldest selection. Systems are always displayed in a consistent column order: 3nps < sym < caged.
+
+**Grid layout** — when 2 systems are selected, positions are paired by scaletone (1-7) in a 2-column grid. CAGED has only 5 shapes, so 2 rows get empty placeholder cells (dashed border) for the missing scaletones. When 1 system is selected, positions flow naturally in the 2-column grid.
+
+**CAGED system** — defined in `scalePositions.utils.ts` as `CAGED_SHAPES`, an array of 5 shape definitions (E, D, C, A, G in neck order). Each shape specifies interval patterns per string for both major and minor. The `buildCagedPositions()` function generates `ScalePosition` objects with `system: "caged"` and a `shapeName` field. CAGED scaletone mapping differs between major and minor (derived from the first interval on the E string).
+
+**Fretboard size variants** — `Fretboard`, `StringRow`, and `Dot` accept a `large` boolean prop. When `large={true}`: string rows are `h-[42px]` (vs `29px`), dots are `w-7 h-7` (vs `w-5 h-5`), and text sizes scale up proportionally. Used by `ShapeModal` for the enlarged view.
+
+**2nps string highlighting** — controlled by the position's `twoNps` field (not note count). Only sym positions set `twoNps` ("G" or "B"); 3nps and CAGED positions set it to `null`. The legend hides the 2nps entry when only CAGED is selected.
+
+**Modal navigation** — `ShapeModal` cycles through positions sharing the same `system` as the initially clicked shape. Navigation updates both `modalIdx` and `selectedIdx` in sync.
 
 ## React Router v7 conventions
 
