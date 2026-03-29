@@ -191,15 +191,17 @@ export function buildCagedPositions(cfg: ScaleConfig): ScalePosition[] {
     const isMajor = cfg.scale.includes("3" as Degree);
     const intervals = isMajor ? shape.major : shape.minor;
     const scaletone = intervals[0][0]; // first degree on E string
-    const strings = toRelative(buildCagedShape(shape, cfg));
+    const rawStrings = buildCagedShape(shape, cfg);
+    const rawMinFret = Math.min(...rawStrings.flatMap((s) => s.notes.map((n) => n.fret)));
 
     return {
       scaletone,
       startDeg: cfg.scale[scaletone - 1],
       system: "caged" as const,
-      strings,
+      strings: toRelative(rawStrings),
       twoNps: null,
       shapeName: shape.name,
+      startFret: rawMinFret % 12,
     };
   });
 }
@@ -207,19 +209,26 @@ export function buildCagedPositions(cfg: ScaleConfig): ScalePosition[] {
 export function buildAllPositions(cfg: ScaleConfig): ScalePosition[] {
   const positions: ScalePosition[] = [];
   for (let st = 0; st < 7; st++) {
+    const raw3nps = build3nps(st, cfg);
+    const rawMin3nps = Math.min(...raw3nps.flatMap((s) => s.notes.map((n) => n.fret)));
     positions.push({
       scaletone: st + 1,
       startDeg: cfg.scale[st],
       system: "3nps",
-      strings: toRelative(build3nps(st, cfg)),
+      strings: toRelative(raw3nps),
       twoNps: null,
+      startFret: rawMin3nps % 12,
     });
+
+    const rawSym = buildSym(st, cfg);
+    const rawMinSym = Math.min(...rawSym.flatMap((s) => s.notes.map((n) => n.fret)));
     positions.push({
       scaletone: st + 1,
       startDeg: cfg.scale[st],
       system: "sym",
-      strings: toRelative(buildSym(st, cfg)),
+      strings: toRelative(rawSym),
       twoNps: symTwoNoteString(st, cfg) === 3 ? "G" : "B",
+      startFret: rawMinSym % 12,
     });
   }
   return positions;

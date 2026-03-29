@@ -22,24 +22,29 @@ function ControlButton({
   active,
   onClick,
   small,
+  disabled,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
   small?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={[
-        "font-display border cursor-pointer transition-all duration-100",
+        "font-display border transition-all duration-100",
         small
           ? "text-[0.65rem] px-[0.7rem] py-[0.3rem] tracking-[0.1em]"
           : "text-[0.75rem] px-[0.85rem] py-[0.35rem] tracking-[0.08em]",
         "uppercase",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
+        disabled
+          ? "bg-transparent text-[var(--muted)] border-[var(--border)] opacity-40 cursor-not-allowed"
+          : active
+            ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)] cursor-pointer"
+            : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] cursor-pointer",
       ].join(" ")}
     >
       {label}
@@ -129,6 +134,7 @@ function StringRow({
   chordTones,
   isTwoNps,
   large = false,
+  fretOffset = 0,
 }: {
   str: ScaleString;
   fretCount: number;
@@ -136,6 +142,7 @@ function StringRow({
   chordTones: Set<string>;
   isTwoNps: boolean;
   large?: boolean;
+  fretOffset?: number;
 }) {
   const line = isTwoNps ? TWO_NPS_LINE : STRING_LINE[str.name];
   const rowH = large ? "h-[42px]" : "h-[29px]";
@@ -181,7 +188,7 @@ function StringRow({
 
         {/* Fret cells */}
         {Array.from({ length: fretCount }, (_, f) => {
-          const note = str.notes.find((n) => n.fret === f);
+          const note = str.notes.find((n) => n.fret === f - fretOffset);
           return (
             <div
               key={f}
@@ -204,15 +211,17 @@ function Fretboard({
   chordTones,
   twoNps,
   large = false,
+  fretOffset = 0,
 }: {
   strings: ScaleString[];
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   twoNps: string | null;
   large?: boolean;
+  fretOffset?: number;
 }) {
   const maxFret = Math.max(...strings.flatMap((s) => s.notes.map((n) => n.fret)));
-  const fretCount = maxFret + 2;
+  const fretCount = maxFret + 2 + fretOffset;
 
   return (
     <div className="w-full">
@@ -238,6 +247,7 @@ function Fretboard({
           chordTones={chordTones}
           isTwoNps={twoNps === str.name}
           large={large}
+          fretOffset={fretOffset}
         />
       ))}
     </div>
@@ -252,46 +262,64 @@ function PositionCell({
   onClick,
   noteFilter,
   chordTones,
+  fretOffset = 0,
 }: {
   pos: ScalePosition;
   isSelected: boolean;
   onClick: () => void;
   noteFilter: NoteFilter;
   chordTones: Set<string>;
+  fretOffset?: number;
 }) {
+  const sysColor = `var(--sys-${pos.system})`;
+
   return (
     <div
       onClick={onClick}
       className={[
-        "p-[0.9rem_1rem_0.7rem] border -mt-px -ml-px cursor-pointer transition-colors duration-100",
+        "border -mt-px -ml-px cursor-pointer transition-colors duration-100 flex",
         isSelected
           ? "bg-[var(--surface)] border-[var(--text)] relative z-[2]"
           : "border-[var(--border)] hover:bg-[var(--surface)]",
       ].join(" ")}
     >
-      <div className="flex justify-between items-center mb-[0.45rem]">
-        <div className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
-          {pos.shapeName ? (
-            <>
-              <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
-                {pos.shapeName}
-              </strong>{" "}
-              Shape
-            </>
-          ) : (
-            <>
-              Start on{" "}
-              <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
-                {pos.startDeg}
-              </strong>
-            </>
-          )}
+      {/* System color accent bar */}
+      <div
+        className="w-[3px] shrink-0"
+        style={{ backgroundColor: sysColor }}
+      />
+
+      <div className="flex-1 p-[0.9rem_1rem_0.7rem] min-w-0">
+        <div className="flex justify-between items-center mb-[0.45rem]">
+          <div className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
+            {pos.shapeName ? (
+              <>
+                <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
+                  {pos.shapeName}
+                </strong>{" "}
+                Shape
+              </>
+            ) : (
+              <>
+                Start on{" "}
+                <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
+                  {pos.startDeg}
+                </strong>
+              </>
+            )}
+          </div>
+          <span
+            className="font-display text-[0.58rem] px-[0.45rem] py-[0.15rem] tracking-[0.1em] uppercase"
+            style={{
+              color: sysColor,
+              border: `1px solid ${sysColor}`,
+            }}
+          >
+            {SYSTEM_FULL_LABELS[pos.system]}
+          </span>
         </div>
-        <span className="text-[0.5rem] px-[0.35rem] py-[0.1rem] border border-[var(--border)] text-[var(--muted)] tracking-[0.05em] uppercase">
-          {pos.system}
-        </span>
+        <Fretboard strings={pos.strings} noteFilter={noteFilter} chordTones={chordTones} twoNps={pos.twoNps} fretOffset={fretOffset} />
       </div>
-      <Fretboard strings={pos.strings} noteFilter={noteFilter} chordTones={chordTones} twoNps={pos.twoNps} />
     </div>
   );
 }
@@ -370,8 +398,17 @@ function ShapeModal({
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <div>
-            <div className="font-display text-[0.55rem] tracking-[0.18em] uppercase text-[var(--muted)] mb-[0.3rem]">
-              {pos.system === "3nps" ? "Pure 3nps" : pos.system === "sym" ? "Symmetric" : "CAGED"} system
+            <div className="flex items-center gap-[0.5rem] mb-[0.3rem]">
+              <div
+                className="w-[6px] h-[6px] rounded-full shrink-0"
+                style={{ backgroundColor: `var(--sys-${pos.system})` }}
+              />
+              <span
+                className="font-display text-[0.55rem] tracking-[0.18em] uppercase"
+                style={{ color: `var(--sys-${pos.system})` }}
+              >
+                {SYSTEM_FULL_LABELS[pos.system]} system
+              </span>
             </div>
             <div className="font-display text-[1.05rem] tracking-[0.07em] uppercase leading-none">
               {pos.shapeName ? (
@@ -480,9 +517,15 @@ function ShapeModal({
 
 // ─── System selector helpers ─────────────────────────────────────────────────
 
-const SYSTEM_ORDER: System[] = ["3nps", "sym", "caged"];
+const SYSTEM_ORDER: System[] = ["3nps", "caged", "sym"];
 const SYSTEM_LABELS: Record<System, string> = {
   "3nps": "3nps",
+  sym: "Symmetric",
+  caged: "CAGED",
+};
+
+const SYSTEM_FULL_LABELS: Record<System, string> = {
+  "3nps": "3NPS",
   sym: "Symmetric",
   caged: "CAGED",
 };
@@ -496,8 +539,8 @@ function toggleSystem(current: System[], clicked: System): System[] {
   if (current.length < 2) {
     return [...current, clicked];
   }
-  // 2 already selected — replace the oldest (first)
-  return [current[1], clicked];
+  // 2 already selected — do nothing (button should be disabled)
+  return current;
 }
 
 // ─── ScalePositions ───────────────────────────────────────────────────────────
@@ -506,7 +549,7 @@ export function ScalePositions() {
   const [isDark, setIsDark] = useState(false);
   const [scaleMode, setScaleMode] = useState<ScaleMode>("minor");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
-  const [selectedSystems, setSelectedSystems] = useState<System[]>(["3nps", "sym"]);
+  const [selectedSystems, setSelectedSystems] = useState<System[]>(["3nps", "caged"]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [modalIdx, setModalIdx] = useState<number | null>(null);
 
@@ -559,6 +602,7 @@ export function ScalePositions() {
       return (positionsBySystem.get(orderedSystems[0]) ?? []).map((pos) => ({
         pos,
         key: `${pos.scaletone}-${pos.system}`,
+        fretOffset: 0,
       }));
     }
 
@@ -566,13 +610,24 @@ export function ScalePositions() {
     const [sysA, sysB] = orderedSystems;
     const posA = positionsBySystem.get(sysA) ?? [];
     const posB = positionsBySystem.get(sysB) ?? [];
-    const items: { pos: ScalePosition | null; key: string }[] = [];
+    const items: { pos: ScalePosition | null; key: string; fretOffset: number }[] = [];
 
     for (let st = 1; st <= 7; st++) {
       const a = posA.find((p) => p.scaletone === st) ?? null;
       const b = posB.find((p) => p.scaletone === st) ?? null;
-      items.push({ pos: a, key: `${st}-${sysA}` });
-      items.push({ pos: b, key: `${st}-${sysB}` });
+
+      let fretOffsetA = 0;
+      let fretOffsetB = 0;
+      if (a && b) {
+        const diff = a.startFret - b.startFret;
+        if (Math.abs(diff) <= 6) {
+          if (diff > 0) fretOffsetA = diff;
+          else if (diff < 0) fretOffsetB = -diff;
+        }
+      }
+
+      items.push({ pos: a, key: `${st}-${sysA}`, fretOffset: fretOffsetA });
+      items.push({ pos: b, key: `${st}-${sysB}`, fretOffset: fretOffsetB });
     }
     return items;
   }, [orderedSystems, positionsBySystem]);
@@ -646,9 +701,7 @@ export function ScalePositions() {
             small
           />
           <div className="text-[0.63rem] text-[var(--muted)] tracking-[0.05em] leading-[1.7] max-w-[18rem] text-right">
-            Diatonic scale shapes across three systems: 3nps, symmetric, and CAGED.
-            <br />
-            Select one or two systems to compare side by side.
+            Diatonic scale shapes across three systems: 3nps, CAGED, and symmetric.
           </div>
         </div>
       </header>
@@ -694,14 +747,22 @@ export function ScalePositions() {
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           System
         </span>
-        {SYSTEM_ORDER.map((sys) => (
-          <ControlButton
-            key={sys}
-            label={SYSTEM_LABELS[sys]}
-            active={selectedSystems.includes(sys)}
-            onClick={() => handleSystemToggle(sys)}
-          />
-        ))}
+        <span className="text-[0.55rem] tracking-[0.04em] text-[var(--muted)] mr-1">
+          (pick 1–2)
+        </span>
+        {SYSTEM_ORDER.map((sys) => {
+          const isActive = selectedSystems.includes(sys);
+          const isDisabled = !isActive && selectedSystems.length >= 2;
+          return (
+            <ControlButton
+              key={sys}
+              label={SYSTEM_LABELS[sys]}
+              active={isActive}
+              disabled={isDisabled}
+              onClick={() => handleSystemToggle(sys)}
+            />
+          );
+        })}
       </div>
 
       {/* Legend */}
@@ -709,7 +770,7 @@ export function ScalePositions() {
 
       {/* Grid */}
       <div className="max-w-[980px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
-        {gridItems.map(({ pos, key }) => {
+        {gridItems.map(({ pos, key, fretOffset }) => {
           if (!pos) {
             return (
               <div
@@ -727,6 +788,7 @@ export function ScalePositions() {
               onClick={() => handleSelect(pos)}
               noteFilter={noteFilter}
               chordTones={chordTones}
+              fretOffset={fretOffset}
             />
           );
         })}
