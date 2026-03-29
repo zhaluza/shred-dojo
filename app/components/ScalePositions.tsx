@@ -558,7 +558,7 @@ function toggleSystem(current: System[], clicked: System): System[] {
 
 export function ScalePositions() {
   const [isDark, setIsDark] = useState(false);
-  const [scaleMode, setScaleMode] = useState<ScaleMode>("minor");
+  const [scaleMode, setScaleMode] = useState<ScaleMode>("major");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
   const [selectedSystems, setSelectedSystems] = useState<System[]>([
     "3nps",
