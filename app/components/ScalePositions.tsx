@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   DARK_THEME,
   LIGHT_THEME,
@@ -18,6 +18,18 @@ import {
   SCALES,
 } from "./scalePositions.utils";
 
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"] as const;
+
+const MODES: Record<ScaleMode, string[]> = {
+  major: ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"],
+  minor: ["Aeolian", "Locrian", "Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian"],
+};
+
+const MODE_ROMAN: Record<ScaleMode, string[]> = {
+  major: ["I", "ii", "iii", "IV", "V", "vi", "vii°"],
+  minor: ["i", "ii°", "bIII", "iv", "v", "bVI", "bVII"],
+};
+
 // ─── ControlButton ────────────────────────────────────────────────────────────
 
 function ControlButton({
@@ -26,17 +38,20 @@ function ControlButton({
   onClick,
   small,
   disabled,
+  title,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
   small?: boolean;
   disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className={[
         "font-display border transition-all duration-100",
         small
@@ -258,6 +273,19 @@ function Fretboard({
 
 // ─── PositionCell ─────────────────────────────────────────────────────────────
 
+function fretRange(strings: ScaleString[], fretOffset: number): [number, number] {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const s of strings) {
+    for (const n of s.notes) {
+      const f = n.fret + fretOffset;
+      if (f < min) min = f;
+      if (f > max) max = f;
+    }
+  }
+  return [min, max];
+}
+
 function PositionCell({
   pos,
   isSelected,
@@ -265,6 +293,8 @@ function PositionCell({
   noteFilter,
   chordTones,
   fretOffset = 0,
+  showModes = false,
+  scaleMode = "major",
 }: {
   pos: ScalePosition;
   isSelected: boolean;
@@ -272,8 +302,13 @@ function PositionCell({
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   fretOffset?: number;
+  showModes?: boolean;
+  scaleMode?: ScaleMode;
 }) {
   const sysColor = `var(--sys-${pos.system})`;
+  const [minFret, maxFret] = fretRange(pos.strings, fretOffset);
+  const modeRoman = MODE_ROMAN[scaleMode][pos.scaletone - 1];
+  const modeName = MODES[scaleMode][pos.scaletone - 1];
 
   return (
     <div
@@ -293,32 +328,46 @@ function PositionCell({
 
       <div className="flex-1 p-[0.9rem_1rem_0.7rem] min-w-0">
         <div className="flex justify-between items-center mb-[0.45rem]">
-          <div className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
-            {pos.shapeName ? (
-              <>
-                <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
-                  {pos.shapeName}
-                </strong>{" "}
-                Shape
-              </>
-            ) : (
-              <>
-                Start on{" "}
-                <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
-                  {pos.startDeg}
-                </strong>
-              </>
+          <div className="flex flex-col gap-[0.2rem]">
+            <div className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
+              {pos.shapeName ? (
+                <>
+                  <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
+                    {pos.shapeName}
+                  </strong>{" "}
+                  Shape
+                </>
+              ) : (
+                <>
+                  Start on{" "}
+                  <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
+                    {pos.startDeg}
+                  </strong>
+                </>
+              )}
+            </div>
+            {showModes && (
+              <div className="font-display text-[0.62rem] tracking-[0.1em] text-[var(--text)]">
+                <span className="text-[var(--accent)]">{modeRoman}</span>
+                {" · "}
+                {modeName}
+              </div>
             )}
           </div>
-          <span
-            className="font-display text-[0.58rem] px-[0.45rem] py-[0.15rem] tracking-[0.1em] uppercase"
-            style={{
-              color: sysColor,
-              border: `1px solid ${sysColor}`,
-            }}
-          >
-            {SYSTEM_FULL_LABELS[pos.system]}
-          </span>
+          <div className="flex items-center gap-[0.4rem]">
+            <span className="font-mono text-[0.5rem] tracking-[0.04em] text-[var(--muted)]">
+              frets {minFret}–{maxFret}
+            </span>
+            <span
+              className="font-display text-[0.58rem] px-[0.45rem] py-[0.15rem] tracking-[0.1em] uppercase"
+              style={{
+                color: sysColor,
+                border: `1px solid ${sysColor}`,
+              }}
+            >
+              {SYSTEM_FULL_LABELS[pos.system]}
+            </span>
+          </div>
         </div>
         <Fretboard
           strings={pos.strings}
@@ -343,6 +392,7 @@ function ShapeModal({
   noteFilter,
   chordTones,
   scaleMode,
+  showModes,
 }: {
   pos: ScalePosition;
   systemIdx: number;
@@ -353,6 +403,7 @@ function ShapeModal({
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   scaleMode: ScaleMode;
+  showModes: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -384,7 +435,7 @@ function ShapeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[560px]:items-end max-[560px]:p-0"
       style={{
         backgroundColor: "rgba(10, 8, 6, 0.82)",
         backdropFilter: "blur(4px)",
@@ -394,7 +445,7 @@ function ShapeModal({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative w-full max-w-[740px] bg-[var(--surface)] outline-none"
+        className="relative w-full max-w-[740px] bg-[var(--surface)] outline-none max-[560px]:max-h-[90vh] max-[560px]:overflow-y-auto"
         style={{
           border: "1px solid var(--border)",
           borderTop: "3px solid var(--accent)",
@@ -402,6 +453,11 @@ function ShapeModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile drag handle */}
+        <div className="hidden max-[560px]:flex justify-center pt-[0.7rem] pb-[0.1rem]">
+          <div className="w-8 h-[3px] bg-[var(--border)]" />
+        </div>
+
         {/* Header */}
         <div
           className="flex items-start justify-between px-5 pt-4 pb-3"
@@ -436,10 +492,19 @@ function ShapeModal({
                 </>
               )}
             </div>
+            {showModes && (
+              <div className="font-display text-[0.72rem] tracking-[0.1em] mt-[0.35rem]">
+                <span className="text-[var(--accent)]">
+                  {MODE_ROMAN[scaleMode][pos.scaletone - 1]}
+                </span>
+                {" · "}
+                {MODES[scaleMode][pos.scaletone - 1]}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-4 pt-[0.15rem]">
-            <div className="font-display text-[0.55rem] tracking-[0.14em] uppercase text-[var(--muted)]">
+            <div className="font-display text-[0.75rem] tracking-[0.14em] uppercase text-[var(--text)]">
               {systemIdx + 1} / {systemTotal}
             </div>
             <button
@@ -452,18 +517,18 @@ function ShapeModal({
         </div>
 
         {/* Fretboard area */}
-        <div className="flex items-center gap-2 px-3 py-6">
+        <div className="flex items-center gap-2 px-3 py-6 max-[560px]:grid max-[560px]:grid-cols-2 max-[560px]:py-4 max-[560px]:px-4 max-[560px]:gap-3">
           {/* Prev */}
           <button
             onClick={onPrev}
             aria-label="Previous shape"
-            className="shrink-0 w-10 h-10 flex items-center justify-center border cursor-pointer transition-colors duration-100 bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] font-display text-[1rem]"
+            className="shrink-0 w-10 h-10 flex items-center justify-center border cursor-pointer transition-colors duration-100 bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] font-display text-[1rem] max-[560px]:order-2 max-[560px]:h-14 max-[560px]:w-full"
           >
             ←
           </button>
 
           {/* Large fretboard */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 max-[560px]:col-span-2 max-[560px]:order-1">
             <Fretboard
               strings={pos.strings}
               noteFilter={noteFilter}
@@ -476,7 +541,7 @@ function ShapeModal({
           <button
             onClick={onNext}
             aria-label="Next shape"
-            className="shrink-0 w-10 h-10 flex items-center justify-center border cursor-pointer transition-colors duration-100 bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] font-display text-[1rem]"
+            className="shrink-0 w-10 h-10 flex items-center justify-center border cursor-pointer transition-colors duration-100 bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] font-display text-[1rem] max-[560px]:order-3 max-[560px]:h-14 max-[560px]:w-full"
           >
             →
           </button>
@@ -508,7 +573,7 @@ function ShapeModal({
         </div>
 
         {/* Keyboard hint */}
-        <div className="px-5 pb-3 text-[0.48rem] tracking-[0.1em] uppercase text-[var(--muted)]">
+        <div className="px-5 pb-3 text-[0.48rem] tracking-[0.1em] uppercase text-[var(--muted)] max-[560px]:hidden">
           ← → arrow keys to navigate · esc to close
         </div>
       </div>
@@ -557,6 +622,7 @@ export function ScalePositions() {
   );
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [modalIdx, setModalIdx] = useState<number | null>(null);
+  const [showModes, setShowModes] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("shred-dojo-dark");
@@ -611,6 +677,7 @@ export function ScalePositions() {
         pos,
         key: `${pos.scaletone}-${pos.system}`,
         fretOffset: 0,
+        scaletone: pos.scaletone,
       }));
     }
 
@@ -622,6 +689,7 @@ export function ScalePositions() {
       pos: ScalePosition | null;
       key: string;
       fretOffset: number;
+      scaletone: number;
     }[] = [];
 
     for (let st = 1; st <= 7; st++) {
@@ -638,8 +706,8 @@ export function ScalePositions() {
         }
       }
 
-      items.push({ pos: a, key: `${st}-${sysA}`, fretOffset: fretOffsetA });
-      items.push({ pos: b, key: `${st}-${sysB}`, fretOffset: fretOffsetB });
+      items.push({ pos: a, key: `${st}-${sysA}`, fretOffset: fretOffsetA, scaletone: st });
+      items.push({ pos: b, key: `${st}-${sysB}`, fretOffset: fretOffsetB, scaletone: st });
     }
     return items;
   }, [orderedSystems, positionsBySystem]);
@@ -733,6 +801,16 @@ export function ScalePositions() {
           active={scaleMode === "minor"}
           onClick={() => handleScaleChange("minor")}
         />
+        <div className="flex-1" />
+        <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
+          Labels
+        </span>
+        <ControlButton
+          label="Modes"
+          active={showModes}
+          onClick={() => setShowModes((v) => !v)}
+          small
+        />
       </div>
 
       {/* Show + System control row */}
@@ -760,7 +838,7 @@ export function ScalePositions() {
           System
         </span>
         <span className="text-[0.55rem] tracking-[0.04em] text-[var(--muted)] mr-1">
-          (pick 1–2)
+          {selectedSystems.length >= 2 ? "(deselect one to switch)" : "(pick 1–2)"}
         </span>
         {SYSTEM_ORDER.map((sys) => {
           const isActive = selectedSystems.includes(sys);
@@ -771,6 +849,7 @@ export function ScalePositions() {
               label={SYSTEM_LABELS[sys]}
               active={isActive}
               disabled={isDisabled}
+              title={isDisabled ? "Deselect a system first" : undefined}
               onClick={() => handleSystemToggle(sys)}
             />
           );
@@ -782,36 +861,52 @@ export function ScalePositions() {
 
       {/* Grid */}
       <div className="max-w-[980px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
-        {gridItems.map(({ pos, key, fretOffset }) => {
-          if (!pos) {
-            return (
-              <div
-                key={key}
-                className="border border-dashed -mt-px -ml-px border-[var(--border)] flex items-center justify-center min-h-[8rem]"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(-45deg, transparent, transparent 6px, var(--fret-bar) 6px, var(--fret-bar) 7px)",
-                }}
-              >
-                <div className="flex flex-col items-center gap-[0.4rem] opacity-40">
-                  <div className="font-display text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">
-                    No CAGED shape
-                  </div>
+        {gridItems.map(({ pos, key, fretOffset, scaletone }, i) => {
+          const showSeparator = orderedSystems.length === 2 && i % 2 === 0;
+          const cell = !pos ? (
+            <div
+              key={key}
+              className="border border-dashed -mt-px -ml-px border-[var(--border)] flex items-center justify-center min-h-[8rem]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(-45deg, transparent, transparent 6px, var(--fret-bar) 6px, var(--fret-bar) 7px)",
+              }}
+            >
+              <div className="flex flex-col items-center gap-[0.5rem] opacity-40 text-center">
+                <div className="font-display text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">
+                  No CAGED shape
+                </div>
+                <div className="font-mono text-[0.52rem] tracking-[0.04em] text-[var(--muted)] leading-[1.5]">
+                  CAGED has 5 shapes (scaletones 1–5)
                 </div>
               </div>
-            );
-          }
-          const globalIdx = allPositions.indexOf(pos);
-          return (
+            </div>
+          ) : (
             <PositionCell
               key={key}
               pos={pos}
-              isSelected={selectedIdx === globalIdx}
+              isSelected={selectedIdx === allPositions.indexOf(pos)}
               onClick={() => handleSelect(pos)}
               noteFilter={noteFilter}
               chordTones={chordTones}
               fretOffset={fretOffset}
+              showModes={showModes}
+              scaleMode={scaleMode}
             />
+          );
+          return (
+            <Fragment key={key}>
+              {showSeparator && (
+                <div className="col-span-2 max-[560px]:col-span-1 flex items-center gap-3 px-4 -mt-px border border-[var(--border)] bg-[var(--surface)] py-[0.35rem]">
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                  <span className="font-display text-[0.62rem] tracking-[0.18em] uppercase text-[var(--accent)]">
+                    {ROMAN[scaletone - 1]}
+                  </span>
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                </div>
+              )}
+              {cell}
+            </Fragment>
           );
         })}
       </div>
@@ -828,6 +923,7 @@ export function ScalePositions() {
           noteFilter={noteFilter}
           chordTones={chordTones as Set<string>}
           scaleMode={scaleMode}
+          showModes={showModes}
         />
       )}
       <footer className="max-w-[980px] mx-auto mt-16 pt-5 border-t border-[var(--border)] text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] text-center">
