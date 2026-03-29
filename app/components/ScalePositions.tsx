@@ -13,7 +13,11 @@ import type {
   ScaleString,
   System,
 } from "./scalePositions.types";
-import { buildAllPositions, buildCagedPositions, SCALES } from "./scalePositions.utils";
+import {
+  buildAllPositions,
+  buildCagedPositions,
+  SCALES,
+} from "./scalePositions.utils";
 
 // ─── ControlButton ────────────────────────────────────────────────────────────
 
@@ -54,7 +58,13 @@ function ControlButton({
 
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
-function Legend({ diaLabel, showTwoNps }: { diaLabel: string; showTwoNps: boolean }) {
+function Legend({
+  diaLabel,
+  showTwoNps,
+}: {
+  diaLabel: string;
+  showTwoNps: boolean;
+}) {
   return (
     <div className="max-w-[980px] mx-auto mb-6 flex flex-wrap gap-6 items-center">
       <div className="flex items-center gap-[0.45rem] text-[0.58rem] text-[var(--muted)] tracking-[0.08em] uppercase">
@@ -72,12 +82,6 @@ function Legend({ diaLabel, showTwoNps }: { diaLabel: string; showTwoNps: boolea
         />
         {diaLabel}
       </div>
-      {showTwoNps && (
-        <div className="flex items-center gap-[0.45rem] text-[0.58rem] text-[var(--muted)] tracking-[0.08em] uppercase">
-          <div className="w-[20px] h-[2px] bg-[var(--two-nps)] shrink-0" />
-          2nps string
-        </div>
-      )}
     </div>
   );
 }
@@ -194,7 +198,9 @@ function StringRow({
               key={f}
               className={`flex-1 ${rowH} flex items-center justify-center relative z-[1]`}
             >
-              {note && <Dot note={note} visible={isVisible(note)} large={large} />}
+              {note && (
+                <Dot note={note} visible={isVisible(note)} large={large} />
+              )}
             </div>
           );
         })}
@@ -220,13 +226,17 @@ function Fretboard({
   large?: boolean;
   fretOffset?: number;
 }) {
-  const maxFret = Math.max(...strings.flatMap((s) => s.notes.map((n) => n.fret)));
+  const maxFret = Math.max(
+    ...strings.flatMap((s) => s.notes.map((n) => n.fret)),
+  );
   const fretCount = maxFret + 2 + fretOffset;
 
   return (
     <div className="w-full">
       {/* Fret numbers */}
-      <div className={`flex ${large ? "pl-[2.4rem]" : "pl-[1.9rem]"} mb-[0.15rem]`}>
+      <div
+        className={`flex ${large ? "pl-[2.4rem]" : "pl-[1.9rem]"} mb-[0.15rem]`}
+      >
         {Array.from({ length: fretCount }, (_, f) => (
           <div
             key={f}
@@ -318,7 +328,13 @@ function PositionCell({
             {SYSTEM_FULL_LABELS[pos.system]}
           </span>
         </div>
-        <Fretboard strings={pos.strings} noteFilter={noteFilter} chordTones={chordTones} twoNps={pos.twoNps} fretOffset={fretOffset} />
+        <Fretboard
+          strings={pos.strings}
+          noteFilter={noteFilter}
+          chordTones={chordTones}
+          twoNps={pos.twoNps}
+          fretOffset={fretOffset}
+        />
       </div>
     </div>
   );
@@ -378,7 +394,10 @@ function ShapeModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(10, 8, 6, 0.82)", backdropFilter: "blur(4px)" }}
+      style={{
+        backgroundColor: "rgba(10, 8, 6, 0.82)",
+        backdropFilter: "blur(4px)",
+      }}
       onClick={onClose}
     >
       <div
@@ -413,12 +432,16 @@ function ShapeModal({
             <div className="font-display text-[1.05rem] tracking-[0.07em] uppercase leading-none">
               {pos.shapeName ? (
                 <>
-                  <span className="text-[var(--accent)]">{pos.shapeName}</span> Shape
+                  <span className="text-[var(--accent)]">{pos.shapeName}</span>{" "}
+                  Shape
                 </>
               ) : (
                 <>
                   Scaletone {pos.scaletone}
-                  <span className="text-[var(--accent)]"> · {pos.startDeg}</span>
+                  <span className="text-[var(--accent)]">
+                    {" "}
+                    · {pos.startDeg}
+                  </span>
                 </>
               )}
             </div>
@@ -492,22 +515,10 @@ function ShapeModal({
                 ? "Symmetric — low E and high e are identical; B string is 2nps"
                 : "CAGED — 5 movable shapes based on open chord forms"}
           </div>
-          {pos.system !== "caged" && (
-            <div className="text-[0.65rem] leading-[1.75] text-[var(--muted)] min-w-[9rem]">
-              <b className="block text-[0.55rem] tracking-[0.12em] uppercase text-[var(--text)] mb-[0.15rem]">
-                2nps string
-              </b>
-              {pos.twoNps
-                ? "B string — drops its last degree to make e = E"
-                : "None — all 6 strings are 3nps"}
-            </div>
-          )}
         </div>
 
         {/* Keyboard hint */}
-        <div
-          className="px-5 pb-3 text-[0.48rem] tracking-[0.1em] uppercase text-[var(--muted)]"
-        >
+        <div className="px-5 pb-3 text-[0.48rem] tracking-[0.1em] uppercase text-[var(--muted)]">
           ← → arrow keys to navigate · esc to close
         </div>
       </div>
@@ -549,7 +560,10 @@ export function ScalePositions() {
   const [isDark, setIsDark] = useState(false);
   const [scaleMode, setScaleMode] = useState<ScaleMode>("minor");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
-  const [selectedSystems, setSelectedSystems] = useState<System[]>(["3nps", "caged"]);
+  const [selectedSystems, setSelectedSystems] = useState<System[]>([
+    "3nps",
+    "caged",
+  ]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [modalIdx, setModalIdx] = useState<number | null>(null);
 
@@ -583,14 +597,17 @@ export function ScalePositions() {
   // Sort selected systems by SYSTEM_ORDER for consistent column placement
   const orderedSystems = useMemo(
     () => SYSTEM_ORDER.filter((s) => selectedSystems.includes(s)),
-    [selectedSystems]
+    [selectedSystems],
   );
 
   // Group positions by system
   const positionsBySystem = useMemo(() => {
     const map = new Map<System, ScalePosition[]>();
     for (const sys of SYSTEM_ORDER) {
-      map.set(sys, allPositions.filter((p) => p.system === sys));
+      map.set(
+        sys,
+        allPositions.filter((p) => p.system === sys),
+      );
     }
     return map;
   }, [allPositions]);
@@ -610,7 +627,11 @@ export function ScalePositions() {
     const [sysA, sysB] = orderedSystems;
     const posA = positionsBySystem.get(sysA) ?? [];
     const posB = positionsBySystem.get(sysB) ?? [];
-    const items: { pos: ScalePosition | null; key: string; fretOffset: number }[] = [];
+    const items: {
+      pos: ScalePosition | null;
+      key: string;
+      fretOffset: number;
+    }[] = [];
 
     for (let st = 1; st <= 7; st++) {
       const a = posA.find((p) => p.scaletone === st) ?? null;
@@ -666,17 +687,19 @@ export function ScalePositions() {
     const sys = allPositions[modalIdx].system;
     const sysPositions = allPositions.filter((p) => p.system === sys);
     const sysIdx = sysPositions.indexOf(allPositions[modalIdx]);
-    const nextSysIdx = (sysIdx + dir + sysPositions.length) % sysPositions.length;
+    const nextSysIdx =
+      (sysIdx + dir + sysPositions.length) % sysPositions.length;
     const nextPos = sysPositions[nextSysIdx];
     const nextGlobalIdx = allPositions.indexOf(nextPos);
     setSelectedIdx(nextGlobalIdx);
     setModalIdx(nextGlobalIdx);
   }
 
-  const modalPos = modalIdx !== null ? allPositions[modalIdx] ?? null : null;
+  const modalPos = modalIdx !== null ? (allPositions[modalIdx] ?? null) : null;
   const modalSystemIdx = modalPos ? modalSystemPositions.indexOf(modalPos) : 0;
 
-  const showTwoNpsLegend = selectedSystems.includes("3nps") || selectedSystems.includes("sym");
+  const showTwoNpsLegend =
+    selectedSystems.includes("3nps") || selectedSystems.includes("sym");
 
   return (
     <div
@@ -701,7 +724,8 @@ export function ScalePositions() {
             small
           />
           <div className="text-[0.63rem] text-[var(--muted)] tracking-[0.05em] leading-[1.7] max-w-[18rem] text-right">
-            Diatonic scale shapes across three systems: 3nps, CAGED, and symmetric.
+            Diatonic scale shapes across three systems: 3nps, CAGED, and
+            symmetric.
           </div>
         </div>
       </header>
