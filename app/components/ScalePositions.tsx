@@ -724,14 +724,14 @@ export function ScalePositions() {
           Scale
         </span>
         <ControlButton
-          label="Minor"
-          active={scaleMode === "minor"}
-          onClick={() => handleScaleChange("minor")}
-        />
-        <ControlButton
           label="Major"
           active={scaleMode === "major"}
           onClick={() => handleScaleChange("major")}
+        />
+        <ControlButton
+          label="Minor"
+          active={scaleMode === "minor"}
+          onClick={() => handleScaleChange("minor")}
         />
       </div>
 
