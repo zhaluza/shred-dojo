@@ -17,6 +17,7 @@ export const SCALES: Record<ScaleMode, ScaleConfig> = {
     scale: ["R", "2", "b3", "4", "5", "6", "b7"],
     semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "5": 7, b6: 8, "6": 8, b7: 10, "7": 11 },
     penta: new Set<Degree>(["R", "b3", "4", "5", "b7"]),
+    chordTones: new Set<Degree>(["R", "b3", "5"]),
     diaLabel: "Diatonic only (2, 6)",
     title: "Natural Minor",
   },
@@ -24,6 +25,7 @@ export const SCALES: Record<ScaleMode, ScaleConfig> = {
     scale: ["R", "2", "3", "4", "5", "6", "7"],
     semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "5": 7, b6: 8, "6": 9, b7: 10, "7": 11 },
     penta: new Set<Degree>(["R", "2", "3", "5", "6"]),
+    chordTones: new Set<Degree>(["R", "3", "5"]),
     diaLabel: "Diatonic only (4, 7)",
     title: "Natural Major",
   },
@@ -70,11 +72,42 @@ export function build3nps(startDegIdx: number, cfg: ScaleConfig): ScaleString[] 
   });
 }
 
+export function symTwoNoteString(startDegIdx: number, cfg: ScaleConfig): 3 | 4 {
+  const gStart = (startDegIdx + 2) % 7;
+  const deg0 = cfg.scale[gStart];
+  const deg2 = cfg.scale[(gStart + 2) % 7];
+  const span = (cfg.semi[deg2] - cfg.semi[deg0] + 12) % 12;
+  return span === 4 ? 3 : 4;
+}
+
 export function buildSym(startDegIdx: number, cfg: ScaleConfig): ScaleString[] {
-  const strings = build3nps(startDegIdx, cfg);
-  strings[4].notes = strings[4].notes.slice(0, 2);
-  strings[5].notes = strings[0].notes.map((n) => ({ ...n }));
-  return strings;
+  const twoNoteIdx = symTwoNoteString(startDegIdx, cfg);
+  let degCursor = startDegIdx;
+  let refFret = ROOT_FRET + cfg.semi[cfg.scale[startDegIdx]];
+
+  return SNAME.map((name, si) => {
+    const noteCount = si === twoNoteIdx ? 2 : 3;
+
+    if (si === 5) {
+      degCursor = startDegIdx;
+    }
+
+    const degrees = Array.from({ length: noteCount }, (_, i) =>
+      cfg.scale[(degCursor + i) % 7]
+    );
+
+    let ref = refFret;
+    const notes: ScaleNote[] = degrees.map((deg) => {
+      const fret = findFret(deg, si, ref, cfg);
+      ref = fret + 1;
+      return { fret, deg, penta: cfg.penta.has(deg) };
+    });
+
+    degCursor = (degCursor + noteCount) % 7;
+    refFret = notes[notes.length - 1].fret + 1;
+
+    return { name, notes };
+  });
 }
 
 export function toRelative(strings: ScaleString[]): ScaleString[] {
@@ -100,7 +133,7 @@ export function buildAllPositions(cfg: ScaleConfig): ScalePosition[] {
       startDeg: cfg.scale[st],
       system: "sym",
       strings: toRelative(buildSym(st, cfg)),
-      twoNps: "B",
+      twoNps: symTwoNoteString(st, cfg) === 3 ? "G" : "B",
     });
   }
   return positions;

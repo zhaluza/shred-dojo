@@ -5,7 +5,16 @@
       "Bash(npm run:*)",
       "WebSearch",
       "WebFetch(domain:developers.netlify.com)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(brew install:*)",
+      "Bash(mkdir -p /tmp/pdf-pages)",
+      "Bash(pdftoppm -png -r 200 \"/Users/zhaluza/Desktop/coding/shred-dojo/resources/diatonic-scales/minor-penta-14pos-standalone.pdf\" /tmp/pdf-pages/minor)",
+      "Read(//tmp/**)",
+      "Bash(pdftoppm -png -r 200 \"/Users/zhaluza/Desktop/coding/shred-dojo/resources/diatonic-scales/major-penta-scale-14pos-standalone.pdf\" /tmp/pdf-pages/major)",
+      "Read(//private/tmp/pdf-pages/**)",
+      "Bash(node -e \":*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

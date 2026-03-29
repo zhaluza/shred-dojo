@@ -115,11 +115,13 @@ function StringRow({
   str,
   fretCount,
   noteFilter,
+  chordTones,
   isTwoNps,
 }: {
   str: ScaleString;
   fretCount: number;
   noteFilter: NoteFilter;
+  chordTones: Set<string>;
   isTwoNps: boolean;
 }) {
   const line = isTwoNps ? TWO_NPS_LINE : STRING_LINE[str.name];
@@ -127,7 +129,7 @@ function StringRow({
   function isVisible(note: ScaleNote): boolean {
     if (noteFilter === "all") return true;
     if (noteFilter === "penta") return note.deg === "R" || note.penta;
-    if (noteFilter === "dia") return note.deg === "R" || !note.penta;
+    if (noteFilter === "chord") return chordTones.has(note.deg);
     return true;
   }
 
@@ -184,10 +186,12 @@ function StringRow({
 function Fretboard({
   strings,
   noteFilter,
+  chordTones,
   twoNps,
 }: {
   strings: ScaleString[];
   noteFilter: NoteFilter;
+  chordTones: Set<string>;
   twoNps: string | null;
 }) {
   const maxFret = Math.max(...strings.flatMap((s) => s.notes.map((n) => n.fret)));
@@ -214,6 +218,7 @@ function Fretboard({
           str={str}
           fretCount={fretCount}
           noteFilter={noteFilter}
+          chordTones={chordTones}
           isTwoNps={str.notes.length === 2}
         />
       ))}
@@ -228,11 +233,13 @@ function PositionCell({
   isSelected,
   onClick,
   noteFilter,
+  chordTones,
 }: {
   pos: ScalePosition;
   isSelected: boolean;
   onClick: () => void;
   noteFilter: NoteFilter;
+  chordTones: Set<string>;
 }) {
   return (
     <div
@@ -246,16 +253,16 @@ function PositionCell({
     >
       <div className="flex justify-between items-center mb-[0.45rem]">
         <div className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
-          St {pos.scaletone}{" "}
+          Start on{" "}
           <strong className="text-[var(--accent)] font-normal text-[0.82rem]">
-            · {pos.startDeg}
+            {pos.startDeg}
           </strong>
         </div>
         <span className="text-[0.5rem] px-[0.35rem] py-[0.1rem] border border-[var(--border)] text-[var(--muted)] tracking-[0.05em]">
           {pos.system}
         </span>
       </div>
-      <Fretboard strings={pos.strings} noteFilter={noteFilter} twoNps={pos.twoNps} />
+      <Fretboard strings={pos.strings} noteFilter={noteFilter} chordTones={chordTones} twoNps={pos.twoNps} />
     </div>
   );
 }
@@ -372,6 +379,7 @@ export function ScalePositions() {
     selectedIdx !== null ? positions[selectedIdx] ?? null : null;
 
   const cfg = SCALES[scaleMode];
+  const chordTones = cfg.chordTones;
 
   return (
     <div
@@ -437,9 +445,9 @@ export function ScalePositions() {
           onClick={() => setNoteFilter("penta")}
         />
         <ControlButton
-          label="Diatonic +"
-          active={noteFilter === "dia"}
-          onClick={() => setNoteFilter("dia")}
+          label="Chord tones"
+          active={noteFilter === "chord"}
+          onClick={() => setNoteFilter("chord")}
         />
         <div className="flex-1" />
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
@@ -476,6 +484,7 @@ export function ScalePositions() {
               isSelected={selectedIdx === globalIdx}
               onClick={() => handleSelect(globalIdx)}
               noteFilter={noteFilter}
+              chordTones={chordTones}
             />
           );
         })}

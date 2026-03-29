@@ -76,10 +76,17 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 - Type route props with the generated types from `./+types/<route-name>`
 - Use `<Link>`, `<Form>`, `useFetcher`, `useLoaderData`, etc. from `react-router`
 
+## Testing
+
+- **Vitest** — separate `vitest.config.ts` (avoids react-router plugin conflicts with `vite.config.ts`)
+- Scale position tests in `app/components/scalePositions.utils.test.ts` — snapshot fixtures verified against Pebber Brown's PDF reference material in `resources/diatonic-scales/`
+
 ## Dev commands
 
 ```bash
-npm run dev       # Start dev server
-npm run build     # Production build
-npm run typecheck # Type check (also runs react-router typegen)
+npm run dev        # Start dev server
+npm run build      # Production build
+npm run typecheck  # Type check (also runs react-router typegen)
+npm run test       # Run tests (vitest)
+npm run test:watch # Run tests in watch mode
 ```
