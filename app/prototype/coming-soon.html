@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shred Dojo — Coming Soon</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600&family=Source+Code+Pro:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #f5f0e8;
+    --surface: #ede8dc;
+    --border:  #c8bfaa;
+    --text:    #1a1612;
+    --muted:   #8a8070;
+    --accent:  #8b1a1a;
+    --amber:   #c8a060;
+    --faint:   #c8bfaa;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Code Pro', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Pick logo ── */
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .pick-mark {
+    display: block;
+    width: 38px;
+    flex-shrink: 0;
+    /* tip of pick (top of path) rotated to point upper-left */
+    transform: rotate(225deg);
+    margin-top: 0.2rem;
+  }
+
+  main, footer, .fret-stripe { position: relative; z-index: 1; }
+
+  /* ── Decorative fretboard stripe across top ── */
+  .fret-stripe {
+    width: 100%;
+    height: 6px;
+    background: repeating-linear-gradient(
+      to right,
+      var(--amber) 0px,
+      var(--amber) 1px,
+      transparent 1px,
+      transparent 80px
+    );
+    opacity: 0.6;
+  }
+
+  /* ── Main layout ── */
+  main {
+    flex: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 5rem 2rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Eyebrow ── */
+  .eyebrow {
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1.25rem;
+  }
+
+  /* ── Heading ── */
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: clamp(2.8rem, 8vw, 5rem);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+
+  h1 em {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  .sub-heading {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 300;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3rem;
+  }
+
+  /* ── Divider ── */
+  .rule {
+    width: 100%;
+    height: 2px;
+    background: var(--text);
+    margin-bottom: 2.5rem;
+  }
+
+  /* ── Description ── */
+  .description {
+    font-size: 0.78rem;
+    line-height: 1.9;
+    color: var(--muted);
+    margin-bottom: 3rem;
+    max-width: 480px;
+  }
+
+  .description strong {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  /* ── Feature list ── */
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 3.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .feature {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .feature-marker {
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    flex-shrink: 0;
+    padding-top: 0.1rem;
+    width: 3.5rem;
+    text-align: right;
+  }
+
+  .feature-text {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .feature-text strong {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text);
+    font-weight: 400;
+    margin-bottom: 0.1rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Email signup ── */
+  .signup-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.65rem;
+  }
+
+  .signup-row {
+    display: flex;
+    gap: 0;
+    max-width: 420px;
+  }
+
+  .signup-input {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--border);
+    border-right: none;
+    color: var(--text);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.72rem;
+    padding: 0.55rem 0.85rem;
+    outline: none;
+    transition: border-color 0.1s;
+  }
+
+  .signup-input::placeholder { color: var(--faint); }
+  .signup-input:focus { border-color: var(--text); }
+
+  .signup-btn {
+    background: var(--text);
+    border: 1px solid var(--text);
+    color: var(--bg);
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    transition: opacity 0.1s;
+    white-space: nowrap;
+  }
+
+  .signup-btn:hover { opacity: 0.8; }
+
+  .signup-note {
+    margin-top: 0.65rem;
+    font-size: 0.55rem;
+    color: var(--faint);
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .footer-note {
+    font-size: 0.55rem;
+    color: var(--faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .footer-link {
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+    transition: color 0.1s, border-color 0.1s;
+  }
+
+  .footer-link:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+
+  /* ── Decorative mini fretboard ── */
+  .deco-fb {
+    margin-bottom: 3rem;
+    opacity: 0.35;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .deco-row {
+    display: flex;
+    height: 18px;
+    align-items: center;
+    position: relative;
+  }
+
+  .deco-row::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%; transform: translateY(-50%);
+    background: var(--border);
+  }
+
+  .deco-row:nth-child(1)::after { height: 1.5px; }
+  .deco-row:nth-child(2)::after { height: 1px; }
+  .deco-row:nth-child(3)::after { height: 1px; }
+  .deco-row:nth-child(4)::after { height: 1.5px; }
+  .deco-row:nth-child(5)::after { height: 2px; background: var(--amber); }
+  .deco-row:nth-child(6)::after { height: 2px; }
+
+  .deco-frets {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent 0px,
+      transparent 59px,
+      var(--border) 59px,
+      var(--border) 60px
+    );
+  }
+
+  .deco-dot {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--text);
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  .deco-dot.r { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="fret-stripe"></div>
+
+<main>
+  <div class="eyebrow">Coming Soon</div>
+
+  <div class="wordmark">
+    <!-- Pick logo mark: outline only, tip points upper-left via CSS rotate(225deg) -->
+    <svg class="pick-mark" viewBox="0 0 160 210" xmlns="http://www.w3.org/2000/svg" aria-label="Shred Dojo pick logo">
+      <path d="
+        M 80 6
+        C 92 22, 118 44, 138 72
+        C 152 92, 156 114, 150 136
+        C 142 164, 120 186, 80 192
+        C 40 186, 18 164, 10 136
+        C 4 114, 8 92, 22 72
+        C 42 44, 68 22, 80 6
+        Z
+      "
+        fill="none"
+        stroke="var(--accent)"
+        stroke-width="10"
+        stroke-linejoin="round"
+      />
+    </svg>
+
+    <h1>Shred<br><em>Dojo</em></h1>
+  </div>
+
+  <div class="sub-heading">Guitar Learning Platform</div>
+
+  <div class="rule"></div>
+
+  <!-- Decorative fretboard -->
+  <div class="deco-fb" aria-hidden="true">
+    <div class="deco-row"><div class="deco-frets">
+      <div class="deco-dot" style="left:180px"></div>
+      <div class="deco-dot" style="left:300px"></div>
+      <div class="deco-dot" style="left:360px"></div>
+    </div></div>
+    <div class="deco-row"><div class="deco-frets">
+      <div class="deco-dot" style="left:60px"></div>
+      <div class="deco-dot" style="left:240px"></div>
+      <div class="deco-dot r" style="left:300px"></div>
+    </div></div>
+    <div class="deco-row"><div class="deco-frets">
+      <div class="deco-dot" style="left:0px"></div>
+      <div class="deco-dot" style="left:120px"></div>
+      <div class="deco-dot" style="left:180px"></div>
+    </div></div>
+    <div class="deco-row"><div class="deco-frets">
+      <div class="deco-dot" style="left:0px"></div>
+      <div class="deco-dot" style="left:120px"></div>
+      <div class="deco-dot" style="left:240px"></div>
+    </div></div>
+    <div class="deco-row"><div class="deco-frets">
+      <div class="deco-dot" style="left:60px"></div>
+      <div class="deco-dot r" style="left:180px"></div>
+      <div class="deco-dot" style="left:300px"></div>
+    </div></div>
+    <div class="deco-row"><div class="deco-frets">
+      <div class="deco-dot r" style="left:0px"></div>
+      <div class="deco-dot" style="left:120px"></div>
+      <div class="deco-dot" style="left:180px"></div>
+    </div></div>
+  </div>
+
+  <p class="description">
+    A focused platform for <strong>guitarists</strong> who want real fretboard command —
+    not another library of disconnected licks.
+    Built around <strong>CAGED, pentatonic fluency, and diatonic scales</strong>,
+    with interactive diagrams that make the neck make sense.
+  </p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-marker">Soon</div>
+      <div class="feature-text">
+        <strong>Interactive Fretboard Visualizer</strong>
+        CAGED shapes, pentatonic boxes, and diatonic overlays — all in one place.
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-marker">Soon</div>
+      <div class="feature-text">
+        <strong>Scale Position System</strong>
+        All 14 positions across both major and minor, with 3nps and symmetric variants.
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-marker">Soon</div>
+      <div class="feature-text">
+        <strong>Structured Curriculum</strong>
+        Fretboard fluency → go-to patterns → creative chords. Depth over breadth.
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-marker">Soon</div>
+      <div class="feature-text">
+        <strong>Video Lessons</strong>
+        Tabbed-out playthroughs and guided practice sessions with backing tracks.
+      </div>
+    </div>
+  </div>
+
+  <div class="signup-label">Get notified when we launch</div>
+  <div class="signup-row">
+    <input class="signup-input" type="email" placeholder="your@email.com" />
+    <button class="signup-btn">Notify me</button>
+  </div>
+  <div class="signup-note">No spam. One email when we're ready.</div>
+</main>
+
+<footer>
+  <span class="footer-note">© Shred Dojo</span>
+  <a class="footer-link" href="scale-positions.html">Scale Positions →</a>
+</footer>
+
+</body>
+</html>
