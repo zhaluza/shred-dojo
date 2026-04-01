@@ -179,8 +179,8 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Email signup */}
-        <p className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mb-[0.65rem]">
+        {/* TODO: wire up email signup (needs backend/service — Resend, ConvertKit, etc.) */}
+        {/* <p className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mb-[0.65rem]">
           Get notified when we launch
         </p>
         <div className="flex max-w-[420px]">
@@ -195,7 +195,7 @@ export default function Home() {
         </div>
         <p className="mt-[0.65rem] text-[0.55rem] text-[var(--faint)] tracking-[0.06em]">
           No spam. One email when we&apos;re ready.
-        </p>
+        </p> */}
       </main>
 
       <footer className="relative z-[1] border-t border-[var(--border)] px-8 py-5 flex justify-between items-center flex-wrap gap-2">
