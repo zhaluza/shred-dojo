@@ -66,9 +66,10 @@ const FEATURES: Array<{ label: string; live?: boolean; title: string; body: stri
     body: "A structured course for internalizing the neck from the ground up. Notes, intervals, and positions as a single connected map — not isolated shapes.",
   },
   {
-    label: "Soon",
-    title: "Modular Licks",
-    body: "Learn vocabulary that moves. Licks broken down by position and function so you can drop them anywhere on the neck, in any key.",
+    label: "Live",
+    live: true,
+    title: "Lick Stash",
+    body: "Curated lick packs organized by style and technique. Learn, loop, and internalize real vocabulary you can use on stage.",
   },
 ];
 
@@ -202,12 +203,20 @@ export default function Home() {
         <span className="text-[0.55rem] text-[var(--faint)] tracking-[0.1em] uppercase">
           © Shred Dojo
         </span>
-        <Link
-          to="/scale-positions"
-          className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
-        >
-          Scale Positions →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/scale-positions"
+            className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
+          >
+            Scale Positions →
+          </Link>
+          <Link
+            to="/lick-stash"
+            className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
+          >
+            Lick Stash →
+          </Link>
+        </div>
       </footer>
     </div>
   );

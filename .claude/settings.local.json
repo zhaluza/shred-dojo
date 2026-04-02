@@ -15,7 +15,16 @@
       "Bash(node -e \":*)",
       "Bash(npx tsx:*)",
       "Bash(npm test:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find /Users/zhaluza/Desktop/coding/shred-dojo -not -path */node_modules* -type d)",
+      "Bash(curl -s -L \"https://alphatab.net/docs/getting-started/installation-vite\")",
+      "Bash(curl -s -L \"https://alphatab.net/docs/tutorials\")",
+      "Bash(curl -s -L \"https://alphatab.net/docs/tutorials/song-details\")",
+      "Bash(curl -s -L \"https://alphatab.net/docs/reference/api\")",
+      "WebFetch(domain:alphatab.net)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm view:*)"
     ]
   }
 }

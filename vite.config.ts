@@ -3,7 +3,14 @@ import tailwindcss from "@tailwindcss/vite";
 import netlifyReactRouter from "@netlify/vite-plugin-react-router";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { alphaTab } from "@coderline/alphatab-vite";
 
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), netlifyReactRouter()],
+  plugins: [
+    tailwindcss(),
+    alphaTab(),
+    reactRouter(),
+    tsconfigPaths(),
+    netlifyReactRouter(),
+  ],
 });

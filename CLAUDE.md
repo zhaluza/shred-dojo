@@ -7,6 +7,7 @@
 - **TypeScript**
 - **Tailwind CSS v4** (via `@tailwindcss/vite` plugin — no `tailwind.config.js`)
 - **Vite**
+- **AlphaTab** (`@coderline/alphatab` + `@coderline/alphatab-vite`) — music notation rendering and playback from Guitar Pro files
 
 ## Project structure
 
@@ -17,8 +18,11 @@ app/
   root.tsx       # Root layout, global error boundary
   app.css        # Tailwind entry point — keep minimal
   global.d.ts    # React.CSSProperties augmented to accept --${string} keys
-public/          # Static assets
-resources/       # Reference material (PDFs, etc.) — not served
+public/
+  tabs/          # Guitar Pro (.gp) files served for AlphaTab playback
+  font/          # AlphaTab Bravura music font (copied by alphaTab vite plugin)
+  soundfont/     # AlphaTab SONiVOX soundfont (copied by alphaTab vite plugin)
+resources/       # Reference material (PDFs, source .gp files, etc.) — not served
 react-router.config.ts
 vite.config.ts
 ```
@@ -89,6 +93,30 @@ The main component (`app/components/ScalePositions.tsx`) owns all state:
 **Fretboard size variants** — `Fretboard`, `StringRow`, and `Dot` accept a `large` boolean prop. When `large={true}`: string rows are `h-[42px]` (vs `29px`), dots are `w-7 h-7` (vs `w-5 h-5`), and text sizes scale up proportionally. Used by `ShapeModal` for the enlarged view.
 
 **Modal navigation** — `ShapeModal` cycles through positions sharing the same `system` as the initially clicked shape. Navigation updates both `modalIdx` and `selectedIdx` in sync.
+
+## Lick Stash feature
+
+The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of Guitar Pro tabs that users can view, play, and loop.
+
+### Routes
+
+- `/lick-stash` (`routes/lick-stash.tsx`) — pack listing page. Available packs link to their detail page; disabled packs show at reduced opacity with "Coming soon".
+- `/lick-stash/:packSlug` (`routes/lick-stash-pack.tsx`) — individual pack page with accordion-style lick cards. Only one lick open at a time to avoid competing AlphaTab instances.
+
+### Data model
+
+- `lickStash.types.ts` — `Lick` (id, title, description, file) and `LickPack` (slug, title, subtitle, description, licks, available)
+- `lickStash.data.ts` — static pack definitions. The first pack ("Rock / Blues Pentatonic") has 10 licks; remaining packs are stubs with `available: false`.
+- Guitar Pro source files live in `resources/gp-tabs/`; servable copies go in `public/tabs/`.
+
+### AlphaTab integration
+
+- `AlphaTabPlayer.tsx` — client-only wrapper around `AlphaTabApi`. Uses dynamic `import("@coderline/alphatab")` inside `useEffect` to avoid SSR crashes (AlphaTab requires DOM, Web Workers, Web Audio).
+- **Stave profile**: `TabMixed` — renders standard notation above tablature so timing/rhythm information is visible.
+- **Layout**: horizontal scrolling, score metadata headers hidden (titles managed by our own UI).
+- **Playback**: play/pause, stop, and loop toggle. Player is initialized with `enablePlayer: true`, `enableCursor: true`. Soundfont served from `/soundfont/sonivox.sf2`.
+- **Vite plugin**: `@coderline/alphatab-vite` handles web worker bundling, audio worklet setup, and copies font/soundfont assets to the build output automatically.
+- **Cleanup**: `api.destroy()` is called in the `useEffect` cleanup to prevent memory leaks and detached DOM nodes.
 
 ## React Router v7 conventions
 
