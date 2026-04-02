@@ -39,10 +39,10 @@ function ClientOnlyPlayer({
     return (
       <div
         className="border border-[var(--border)] flex items-center justify-center"
-        style={{ minHeight: 160 }}
+        style={{ minHeight: 200, backgroundColor: "#fff" }}
       >
-        <span className="text-[0.6rem] tracking-[0.1em] uppercase text-[var(--muted)]">
-          Loading player...
+        <span className="font-display text-[0.58rem] tracking-[0.14em] uppercase text-[var(--muted)]">
+          Loading player…
         </span>
       </div>
     );
@@ -51,12 +51,14 @@ function ClientOnlyPlayer({
   return <Player file={file} loop={loop} onToggleLoop={onToggleLoop} />;
 }
 
-function LickCard({
+function LickRow({
   lick,
+  index,
   isOpen,
   onToggle,
 }: {
   lick: Lick;
+  index: number;
   isOpen: boolean;
   onToggle: () => void;
 }) {
@@ -64,33 +66,88 @@ function LickCard({
   const toggleLoop = useCallback(() => setLoop((prev) => !prev), []);
 
   return (
-    <div className="border-b border-[var(--border)]">
+    <div
+      className="relative"
+      style={{
+        borderLeft: isOpen ? "3px solid var(--accent)" : "3px solid transparent",
+        transition: "border-color 0.15s",
+      }}
+    >
+      {/* Row trigger */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-4 py-4 px-0 bg-transparent text-left cursor-pointer hover:bg-[var(--surface)] transition-colors"
-        style={{ border: "none" }}
+        className="w-full flex items-center gap-0 text-left cursor-pointer transition-colors"
+        style={{
+          border: "none",
+          borderBottom: "1px solid var(--border)",
+          backgroundColor: isOpen ? "var(--surface)" : "transparent",
+          padding: 0,
+        }}
       >
-        <span className="shrink-0 w-8 text-right font-display text-[0.65rem] tracking-[0.08em] text-[var(--muted)]">
-          {lick.id.split("-").pop()}
-        </span>
-        <div className="flex-1 min-w-0">
-          <span className="font-display text-[0.82rem] tracking-[0.06em] uppercase text-[var(--text)]">
-            {lick.title}
+        {/* Track number */}
+        <div
+          className="shrink-0 w-14 flex items-center justify-center self-stretch"
+          style={{
+            borderRight: "1px solid var(--border)",
+            backgroundColor: isOpen ? "var(--accent)" : "transparent",
+          }}
+        >
+          <span
+            className="font-display text-[0.68rem] tracking-[0.08em]"
+            style={{
+              color: isOpen ? "#fff" : "var(--muted)",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {String(index + 1).padStart(2, "0")}
           </span>
         </div>
-        <span
-          className="shrink-0 font-display text-[0.65rem] tracking-[0.08em] uppercase transition-colors"
-          style={{ color: isOpen ? "var(--accent)" : "var(--muted)" }}
-        >
-          {isOpen ? "Close" : "Open"}
-        </span>
+
+        {/* Title + description */}
+        <div className="flex-1 min-w-0 px-5 py-4">
+          <span
+            className="block font-display text-[0.85rem] tracking-[0.05em] uppercase leading-tight"
+            style={{ color: isOpen ? "var(--accent)" : "var(--text)" }}
+          >
+            {lick.title}
+          </span>
+          <span
+            className="block text-[0.62rem] leading-[1.5] mt-[0.2rem] truncate"
+            style={{ color: "var(--muted)" }}
+          >
+            {lick.description}
+          </span>
+        </div>
+
+        {/* Toggle caret */}
+        <div className="shrink-0 px-5 flex items-center">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            style={{
+              color: isOpen ? "var(--accent)" : "var(--muted)",
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s, color 0.15s",
+            }}
+          >
+            <polyline points="1,3 5,7 9,3" />
+          </svg>
+        </div>
       </button>
 
+      {/* Expanded panel */}
       {isOpen && (
-        <div className="pb-5 pl-12 pr-2">
-          <p className="text-[0.68rem] leading-[1.6] text-[var(--muted)] mb-4">
-            {lick.description}
-          </p>
+        <div
+          className="px-0"
+          style={{
+            borderBottom: "1px solid var(--border)",
+            backgroundColor: "var(--bg)",
+          }}
+        >
           <ClientOnlyPlayer
             file={lick.file}
             loop={loop}
@@ -162,7 +219,8 @@ export default function LickStashPack() {
             </Link>
             <Link
               to="/lick-stash"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
+              className="font-display text-[0.65rem] tracking-[0.1em] uppercase no-underline transition-colors"
+              style={{ color: "var(--accent)", borderBottom: "1px solid var(--accent)", paddingBottom: "1px" }}
             >
               Lick Stash
             </Link>
@@ -176,48 +234,68 @@ export default function LickStashPack() {
         </button>
       </header>
 
-      {/* Divider */}
       <div className="w-full h-px bg-[var(--border)]" />
 
-      <main className="flex-1 max-w-[760px] mx-auto w-full px-8 pt-10 pb-16">
+      <main className="flex-1 max-w-[840px] mx-auto w-full px-8 pt-10 pb-16">
         {/* Breadcrumb */}
         <Link
           to="/lick-stash"
-          className="text-[0.55rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors mb-6 inline-block"
+          className="font-display text-[0.55rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors mb-8 inline-flex items-center gap-1.5"
         >
-          &larr; All Packs
+          <svg width="6" height="10" viewBox="0 0 6 10" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <polyline points="5,1 1,5 5,9" />
+          </svg>
+          All Packs
         </Link>
 
         {/* Pack header */}
-        <div className="mb-8">
-          <span className="text-[0.5rem] tracking-[0.12em] uppercase text-[var(--accent)] block mb-1">
+        <div className="mb-10">
+          <span
+            className="font-display text-[0.52rem] tracking-[0.18em] uppercase block mb-1.5"
+            style={{ color: "var(--accent)" }}
+          >
             {pack.subtitle}
           </span>
-          <h1 className="font-display font-semibold text-[clamp(1.6rem,3.5vw,2.4rem)] tracking-[0.04em] uppercase leading-none mb-3">
+          <h1 className="font-display font-semibold text-[clamp(1.6rem,3.5vw,2.6rem)] tracking-[0.04em] uppercase leading-none mb-3">
             {pack.title}
           </h1>
-          <p className="text-[0.72rem] leading-[1.7] text-[var(--muted)] max-w-[520px]">
+          <p className="text-[0.72rem] leading-[1.75] max-w-[520px]" style={{ color: "var(--muted)" }}>
             {pack.description}
           </p>
         </div>
 
-        {/* Accent bar */}
+        {/* Lick list — full-bleed border treatment */}
         <div
-          className="w-full h-[3px] mb-0"
-          style={{ backgroundColor: "var(--accent)" }}
-        />
+          className="border border-[var(--border)]"
+          style={{ overflow: "hidden" }}
+        >
+          {/* List header */}
+          <div
+            className="flex items-center gap-0 border-b border-[var(--border)]"
+            style={{ backgroundColor: "var(--surface)" }}
+          >
+            <div
+              className="shrink-0 w-[17px]"
+              style={{ borderRight: "none" }}
+            />
+            <div className="shrink-0 w-14 flex items-center justify-center py-2.5" style={{ borderRight: "1px solid var(--border)" }}>
+              <span className="font-display text-[0.48rem] tracking-[0.14em] uppercase" style={{ color: "var(--muted)" }}>#</span>
+            </div>
+            <div className="px-5 py-2.5">
+              <span className="font-display text-[0.48rem] tracking-[0.14em] uppercase" style={{ color: "var(--muted)" }}>
+                Lick — {pack.licks.length} in this pack
+              </span>
+            </div>
+          </div>
 
-        {/* Lick list */}
-        <div className="border-t border-[var(--border)]">
-          {pack.licks.map((lick) => (
-            <LickCard
+          {pack.licks.map((lick, i) => (
+            <LickRow
               key={lick.id}
               lick={lick}
+              index={i}
               isOpen={openLickId === lick.id}
               onToggle={() =>
-                setOpenLickId((prev) =>
-                  prev === lick.id ? null : lick.id
-                )
+                setOpenLickId((prev) => (prev === lick.id ? null : lick.id))
               }
             />
           ))}
@@ -225,12 +303,13 @@ export default function LickStashPack() {
       </main>
 
       <footer className="border-t border-[var(--border)] px-8 py-5 flex justify-between items-center flex-wrap gap-2">
-        <span className="text-[0.55rem] text-[var(--faint)] tracking-[0.1em] uppercase">
+        <span className="text-[0.55rem] tracking-[0.1em] uppercase" style={{ color: "var(--faint)" }}>
           &copy; Shred Dojo
         </span>
         <Link
           to="/lick-stash"
-          className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
+          className="text-[0.55rem] tracking-[0.1em] uppercase no-underline border-b pb-px hover:opacity-80 transition-opacity"
+          style={{ color: "var(--accent)", borderColor: "var(--accent)" }}
         >
           &larr; All Packs
         </Link>
