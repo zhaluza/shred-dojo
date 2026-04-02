@@ -200,6 +200,21 @@ export function AlphaTabPlayer({ file, loop, onToggleLoop }: AlphaTabPlayerProps
         )}
       </div>
 
+      {/* AlphaTab cursor styles — these class names are injected by AlphaTab
+          into the DOM and have no default styling; we must provide them here. */}
+      <style>{`
+        .at-cursor-bar {
+          background: rgba(139, 26, 26, 0.08);
+        }
+        .at-cursor-beat {
+          background: rgba(139, 26, 26, 0.75);
+          width: 2px;
+        }
+        .at-selection div {
+          background: rgba(139, 26, 26, 0.12);
+        }
+      `}</style>
+
       {/* Score viewport */}
       <div
         ref={scrollRef}
