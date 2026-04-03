@@ -24,7 +24,17 @@
       "WebFetch(domain:alphatab.net)",
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:github.com)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "WebFetch(domain:www.soundslice.com)",
+      "WebFetch(domain:flat.io)",
+      "WebFetch(domain:soundslice.com)",
+      "Bash(gh issue:*)",
+      "Bash(curl -s https://raw.githubusercontent.com/CoderLine/alphaTab/develop/src/synth/AlphaSynth.ts)",
+      "Bash(curl -s https://api.github.com/repos/CoderLine/alphaTab/contents/src/synth)",
+      "Bash(python3 -c \"import sys,json; [print\\(x[''''name'''']\\) for x in json.load\\(sys.stdin\\) if isinstance\\(x, dict\\)]\")",
+      "Bash(curl -s https://api.github.com/repos/CoderLine/alphaTab/git/trees/main?recursive=1)",
+      "Bash(curl -s https://raw.githubusercontent.com/CoderLine/alphaTab/main/packages/alphatab/src/synth/AlphaSynth.ts)",
+      "Bash(curl -s https://raw.githubusercontent.com/CoderLine/alphaTab/main/packages/alphatab/src/synth/MidiFileSequencer.ts)"
     ]
   }
 }

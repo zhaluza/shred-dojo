@@ -15,6 +15,15 @@ export function AlphaTabPlayer({ file, loop, onToggleLoop }: AlphaTabPlayerProps
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0); // 0–100
 
+  // Refs so event handlers always see current values without re-registering
+  const loopRef = useRef(loop);
+  // Guard: prevents double-seek when multiple position events fire near endTick
+  const seekedRef = useRef(false);
+
+  useEffect(() => {
+    loopRef.current = loop;
+  }, [loop]);
+
   useEffect(() => {
     if (!containerRef.current || !scrollRef.current) return;
 
@@ -56,6 +65,8 @@ export function AlphaTabPlayer({ file, loop, onToggleLoop }: AlphaTabPlayerProps
       };
 
       const api = new alphaTab.AlphaTabApi(containerRef.current, settings);
+      // Never use api.isLooping — it waits for the audio buffer to drain before
+      // restarting (the "gap"). We implement looping ourselves via tick monitoring.
       api.load(file);
 
       api.playerReady.on(() => {
@@ -72,15 +83,34 @@ export function AlphaTabPlayer({ file, loop, onToggleLoop }: AlphaTabPlayerProps
       });
 
       api.playerPositionChanged.on((e: any) => {
-        if (!destroyed && e.endTime > 0) {
-          setProgress(Math.min(100, (e.currentTime / e.endTime) * 100));
+        if (destroyed || e.endTick <= 0) return;
+
+        setProgress(Math.min(100, (e.currentTick / e.endTick) * 100));
+
+        if (loopRef.current) {
+          // Jump back 20 ticks before endTick. At 960 PPQ this is ~1/48th of a
+          // beat — inaudible at any tempo — but early enough that the sequencer
+          // never stops dispatching MIDI events, so synth voices never fade and
+          // the audio buffer never drains. This is the workaround confirmed in
+          // AlphaTab issue #2569; the built-in isLooping has this gap by design.
+          if (e.currentTick >= e.endTick - 20 && !seekedRef.current) {
+            seekedRef.current = true;
+            api.tickPosition = 0;
+            setProgress(0);
+          }
+          // Reset guard once safely past the start of the next cycle
+          if (e.currentTick > e.endTick * 0.25) {
+            seekedRef.current = false;
+          }
         }
       });
 
+      // Fallback: fires if the 20-tick window was somehow missed entirely.
+      // play() alone (no stop() first) restarts with minimal latency.
       api.playerFinished.on(() => {
-        if (!destroyed) {
-          setProgress(0);
-        }
+        if (destroyed) return;
+        setProgress(0);
+        if (loopRef.current) api.play();
       });
 
       api.renderFinished.on(() => {
@@ -98,12 +128,6 @@ export function AlphaTabPlayer({ file, loop, onToggleLoop }: AlphaTabPlayerProps
       }
     };
   }, [file]);
-
-  useEffect(() => {
-    if (apiRef.current) {
-      apiRef.current.isLooping = loop;
-    }
-  }, [loop]);
 
   const handlePlayPause = useCallback(() => {
     if (!apiRef.current || !isReady) return;
