@@ -7,6 +7,8 @@ import type {
   ScalePosition,
   ScaleString,
   StringName,
+  UnifiedNote,
+  UnifiedString,
 } from "./scalePositions.types";
 
 export const OPEN: number[] = [0, 5, 10, 15, 19, 24];
@@ -229,4 +231,54 @@ export function buildAllPositions(cfg: ScaleConfig): ScalePosition[] {
     });
   }
   return positions;
+}
+
+/**
+ * Merge two positions' strings into a unified representation with absolute fret
+ * positions. Notes at the same fret+string from both systems are combined into
+ * a single UnifiedNote with both systems listed.
+ */
+export function mergePositions(
+  posA: ScalePosition,
+  posB: ScalePosition,
+  fretOffsetA: number,
+  fretOffsetB: number,
+): UnifiedString[] {
+  return SNAME.map((name, si) => {
+    const strA = posA.strings[si];
+    const strB = posB.strings[si];
+    const noteMap = new Map<number, UnifiedNote>();
+
+    for (const n of strA.notes) {
+      const absFret = n.fret + fretOffsetA;
+      noteMap.set(absFret, {
+        fret: absFret,
+        deg: n.deg,
+        penta: n.penta,
+        systems: [posA.system],
+      });
+    }
+
+    for (const n of strB.notes) {
+      const absFret = n.fret + fretOffsetB;
+      const existing = noteMap.get(absFret);
+      if (existing) {
+        if (!existing.systems.includes(posB.system)) {
+          existing.systems.push(posB.system);
+        }
+      } else {
+        noteMap.set(absFret, {
+          fret: absFret,
+          deg: n.deg,
+          penta: n.penta,
+          systems: [posB.system],
+        });
+      }
+    }
+
+    return {
+      name,
+      notes: Array.from(noteMap.values()).sort((a, b) => a.fret - b.fret),
+    };
+  });
 }

@@ -25,6 +25,18 @@ export interface ScalePosition {
   startFret: number; // rawMinFret % 12, used for cross-system fret alignment
 }
 
+export interface UnifiedNote {
+  fret: number;
+  deg: Degree;
+  penta: boolean;
+  systems: System[];
+}
+
+export interface UnifiedString {
+  name: StringName;
+  notes: UnifiedNote[];
+}
+
 export interface ScaleConfig {
   scale: Degree[];
   semi: Record<Degree, number>;

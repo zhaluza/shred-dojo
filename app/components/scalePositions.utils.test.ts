@@ -5,6 +5,7 @@ import {
   buildSym,
   buildAllPositions,
   buildCagedPositions,
+  mergePositions,
   symTwoNoteString,
   toRelative,
 } from "./scalePositions.utils";
@@ -319,6 +320,74 @@ describe("buildAllPositions", () => {
     expect(positions.filter((p) => p.system === "3nps")).toHaveLength(7);
     expect(positions.filter((p) => p.system === "sym")).toHaveLength(7);
   });
+});
 
+// ---------------------------------------------------------------------------
+// mergePositions
+// ---------------------------------------------------------------------------
+describe("mergePositions", () => {
+  it("merges two positions and marks shared notes", () => {
+    const positions = buildAllPositions(SCALES.minor);
+    const posA = positions.find((p) => p.system === "3nps" && p.scaletone === 1)!;
+    const posB = positions.find((p) => p.system === "sym" && p.scaletone === 1)!;
+    const merged = mergePositions(posA, posB, 0, 0);
 
+    expect(merged).toHaveLength(6);
+    expect(merged.map((s) => s.name)).toEqual(["E", "A", "D", "G", "B", "e"]);
+
+    // Every note should have at least one system
+    for (const str of merged) {
+      for (const note of str.notes) {
+        expect(note.systems.length).toBeGreaterThanOrEqual(1);
+        expect(note.systems.length).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+
+  it("applies fret offsets correctly", () => {
+    const positions = buildAllPositions(SCALES.minor);
+    const posA = positions.find((p) => p.system === "3nps" && p.scaletone === 1)!;
+    const posB = positions.find((p) => p.system === "sym" && p.scaletone === 1)!;
+    const merged = mergePositions(posA, posB, 0, 3);
+
+    // posB notes should be shifted by 3 frets
+    const posB_E_frets = posB.strings[0].notes.map((n) => n.fret + 3);
+    for (const f of posB_E_frets) {
+      const note = merged[0].notes.find((n) => n.fret === f);
+      expect(note).toBeDefined();
+      expect(note!.systems).toContain("sym");
+    }
+  });
+
+  it("notes at same fret+string are shared between systems", () => {
+    const positions = buildAllPositions(SCALES.minor);
+    const posA = positions.find((p) => p.system === "3nps" && p.scaletone === 1)!;
+    const posB = positions.find((p) => p.system === "sym" && p.scaletone === 1)!;
+    // With offset 0, notes at the same fret on the same string should be shared
+    const merged = mergePositions(posA, posB, 0, 0);
+
+    for (const str of merged) {
+      const shared = str.notes.filter((n) => n.systems.length === 2);
+      // 3nps and sym scaletone 1 share many notes with offset 0
+      // Just verify shared notes have both systems
+      for (const note of shared) {
+        expect(note.systems).toContain("3nps");
+        expect(note.systems).toContain("sym");
+      }
+    }
+  });
+
+  it("returns sorted notes per string", () => {
+    const positions = buildAllPositions(SCALES.minor);
+    const caged = buildCagedPositions(SCALES.minor);
+    const posA = positions.find((p) => p.system === "3nps" && p.scaletone === 1)!;
+    const posB = caged.find((p) => p.scaletone === 1)!;
+    const merged = mergePositions(posA, posB, 0, 2);
+
+    for (const str of merged) {
+      for (let i = 1; i < str.notes.length; i++) {
+        expect(str.notes[i].fret).toBeGreaterThanOrEqual(str.notes[i - 1].fret);
+      }
+    }
+  });
 });

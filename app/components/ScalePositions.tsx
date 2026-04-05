@@ -11,10 +11,13 @@ import type {
   ScalePosition,
   ScaleString,
   System,
+  UnifiedNote,
+  UnifiedString,
 } from "./scalePositions.types";
 import {
   buildAllPositions,
   buildCagedPositions,
+  mergePositions,
   SCALES,
 } from "./scalePositions.utils";
 
@@ -269,6 +272,285 @@ function Fretboard({
           fretOffset={fretOffset}
         />
       ))}
+    </div>
+  );
+}
+
+// ─── UnifiedDot ──────────────────────────────────────────────────────────────
+
+function UnifiedDot({
+  note,
+  visible,
+  orderedSystems,
+}: {
+  note: UnifiedNote;
+  visible: boolean;
+  orderedSystems: [System, System];
+}) {
+  const isShared = note.systems.length === 2;
+  const sys = note.systems[0];
+
+  // Ring background: split gradient for shared, solid for single-system
+  const ringBg = isShared
+    ? `linear-gradient(90deg, var(--sys-${orderedSystems[0]}) 50%, var(--sys-${orderedSystems[1]}) 50%)`
+    : `var(--sys-${sys})`;
+
+  // Inner dot fill (same logic as regular Dot)
+  let innerClasses: string;
+  let innerBorder: React.CSSProperties | undefined;
+  if (note.deg === "R") {
+    innerClasses = "bg-[var(--root-col)] text-white";
+    innerBorder = undefined;
+  } else if (note.penta) {
+    innerClasses = "bg-[var(--text)] text-[var(--bg)]";
+    innerBorder = undefined;
+  } else {
+    innerClasses = "bg-[var(--bg)] text-[var(--text)]";
+    innerBorder = { border: "1.5px solid var(--text)" };
+  }
+
+  return (
+    <div
+      className={[
+        "w-6 h-6 rounded-full flex items-center justify-center",
+        "transition-[opacity,transform] duration-[120ms]",
+        visible ? "" : "opacity-0 scale-[0.2] pointer-events-none",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={{ background: ringBg }}
+    >
+      <div
+        className={[
+          "w-[18px] h-[18px] rounded-full flex items-center justify-center text-[0.42rem] relative z-[2]",
+          innerClasses,
+        ].join(" ")}
+        style={innerBorder}
+      >
+        {note.deg}
+      </div>
+    </div>
+  );
+}
+
+// ─── UnifiedStringRow ────────────────────────────────────────────────────────
+
+function UnifiedStringRow({
+  str,
+  fretCount,
+  noteFilter,
+  chordTones,
+  orderedSystems,
+}: {
+  str: UnifiedString;
+  fretCount: number;
+  noteFilter: NoteFilter;
+  chordTones: Set<string>;
+  orderedSystems: [System, System];
+}) {
+  const line = STRING_LINE[str.name];
+  const rowH = "h-[29px]";
+
+  function isVisible(note: UnifiedNote): boolean {
+    if (noteFilter === "all") return true;
+    if (noteFilter === "penta") return note.deg === "R" || note.penta;
+    if (noteFilter === "chord") return chordTones.has(note.deg);
+    return true;
+  }
+
+  return (
+    <div className={`flex items-center ${rowH}`} data-string={str.name}>
+      <div className="w-[1.9rem] text-[0.5rem] text-right pr-[0.4rem] shrink-0 text-[var(--muted)]">
+        {str.name}
+      </div>
+      <div
+        className="flex-1 flex relative items-center h-full"
+        style={{
+          backgroundImage: `repeating-linear-gradient(
+            to right,
+            transparent 0%,
+            transparent calc(100% / ${fretCount} - 1px),
+            var(--fret-bar) calc(100% / ${fretCount} - 1px),
+            var(--fret-bar) calc(100% / ${fretCount})
+          )`,
+        }}
+      >
+        <div
+          className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none"
+          style={{ height: line.height, backgroundColor: line.colorVar }}
+        />
+        {Array.from({ length: fretCount }, (_, f) => {
+          const note = str.notes.find((n) => n.fret === f);
+          return (
+            <div
+              key={f}
+              className={`flex-1 ${rowH} flex items-center justify-center relative z-[1]`}
+            >
+              {note && (
+                <UnifiedDot
+                  note={note}
+                  visible={isVisible(note)}
+                  orderedSystems={orderedSystems}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── UnifiedFretboard ────────────────────────────────────────────────────────
+
+function UnifiedFretboard({
+  strings,
+  noteFilter,
+  chordTones,
+  orderedSystems,
+}: {
+  strings: UnifiedString[];
+  noteFilter: NoteFilter;
+  chordTones: Set<string>;
+  orderedSystems: [System, System];
+}) {
+  const maxFret = Math.max(
+    ...strings.flatMap((s) => s.notes.map((n) => n.fret)),
+  );
+  const fretCount = maxFret + 2;
+
+  return (
+    <div className="w-full">
+      <div className="flex pl-[1.9rem] mb-[0.15rem]">
+        {Array.from({ length: fretCount }, (_, f) => (
+          <div
+            key={f}
+            className="flex-1 text-center text-[0.45rem] text-[var(--faint)]"
+          >
+            {f}
+          </div>
+        ))}
+      </div>
+      {[...strings].reverse().map((str) => (
+        <UnifiedStringRow
+          key={str.name}
+          str={str}
+          fretCount={fretCount}
+          noteFilter={noteFilter}
+          chordTones={chordTones}
+          orderedSystems={orderedSystems}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── UnifiedCell ─────────────────────────────────────────────────────────────
+
+function UnifiedCell({
+  posA,
+  posB,
+  fretOffsetA,
+  fretOffsetB,
+  noteFilter,
+  chordTones,
+  orderedSystems,
+  showModes,
+  scaleMode,
+}: {
+  posA: ScalePosition;
+  posB: ScalePosition;
+  fretOffsetA: number;
+  fretOffsetB: number;
+  noteFilter: NoteFilter;
+  chordTones: Set<string>;
+  orderedSystems: [System, System];
+  showModes?: boolean;
+  scaleMode?: ScaleMode;
+}) {
+  const mergedStrings = useMemo(
+    () => mergePositions(posA, posB, fretOffsetA, fretOffsetB),
+    [posA, posB, fretOffsetA, fretOffsetB],
+  );
+
+  // Compute fret range for label
+  const allFrets = mergedStrings.flatMap((s) => s.notes.map((n) => n.fret));
+  const minFret = Math.min(...allFrets);
+  const maxFret = Math.max(...allFrets);
+
+  const sysA = orderedSystems[0];
+  const sysB = orderedSystems[1];
+
+  return (
+    <div className="col-span-2 max-[560px]:col-span-1 border -mt-px -ml-px border-[var(--border)] bg-[var(--surface)] relative">
+      {/* Top accent bar — split gradient for both systems */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[3px]"
+        style={{
+          background: `linear-gradient(90deg, var(--sys-${sysA}) 50%, var(--sys-${sysB}) 50%)`,
+        }}
+      />
+
+      {/* Header */}
+      <div className="px-3 pt-3 pb-1 flex items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {/* Position info from system A */}
+          <span className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
+            {posA.shapeName
+              ? `${posA.shapeName} shape`
+              : `Start on ${posA.startDeg}`}
+          </span>
+          <span className="text-[0.45rem] text-[var(--muted)]">/</span>
+          {/* Position info from system B */}
+          <span className="font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]">
+            {posB.shapeName
+              ? `${posB.shapeName} shape`
+              : `Start on ${posB.startDeg}`}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[0.45rem] text-[var(--faint)] tracking-[0.08em]">
+            frets {minFret}–{maxFret}
+          </span>
+          {/* System badges */}
+          <span
+            className="font-display text-[0.42rem] tracking-[0.12em] uppercase px-[0.35rem] py-[0.1rem] rounded-sm"
+            style={{
+              backgroundColor: `var(--sys-${sysA})`,
+              color: "white",
+            }}
+          >
+            {SYSTEM_LABELS[sysA]}
+          </span>
+          <span
+            className="font-display text-[0.42rem] tracking-[0.12em] uppercase px-[0.35rem] py-[0.1rem] rounded-sm"
+            style={{
+              backgroundColor: `var(--sys-${sysB})`,
+              color: "white",
+            }}
+          >
+            {SYSTEM_LABELS[sysB]}
+          </span>
+        </div>
+      </div>
+
+      {showModes && scaleMode && (
+        <div className="px-3 pb-1">
+          <span className="text-[0.5rem] tracking-[0.08em] text-[var(--muted)]">
+            {MODE_ROMAN[scaleMode][posA.scaletone - 1]} — {MODES[scaleMode][posA.scaletone - 1]}
+          </span>
+        </div>
+      )}
+
+      <div className="px-2 pb-2">
+        <UnifiedFretboard
+          strings={mergedStrings}
+          noteFilter={noteFilter}
+          chordTones={chordTones}
+          orderedSystems={orderedSystems}
+        />
+      </div>
     </div>
   );
 }
@@ -628,6 +910,9 @@ export function ScalePositions() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [modalIdx, setModalIdx] = useState<number | null>(null);
   const [showModes, setShowModes] = useState(false);
+  const [unifiedScaletones, setUnifiedScaletones] = useState<Set<number>>(
+    new Set(),
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem("shred-dojo-dark");
@@ -732,12 +1017,23 @@ export function ScalePositions() {
     setScaleMode(mode);
     setSelectedIdx(null);
     setModalIdx(null);
+    setUnifiedScaletones(new Set());
   }
 
   function handleSystemToggle(sys: System) {
     setSelectedSystems((prev) => toggleSystem(prev, sys));
     setSelectedIdx(null);
     setModalIdx(null);
+    setUnifiedScaletones(new Set());
+  }
+
+  function handleUnifyToggle(scaletone: number) {
+    setUnifiedScaletones((prev) => {
+      const next = new Set(prev);
+      if (next.has(scaletone)) next.delete(scaletone);
+      else next.add(scaletone);
+      return next;
+    });
   }
 
   function handleSelect(pos: ScalePosition) {
@@ -878,7 +1174,49 @@ export function ScalePositions() {
       {/* Grid */}
       <div className="max-w-[980px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
         {gridItems.map(({ pos, key, fretOffset, fretCount, scaletone }, i) => {
-          const showSeparator = orderedSystems.length === 2 && i % 2 === 0;
+          const isTwoSystems = orderedSystems.length === 2;
+          const showSeparator = isTwoSystems && i % 2 === 0;
+          const isUnified = isTwoSystems && unifiedScaletones.has(scaletone);
+
+          // Skip the second cell of a unified pair
+          if (isUnified && i % 2 === 1) return null;
+
+          // Check if both positions exist for this scaletone (for unify button)
+          const pairItem = isTwoSystems && i % 2 === 0 ? gridItems[i + 1] : null;
+          const canUnify = pairItem?.pos != null && pos != null;
+
+          // Render unified cell
+          if (isUnified && i % 2 === 0 && pos && pairItem?.pos) {
+            return (
+              <Fragment key={key}>
+                <div className="col-span-2 max-[560px]:col-span-1 flex items-center gap-3 px-4 -mt-px border border-[var(--border)] bg-[var(--surface)] py-[0.35rem]">
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                  <span className="font-display text-[0.62rem] tracking-[0.18em] uppercase text-[var(--accent)]">
+                    {ROMAN[scaletone - 1]}
+                  </span>
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                  <button
+                    onClick={() => handleUnifyToggle(scaletone)}
+                    className="font-display text-[0.55rem] px-[0.6rem] py-[0.15rem] tracking-[0.1em] uppercase border transition-all duration-100 cursor-pointer bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
+                  >
+                    Split
+                  </button>
+                </div>
+                <UnifiedCell
+                  posA={pos}
+                  posB={pairItem.pos}
+                  fretOffsetA={fretOffset}
+                  fretOffsetB={pairItem.fretOffset}
+                  noteFilter={noteFilter}
+                  chordTones={chordTones}
+                  orderedSystems={orderedSystems as [System, System]}
+                  showModes={showModes}
+                  scaleMode={scaleMode}
+                />
+              </Fragment>
+            );
+          }
+
           const cell = !pos ? (
             <div
               key={key}
@@ -920,6 +1258,14 @@ export function ScalePositions() {
                     {ROMAN[scaletone - 1]}
                   </span>
                   <div className="flex-1 h-px bg-[var(--border)]" />
+                  {canUnify && (
+                    <button
+                      onClick={() => handleUnifyToggle(scaletone)}
+                      className="font-display text-[0.55rem] px-[0.6rem] py-[0.15rem] tracking-[0.1em] uppercase border transition-all duration-100 cursor-pointer bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]"
+                    >
+                      Unify
+                    </button>
+                  )}
                 </div>
               )}
               {cell}
