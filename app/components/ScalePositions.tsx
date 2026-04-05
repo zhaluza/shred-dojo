@@ -227,17 +227,19 @@ function Fretboard({
   chordTones,
   large = false,
   fretOffset = 0,
+  fretCount: fretCountProp,
 }: {
   strings: ScaleString[];
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   large?: boolean;
   fretOffset?: number;
+  fretCount?: number;
 }) {
   const maxFret = Math.max(
     ...strings.flatMap((s) => s.notes.map((n) => n.fret)),
   );
-  const fretCount = maxFret + 2 + fretOffset;
+  const fretCount = fretCountProp ?? maxFret + 2 + fretOffset;
 
   return (
     <div className="w-full">
@@ -293,6 +295,7 @@ function PositionCell({
   noteFilter,
   chordTones,
   fretOffset = 0,
+  fretCount,
   showModes = false,
   scaleMode = "major",
 }: {
@@ -302,6 +305,7 @@ function PositionCell({
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   fretOffset?: number;
+  fretCount?: number;
   showModes?: boolean;
   scaleMode?: ScaleMode;
 }) {
@@ -374,6 +378,7 @@ function PositionCell({
           noteFilter={noteFilter}
           chordTones={chordTones}
           fretOffset={fretOffset}
+          fretCount={fretCount}
         />
       </div>
     </div>
@@ -677,6 +682,7 @@ export function ScalePositions() {
         pos,
         key: `${pos.scaletone}-${pos.system}`,
         fretOffset: 0,
+        fretCount: undefined as number | undefined,
         scaletone: pos.scaletone,
       }));
     }
@@ -689,6 +695,7 @@ export function ScalePositions() {
       pos: ScalePosition | null;
       key: string;
       fretOffset: number;
+      fretCount?: number;
       scaletone: number;
     }[] = [];
 
@@ -706,8 +713,17 @@ export function ScalePositions() {
         }
       }
 
+      let fretCountB: number | undefined = undefined;
+      if (a && b && sysA === "3nps" && sysB === "caged") {
+        const maxFretA = Math.max(...a.strings.flatMap((s) => s.notes.map((n) => n.fret)));
+        const maxFretB = Math.max(...b.strings.flatMap((s) => s.notes.map((n) => n.fret)));
+        const naturalA = maxFretA + 2 + fretOffsetA;
+        const naturalB = maxFretB + 2 + fretOffsetB;
+        fretCountB = Math.max(naturalB, naturalA);
+      }
+
       items.push({ pos: a, key: `${st}-${sysA}`, fretOffset: fretOffsetA, scaletone: st });
-      items.push({ pos: b, key: `${st}-${sysB}`, fretOffset: fretOffsetB, scaletone: st });
+      items.push({ pos: b, key: `${st}-${sysB}`, fretOffset: fretOffsetB, fretCount: fretCountB, scaletone: st });
     }
     return items;
   }, [orderedSystems, positionsBySystem]);
@@ -861,7 +877,7 @@ export function ScalePositions() {
 
       {/* Grid */}
       <div className="max-w-[980px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
-        {gridItems.map(({ pos, key, fretOffset, scaletone }, i) => {
+        {gridItems.map(({ pos, key, fretOffset, fretCount, scaletone }, i) => {
           const showSeparator = orderedSystems.length === 2 && i % 2 === 0;
           const cell = !pos ? (
             <div
@@ -890,6 +906,7 @@ export function ScalePositions() {
               noteFilter={noteFilter}
               chordTones={chordTones}
               fretOffset={fretOffset}
+              fretCount={fretCount}
               showModes={showModes}
               scaleMode={scaleMode}
             />
