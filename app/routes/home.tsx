@@ -68,23 +68,26 @@ const DECO_ROWS: Array<{
   },
 ];
 
-const FEATURES: Array<{ label: string; live?: boolean; title: string; body: string }> = [
+const FEATURES: Array<{ label: string; title: string; body: string }> = [
   {
-    label: "Live",
-    live: true,
+    label: "Soon",
     title: "Scale Position System",
     body: "All 7 diatonic positions across major and minor — 3nps, CAGED, and symmetric systems mapped side by side so you can see exactly how they relate on the neck.",
   },
   {
     label: "Soon",
-    title: "Fretboard Fluency",
-    body: "A structured course for internalizing the neck from the ground up. Notes, intervals, and positions as a single connected map — not isolated shapes.",
-  },
-  {
-    label: "Live",
-    live: true,
     title: "Lick Stash",
     body: "Curated lick packs organized by style and technique. Learn, loop, and internalize real vocabulary you can use on stage.",
+  },
+  {
+    label: "Soon",
+    title: "Pentatonic Triads",
+    body: "Triad intervals mapped across all 5 pentatonic shapes — see how roots, 3rds, and 5ths connect across position boundaries.",
+  },
+  {
+    label: "Soon",
+    title: "Fretboard Fluency",
+    body: "A structured course for internalizing the neck from the ground up. Notes, intervals, and positions as a single connected map — not isolated shapes.",
   },
 ];
 
@@ -179,7 +182,7 @@ function ComingSoonPage() {
             >
               <div
                 className="text-[0.5rem] tracking-[0.1em] uppercase shrink-0 pt-[0.1rem] w-14 text-right"
-                style={{ color: f.live ? "var(--accent)" : AMBER }}
+                style={{ color: AMBER }}
               >
                 {f.label}
               </div>
@@ -194,24 +197,10 @@ function ComingSoonPage() {
         </div>
       </main>
 
-      <footer className="relative z-[1] border-t border-[var(--border)] px-8 py-5 flex justify-between items-center flex-wrap gap-2">
+      <footer className="relative z-[1] border-t border-[var(--border)] px-8 py-5">
         <span className="text-[0.55rem] text-[var(--faint)] tracking-[0.1em] uppercase">
           © Shred Dojo
         </span>
-        <div className="flex items-center gap-4">
-          <Link
-            to="/scale-positions"
-            className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
-          >
-            Scale Positions →
-          </Link>
-          <Link
-            to="/lick-stash"
-            className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
-          >
-            Lick Stash →
-          </Link>
-        </div>
       </footer>
     </div>
   );
