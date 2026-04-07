@@ -2,7 +2,7 @@ import { Link, useLoaderData } from "react-router";
 import type { Route } from "./+types/home";
 import { Logo } from "~/components/Logo";
 import { LIGHT_THEME, DARK_THEME } from "~/components/scalePositions.theme";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function meta({ data }: Route.MetaArgs) {
   const isPreview = (data as { preview: boolean } | undefined)?.preview;
@@ -31,42 +31,223 @@ const AMBER = "#c8a060";
 // Coming Soon page (existing, shown to regular visitors)
 // ---------------------------------------------------------------------------
 
-const DECO_ROWS: Array<{
-  stringHeight: string;
-  stringColor: string;
-  dots: Array<{ left: number; root?: boolean }>;
-}> = [
+// ── Morphing fretboard ───────────────────────────────────────────────────────
+
+type DotType = "root" | "triad" | "note";
+interface MorphDot { s: number; f: number; type: DotType }
+interface MorphPattern { name: string; sub: string; dots: MorphDot[] }
+
+const MORPH_PATTERNS: MorphPattern[] = [
   {
-    stringHeight: "1.5px",
-    stringColor: "var(--border)",
-    dots: [{ left: 180 }, { left: 300 }, { left: 360 }],
+    name: "Minor Pentatonic",
+    sub: "Box 1",
+    dots: [
+      { s: 0, f: 0, type: "root" }, { s: 0, f: 3, type: "note" },
+      { s: 1, f: 0, type: "note" }, { s: 1, f: 3, type: "note" },
+      { s: 2, f: 0, type: "note" }, { s: 2, f: 2, type: "note" },
+      { s: 3, f: 0, type: "note" }, { s: 3, f: 2, type: "note" },
+      { s: 4, f: 0, type: "note" }, { s: 4, f: 2, type: "note" },
+      { s: 5, f: 0, type: "root" }, { s: 5, f: 3, type: "note" },
+    ],
   },
   {
-    stringHeight: "1px",
-    stringColor: "var(--border)",
-    dots: [{ left: 60 }, { left: 240 }, { left: 300, root: true }],
+    name: "Pentatonic Triads",
+    sub: "Root · 3rd · 5th",
+    dots: [
+      { s: 0, f: 0, type: "root" }, { s: 0, f: 3, type: "triad" },
+      { s: 1, f: 0, type: "triad" }, { s: 1, f: 3, type: "note" },
+      { s: 2, f: 0, type: "note" }, { s: 2, f: 2, type: "triad" },
+      { s: 3, f: 0, type: "triad" }, { s: 3, f: 2, type: "root" },
+      { s: 4, f: 0, type: "note" }, { s: 4, f: 2, type: "triad" },
+      { s: 5, f: 0, type: "root" }, { s: 5, f: 3, type: "triad" },
+    ],
   },
   {
-    stringHeight: "1px",
-    stringColor: "var(--border)",
-    dots: [{ left: 0 }, { left: 120 }, { left: 180 }],
+    name: "3nps Diatonic",
+    sub: "Position 1",
+    dots: [
+      { s: 0, f: 0, type: "root" }, { s: 0, f: 2, type: "note" }, { s: 0, f: 3, type: "note" },
+      { s: 1, f: 0, type: "note" }, { s: 1, f: 2, type: "note" }, { s: 1, f: 4, type: "note" },
+      { s: 2, f: 0, type: "note" }, { s: 2, f: 2, type: "note" }, { s: 2, f: 4, type: "root" },
+      { s: 3, f: 0, type: "note" }, { s: 3, f: 1, type: "note" }, { s: 3, f: 3, type: "note" },
+      { s: 4, f: 0, type: "note" }, { s: 4, f: 2, type: "note" }, { s: 4, f: 3, type: "note" },
+      { s: 5, f: 0, type: "root" }, { s: 5, f: 2, type: "note" }, { s: 5, f: 3, type: "note" },
+    ],
   },
   {
-    stringHeight: "1.5px",
-    stringColor: "var(--border)",
-    dots: [{ left: 0 }, { left: 120 }, { left: 240 }],
-  },
-  {
-    stringHeight: "2px",
-    stringColor: AMBER,
-    dots: [{ left: 60 }, { left: 180, root: true }, { left: 300 }],
-  },
-  {
-    stringHeight: "2px",
-    stringColor: "var(--border)",
-    dots: [{ left: 0, root: true }, { left: 120 }, { left: 180 }],
+    name: "CAGED",
+    sub: "E Shape",
+    dots: [
+      { s: 0, f: 0, type: "root" }, { s: 0, f: 2, type: "note" }, { s: 0, f: 4, type: "note" },
+      { s: 1, f: 0, type: "note" }, { s: 1, f: 2, type: "note" }, { s: 1, f: 3, type: "note" },
+      { s: 2, f: 0, type: "note" }, { s: 2, f: 2, type: "note" }, { s: 2, f: 4, type: "root" },
+      { s: 3, f: 0, type: "note" }, { s: 3, f: 1, type: "note" }, { s: 3, f: 4, type: "note" },
+      { s: 4, f: 0, type: "root" }, { s: 4, f: 2, type: "note" }, { s: 4, f: 4, type: "note" },
+      { s: 5, f: 0, type: "root" }, { s: 5, f: 2, type: "note" }, { s: 5, f: 4, type: "note" },
+    ],
   },
 ];
+
+const FRET_COUNT = 5;
+const MORPH_STRING_HEIGHTS = ["0.7px", "0.8px", "1px", "1.3px", "1.8px", "2.2px"];
+const MORPH_STRING_COLORS = [
+  "var(--border)", "var(--border)", "var(--border)", "var(--border)", AMBER, "var(--border)",
+];
+
+function MorphingFretboard() {
+  const [patternIdx, setPatternIdx] = useState(0);
+  const [showing, setShowing] = useState(true);
+  const scanRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const cycle = setInterval(() => {
+      setShowing(false);
+
+      const scan = scanRef.current;
+      if (scan) {
+        scan.style.transition = "none";
+        scan.style.left = "-2px";
+        scan.style.opacity = "0.9";
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scan.style.transition = "left 0.4s cubic-bezier(0.4, 0, 0.6, 1)";
+            scan.style.left = "100%";
+            setTimeout(() => {
+              if (scanRef.current) scanRef.current.style.opacity = "0";
+            }, 400);
+          });
+        });
+      }
+
+      setTimeout(() => {
+        setPatternIdx((i) => (i + 1) % MORPH_PATTERNS.length);
+        setShowing(true);
+      }, 400);
+    }, 4200);
+
+    return () => clearInterval(cycle);
+  }, []);
+
+  const pattern = MORPH_PATTERNS[patternIdx];
+
+  const getDotBg = (type: DotType) =>
+    type === "root" ? "var(--accent)" : type === "triad" ? AMBER : "var(--text)";
+
+  const getDotGlow = (type: DotType) =>
+    type === "root"
+      ? "0 0 9px var(--accent)"
+      : type === "triad"
+        ? `0 0 7px ${AMBER}`
+        : "none";
+
+  return (
+    <div className="mb-12 select-none pointer-events-none" aria-hidden="true">
+      {/* Label row */}
+      <div
+        className="flex items-center justify-between mb-3"
+        style={{ opacity: showing ? 0.55 : 0, transition: "opacity 0.3s ease" }}
+      >
+        <span className="text-[0.44rem] tracking-[0.18em] uppercase" style={{ color: AMBER }}>
+          {pattern.name}
+          <span className="ml-[0.5em]" style={{ color: "var(--muted)" }}>
+            — {pattern.sub}
+          </span>
+        </span>
+        {/* Progress pills */}
+        <div className="flex gap-[5px] items-center">
+          {MORPH_PATTERNS.map((_, i) => (
+            <div
+              key={i}
+              className="rounded-full"
+              style={{
+                width: i === patternIdx ? 14 : 4,
+                height: 4,
+                backgroundColor: i === patternIdx ? AMBER : "var(--border)",
+                transition: "width 0.35s ease, background-color 0.35s ease",
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Fretboard */}
+      <div className="relative overflow-hidden">
+        {/* Scan line */}
+        <div
+          ref={scanRef}
+          className="absolute inset-y-0 z-10 pointer-events-none"
+          style={{
+            width: 1,
+            left: "-2px",
+            opacity: 0,
+            backgroundColor: AMBER,
+            boxShadow: `0 0 6px ${AMBER}, 0 0 14px ${AMBER}60`,
+          }}
+        />
+
+        {Array.from({ length: 6 }, (_, si) => {
+          const rowDots = pattern.dots.filter((d) => d.s === si);
+          return (
+            <div key={si} className="h-[20px] relative">
+              {/* String */}
+              <div
+                className="absolute inset-x-0"
+                style={{
+                  top: "calc(50% - 1px)",
+                  height: MORPH_STRING_HEIGHTS[si],
+                  backgroundColor: MORPH_STRING_COLORS[si],
+                  opacity: 0.45,
+                }}
+              />
+              {/* Fret bars */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(
+                    to right,
+                    transparent 0px,
+                    transparent calc(${100 / FRET_COUNT}% - 1px),
+                    var(--border) calc(${100 / FRET_COUNT}% - 1px),
+                    var(--border) ${100 / FRET_COUNT}%
+                  )`,
+                  opacity: 0.3,
+                }}
+              />
+              {/* Dots */}
+              {Array.from({ length: FRET_COUNT }, (_, fi) => {
+                const dot = rowDots.find((d) => d.f === fi);
+                const isOn = showing && !!dot;
+                const delay = showing ? fi * 0.052 : 0;
+                return (
+                  <div
+                    key={fi}
+                    className="absolute rounded-full"
+                    style={{
+                      width: 12,
+                      height: 12,
+                      left: `calc(${((fi + 0.5) / FRET_COUNT) * 100}% - 6px)`,
+                      top: "50%",
+                      marginTop: -6,
+                      backgroundColor: dot ? getDotBg(dot.type) : "var(--text)",
+                      opacity: isOn ? (dot.type === "note" ? 0.72 : 1) : 0,
+                      transform: `scale(${isOn ? 1 : 0.2})`,
+                      transition: [
+                        `opacity ${showing ? "0.32s" : "0.15s"} ease ${delay}s`,
+                        `transform ${showing ? "0.38s" : "0.15s"} cubic-bezier(0.34, 1.56, 0.64, 1) ${delay}s`,
+                      ].join(", "),
+                      boxShadow: isOn && dot ? getDotGlow(dot.type) : "none",
+                      zIndex: 2,
+                    }}
+                  />
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const FEATURES: Array<{ label: string; title: string; body: string }> = [
   {
@@ -131,35 +312,8 @@ function ComingSoonPage() {
         {/* Rule */}
         <div className="w-full h-[2px] bg-[var(--text)] mb-10" />
 
-        {/* Decorative fretboard */}
-        <div className="mb-12 opacity-35 pointer-events-none select-none" aria-hidden="true">
-          {DECO_ROWS.map((row, i) => (
-            <div key={i} className="h-[18px] flex items-center relative">
-              <div
-                className="absolute inset-x-0 top-1/2 -translate-y-1/2"
-                style={{ height: row.stringHeight, backgroundColor: row.stringColor }}
-              />
-              <div
-                className="flex-1 h-full relative"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(to right, transparent 0px, transparent 59px, var(--border) 59px, var(--border) 60px)",
-                }}
-              >
-                {row.dots.map((dot, j) => (
-                  <div
-                    key={j}
-                    className="w-[13px] h-[13px] rounded-full absolute top-1/2 -translate-y-1/2 z-[2]"
-                    style={{
-                      left: dot.left,
-                      backgroundColor: dot.root ? "var(--accent)" : "var(--text)",
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Morphing fretboard visualization */}
+        <MorphingFretboard />
 
         {/* Description */}
         <p className="text-[0.78rem] leading-[1.9] text-[var(--muted)] mb-12 max-w-[480px]">
