@@ -282,6 +282,14 @@ const TOOLS: Array<{
     tag: "Vocabulary",
     body: "Curated lick packs organized by style and technique. Learn, loop, and internalize real vocabulary for the stage.",
   },
+  {
+    label: "Live",
+    live: true,
+    to: "/pentatonic-triads",
+    title: "Pentatonic Triads",
+    tag: "Theory",
+    body: "Triad intervals (root, 3rd, 5th) mapped across all 5 pentatonic shapes — see how they connect across position boundaries.",
+  },
 ];
 
 const COMING_SOON_TOOLS = [
@@ -319,6 +327,12 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
               className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
             >
               Lick Stash
+            </Link>
+            <Link
+              to="/pentatonic-triads"
+              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
+            >
+              Triads
             </Link>
           </nav>
         </div>
@@ -437,13 +451,23 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
         </p>
 
         <div className="grid grid-cols-2 max-[600px]:grid-cols-1 border border-[var(--border)]">
-          {TOOLS.map((tool, i) => (
+          {TOOLS.map((tool, i) => {
+            const n = TOOLS.length;
+            const col = i % 2;
+            const totalRows = Math.ceil(n / 2);
+            const isLastRow = Math.floor(i / 2) === totalRows - 1;
+            const hasRightNeighbor = i + 1 < n;
+            const needsRightBorder = col === 0 && hasRightNeighbor;
+            const needsBottomBorder = !isLastRow;
+            return (
             <Link
               key={tool.to}
               to={tool.to}
               className={[
                 "no-underline text-[var(--text)] p-7 hover:bg-[var(--surface)] transition-colors group",
-                i === 0 ? "border-r border-[var(--border)] max-[600px]:border-r-0 max-[600px]:border-b" : "",
+                needsRightBorder ? "border-r border-[var(--border)] max-[600px]:border-r-0" : "",
+                needsBottomBorder ? "border-b border-[var(--border)]" : "",
+                i < n - 1 ? "max-[600px]:border-b max-[600px]:border-[var(--border)]" : "",
               ].join(" ")}
             >
               {/* Card top row */}
@@ -477,7 +501,8 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
                 {tool.body}
               </p>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </section>
 

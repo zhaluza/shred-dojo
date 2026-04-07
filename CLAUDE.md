@@ -97,6 +97,64 @@ The main component (`app/components/ScalePositions.tsx`) owns all state:
 
 **Modal navigation** — `ShapeModal` cycles through positions sharing the same `system` as the initially clicked shape. Navigation updates both `modalIdx` and `selectedIdx` in sync.
 
+## Pentatonic Triads feature
+
+The Pentatonic Triads page (`/pentatonic-triads`) visualizes the triad intervals (root, 3rd, 5th) within and across the 5 standard pentatonic box shapes, rooted on G.
+
+### Files
+
+- `app/components/pentatonicTriads.utils.ts` — scale data and box construction
+- `app/components/PentatonicTriads.tsx` — all component code
+- `app/routes/pentatonic-triads.tsx` — route wrapper
+
+### Data model
+
+- `BOX_DEGREES` — hardcoded degree assignments per string per box (low E → high e), two degrees per string, for both major and minor pentatonic. There are 5 boxes each.
+- `SEMI` — semitone offsets per degree per scale type, used to compute absolute fret numbers.
+- `buildBox(boxIdx, scale)` — builds one box as a flat array of `BoxNote` (`{ string, fret, deg }`). Uses `closestFret()` to anchor each note near a reference fret, keeping the shape in the correct neck region.
+- `buildAllBoxes(scale)` — returns all 5 boxes.
+- `adjustAdjacentFrets(notes, currentMinF, currentMaxF, side)` — when boxes wrap around the neck (e.g. box 4 → box 0), shifts frets by ±12 so the adjacent box is physically adjacent in fret space. Filters out frets < 0 or > 24.
+
+### Triad dot colors
+
+| Role | Light | Dark |
+|---|---|---|
+| Root | `#c0392b` | `#c0392b` |
+| 3rd | `#3a6a3a` | `#5a9a5a` |
+| 5th | `#3a5a8a` | `#5a7aaa` |
+| Scale tone | `var(--text)` / `var(--bg)` | same |
+
+### Dot variants
+
+- `solid` — filled dot, used for notes within the current shape
+- `cross` — dashed outline, used for triad tones from adjacent shapes shown at the edge of the main fretboard
+- `connector` — filled dot with accent ring (`boxShadow: 0 0 0 2.5px var(--bg), 0 0 0 4px var(--accent)`), used in the combined panoramic view for notes that cross the shape boundary
+
+### Per-shape cross notes
+
+For each shape, the component computes:
+- `leftCross` — triad tones from the previous shape (`prevAdjusted`) whose fret is strictly less than `mainMinF`
+- `rightCross` — triad tones from the next shape (`nextAdjusted`) whose fret is strictly greater than `mainMaxF`
+
+These appear as `cross`-variant ghost dots at the left/right edges of the main fretboard, giving a quick visual hint that triad tones are reachable just outside the shape.
+
+### Neck context / combined fretboard
+
+Each shape card has a **"▼ Neck context"** toggle. When expanded, it renders a single `CombinedFretboard` showing the previous shape, current shape, and next shape on one continuous neck:
+
+- **Zone labels** — `← Shape N` / `Shape X` (accent color) / `Shape N →` — positioned above fret columns using flex proportions (`flex: numFretsInZone`) so they align precisely with the fretboard.
+- **Zone backgrounds** — a warm `var(--accent)` band at 10% opacity marks the current shape's fret range; outer zones have no background.
+- **Zone separators** — 1px `var(--accent)` lines at 35% opacity mark the zone boundaries.
+- **Fret numbers** — current zone numbers rendered in `var(--text)`; outer zone in `var(--faint)`.
+- **Dimming** — outer-zone notes (not cross notes) rendered at 32% opacity so the adjacent shape's structure is visible without competing for attention.
+- **Cross notes in the combined view** — `leftCross`/`rightCross` notes rendered at full opacity with `connector` variant (accent ring), even though they sit in the dimmed outer zones. These are the key information: triad tones reachable from both shapes without a full position shift.
+- **Priority** — when a fret+string appears in both the main shape and an adjacent shape, the main shape's note wins.
+
+### Controls
+
+- **Scale** — Minor / Major toggle (clears expanded state on change)
+- **Show** — All notes / Triad only (hides non-triad scale tones in all fretboard views)
+
 ## Lick Stash feature
 
 The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of Guitar Pro tabs that users can view, play, and loop.

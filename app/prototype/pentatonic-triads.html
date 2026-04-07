@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pentatonic Triads</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Code+Pro:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f5f0e8;
+    --surface:   #ede8dc;
+    --border:    #c8bfaa;
+    --text:      #1a1612;
+    --muted:     #8a8070;
+    --accent:    #8b1a1a;
+    --root-col:  #c0392b;
+    --amber:     #c8a060;
+    --faint:     #c8bfaa;
+    --fret-bar:  #d8cebb;
+    --str-E:     #8a7a58;
+    --str-A:     #a09060;
+    --str-D:     #b0a878;
+    --str-G:     #c0b898;
+    --str-Be:    #c8bfaa;
+    /* Triad colours */
+    --col-root:  #c0392b;   /* red   — root */
+    --col-third: #3a6a3a;   /* green — major/minor 3rd */
+    --col-fifth: #3a5a8a;   /* blue  — perfect 5th */
+    --col-ghost: #a09888;   /* grey  — cross-shape extension */
+  }
+
+  body.dark {
+    --bg:       #141210;
+    --surface:  #1e1a16;
+    --border:   #352e24;
+    --text:     #e8e0d0;
+    --muted:    #6a6058;
+    --accent:   #c8604a;
+    --root-col: #c0392b;
+    --amber:    #c8a060;
+    --faint:    #3a3228;
+    --fret-bar: #2a2418;
+    --str-E:    #5a5040;
+    --str-A:    #6a6048;
+    --str-D:    #7a7058;
+    --str-G:    #8a8068;
+    --str-Be:   #6a6258;
+    --col-third: #5a9a5a;
+    --col-fifth: #5a7aaa;
+    background: #141210;
+    color: #e8e0d0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #f5f0e8; color: #1a1612; }
+  html { transition: background 0.2s; }
+  body {
+    font-family: 'Source Code Pro', monospace;
+    padding: 2rem 1.5rem 5rem;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  /* ── Header ── */
+  header {
+    max-width: 900px; margin: 0 auto 2rem;
+    display: flex; align-items: flex-end;
+    justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    border-bottom: 2px solid var(--text); padding-bottom: 1.5rem;
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif; font-weight: 600;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    letter-spacing: 0.04em; text-transform: uppercase; line-height: 1;
+  }
+  h1 em { color: var(--accent); font-style: normal; }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+  .header-meta {
+    font-size: 0.6rem; color: var(--muted);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    text-align: right; line-height: 1.8;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--text); cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.35rem 0.85rem; transition: all 0.1s;
+  }
+  .btn:hover  { border-color: var(--text); }
+  .btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* ── Controls bar ── */
+  .controls {
+    max-width: 900px; margin: 0 auto 2rem;
+    display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;
+    border-bottom: 1px solid var(--border); padding-bottom: 1.25rem;
+  }
+  .ctrl-label {
+    font-size: 0.58rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .spacer { flex: 1; }
+
+  /* ── Intro text ── */
+  .intro {
+    max-width: 900px; margin: 0 auto 2rem;
+    font-size: 0.73rem; color: var(--muted); line-height: 1.8;
+  }
+  .intro strong { color: var(--text); font-weight: 400; }
+
+  /* ── Legend ── */
+  .legend {
+    max-width: 900px; margin: 0 auto 2rem;
+    display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .leg { display: flex; align-items: center; gap: 0.5rem;
+         font-size: 0.58rem; color: var(--muted);
+         letter-spacing: 0.08em; text-transform: uppercase; }
+  .leg-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.46rem; color: #fff; font-weight: 600; flex-shrink: 0;
+  }
+  .leg-dot.root  { background: var(--col-root); }
+  .leg-dot.third { background: var(--col-third); }
+  .leg-dot.fifth { background: var(--col-fifth); }
+  .leg-dot.scale { background: var(--text); color: var(--bg); }
+  .leg-dot.cross {
+    background: none; border: 2px dashed var(--col-ghost);
+    color: var(--col-ghost);
+  }
+
+  /* ── Shape grid ── */
+  .shapes-wrap { max-width: 900px; margin: 0 auto; }
+
+  .shape-block {
+    margin-bottom: 2.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .shape-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 1rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; gap: 0.5rem;
+  }
+
+  .shape-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem; font-weight: 400; letter-spacing: 0.06em;
+  }
+  .shape-title strong { font-weight: 600; }
+
+  .shape-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .badge {
+    font-size: 0.5rem; padding: 0.15rem 0.5rem;
+    border: 1px solid var(--border); color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .badge.triad-badge {
+    border-color: var(--col-third);
+    color: var(--col-third);
+  }
+
+  .shape-body { padding: 0.75rem 1rem 0.6rem; overflow-x: auto; }
+
+  .shape-note {
+    padding: 0.6rem 1rem 0.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.62rem; color: var(--muted); line-height: 1.7;
+  }
+  .shape-note strong { color: var(--text); font-weight: 400; }
+
+  /* ── Fretboard ── */
+  .fb { width: 100%; }
+  .fb-nums { display: flex; padding-left: 2rem; margin-bottom: 0.2rem; }
+  .fb-num  { flex: 1; text-align: center; font-size: 0.44rem; color: var(--faint); }
+
+  .fb-row  { display: flex; align-items: center; height: 32px; }
+  .fb-name { width: 2rem; font-size: 0.5rem; color: var(--muted);
+             text-align: right; padding-right: 0.4rem; flex-shrink: 0; }
+
+  .fb-frets {
+    flex: 1; display: flex; position: relative;
+    align-items: center; height: 100%;
+  }
+  .fb-frets::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent 0%, transparent calc(100% / var(--fw) - 1px),
+      var(--fret-bar) calc(100% / var(--fw) - 1px),
+      var(--fret-bar) calc(100% / var(--fw))
+    );
+  }
+  .fb-frets::after {
+    content: ''; position: absolute;
+    top: 50%; left: 0; right: 0; transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .fb-row[data-s="E"] .fb-frets::after { height: 2px;   background: var(--str-E);  }
+  .fb-row[data-s="A"] .fb-frets::after { height: 1.5px; background: var(--str-A);  }
+  .fb-row[data-s="D"] .fb-frets::after { height: 1.5px; background: var(--str-D);  }
+  .fb-row[data-s="G"] .fb-frets::after { height: 1px;   background: var(--str-G);  }
+  .fb-row[data-s="B"] .fb-frets::after { height: 1px;   background: var(--str-Be); }
+  .fb-row[data-s="e"] .fb-frets::after { height: 0.5px; background: var(--str-Be); }
+
+  .fb-fret {
+    flex: 1; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+  }
+
+  /* Dot types */
+  .dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.48rem; position: relative; z-index: 2;
+    font-weight: 400; transition: all 0.15s;
+  }
+  .dot.root    { background: var(--col-root);  color: #fff; }
+  .dot.third   { background: var(--col-third); color: #fff; }
+  .dot.fifth   { background: var(--col-fifth); color: #fff; }
+  .dot.scale   { background: var(--text);      color: var(--bg); }
+  /* Cross-shape extension — dashed border, dimmed */
+  .dot.cross-root  { background: none; border: 2px dashed var(--col-root);  color: var(--col-root);  opacity: 0.7; }
+  .dot.cross-third { background: none; border: 2px dashed var(--col-third); color: var(--col-third); opacity: 0.7; }
+  .dot.cross-fifth { background: none; border: 2px dashed var(--col-fifth); color: var(--col-fifth); opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Pentatonic<br><em>Triads</em></h1>
+  <div class="header-right">
+    <button class="btn" id="darkBtn" onclick="toggleDark()"
+      style="font-size:0.65rem;padding:0.3rem 0.7rem">◐ Dark</button>
+    <div class="header-meta">
+      G root · 5 shapes<br>triads within &amp; across shapes
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <span class="ctrl-label">Scale</span>
+  <button class="btn active" id="scMin" onclick="setScale('minor')">Minor</button>
+  <button class="btn"        id="scMaj" onclick="setScale('major')">Major</button>
+  <div class="spacer"></div>
+  <span class="ctrl-label">Show</span>
+  <button class="btn active" id="shAll"   onclick="setShow('all')">All notes</button>
+  <button class="btn"        id="shTriad" onclick="setShow('triad')">Triad only</button>
+</div>
+
+<div class="intro" id="introText"></div>
+
+<div class="legend">
+  <div class="leg"><div class="leg-dot root">R</div>Root</div>
+  <div class="leg"><div class="leg-dot third" id="legThird">3</div><span id="legThirdLabel">Major 3rd</span></div>
+  <div class="leg"><div class="leg-dot fifth">5</div>Perfect 5th</div>
+  <div class="leg"><div class="leg-dot scale">·</div>Scale tone</div>
+  <div class="leg"><div class="leg-dot cross" style="width:18px;height:18px;font-size:0.44rem">R</div>Extends from adjacent shape</div>
+</div>
+
+<div class="shapes-wrap" id="shapesWrap"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// SCALE DATA
+// ─────────────────────────────────────────────────────────────────────────────
+
+const OPEN      = [0, 5, 10, 15, 19, 24]; // E A D G B e semitones above low E
+const SNAME     = ['E','A','D','G','B','e'];
+const ROOT_FRET = 3; // G on low E
+
+const SCALES = {
+  major: {
+    degrees:    { 'R':0, '2':2, '3':4, '5':7, '6':9 },
+    triad:      new Set(['R','3','5']),
+    thirdDeg:   '3',
+    thirdLabel: 'Major 3rd',
+    intro: `The major pentatonic triad is built from the <strong>root (R)</strong>,
+      <strong>major 3rd (3)</strong>, and <strong>perfect 5th (5)</strong>.
+      These three notes appear in every shape. Dashed outlines show triad tones
+      that sit just outside the shape but are reachable from the same hand position —
+      they belong to the adjacent shape.`,
+    shapeNotes: [
+      'Root on low E and high e. The 3rd appears early on A and G strings — easy to target on the way down.',
+      'Root moves to the D and B strings. The 3rd and 5th cluster on G and high e — a natural double-stop position.',
+      'Root on A and B strings. All three triad tones sit in a tight vertical window — good for vertical chord-tone targeting.',
+      'Root on A and G strings. The 3rd and 5th on D and B form the classic two-string triad voicing.',
+      'Root returns to E and e. Mirrors shape 1 an octave higher — same fingering logic.',
+    ],
+  },
+  minor: {
+    degrees:    { 'R':0, 'b3':3, '4':5, '5':7, 'b7':10 },
+    triad:      new Set(['R','b3','5']),
+    thirdDeg:   'b3',
+    thirdLabel: 'Minor 3rd',
+    intro: `The minor pentatonic triad is built from the <strong>root (R)</strong>,
+      <strong>minor 3rd (b3)</strong>, and <strong>perfect 5th (5)</strong>.
+      All three appear in every shape. Dashed outlines show triad tones that extend
+      just into the adjacent shape — worth knowing because they're easily reached
+      with a small position shift.`,
+    shapeNotes: [
+      'Root on low E and high e. The b3 appears on both E strings and the G string — multiple places to enter a lick.',
+      'Root on D and B strings. The b3 and 5 sit close on the upper strings — ideal for bends up to the 5th.',
+      'Root on A and B strings. The b3 bridges shapes 2 and 3 here, connecting the two positions.',
+      'Root on A and G strings. The 5th appears on three strings — it\'s easy to find the stable tone in this box.',
+      'Root back on E and e. The b3 on G is the classic box 5 bend target.',
+    ],
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHAPE COMPUTATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Hardcoded degree assignments per string per box (low E → high e).
+// These match the universally standard 5-box pentatonic patterns.
+const BOX_DEGREES = {
+  minor: [
+    [['R','b3'], ['4','5'],  ['b7','R'], ['b3','4'], ['5','b7'], ['R','b3'] ],
+    [['b3','4'], ['5','b7'], ['R','b3'], ['4','5'],  ['b7','R'], ['b3','4'] ],
+    [['4','5'],  ['b7','R'], ['b3','4'], ['5','b7'], ['R','b3'], ['4','5']  ],
+    [['5','b7'], ['R','b3'], ['4','5'],  ['b7','R'], ['b3','4'], ['5','b7'] ],
+    [['b7','R'], ['b3','4'], ['5','b7'], ['R','b3'], ['4','5'],  ['b7','R'] ],
+  ],
+  major: [
+    [['R','2'],  ['3','5'],  ['6','R'],  ['2','3'],  ['5','6'],  ['R','2']  ],
+    [['2','3'],  ['5','6'],  ['R','2'],  ['3','5'],  ['6','R'],  ['2','3']  ],
+    [['3','5'],  ['6','R'],  ['2','3'],  ['5','6'],  ['R','2'],  ['3','5']  ],
+    [['5','6'],  ['R','2'],  ['3','5'],  ['6','R'],  ['2','3'],  ['5','6']  ],
+    [['6','R'],  ['2','3'],  ['5','6'],  ['R','2'],  ['3','5'],  ['6','R']  ],
+  ],
+};
+
+const SEMI = {
+  minor: { 'R':0, 'b3':3, '4':5, '5':7, 'b7':10 },
+  major: { 'R':0, '2':2,  '3':4, '5':7,  '6':9  },
+};
+
+function closestFret(degSemi, stringIdx, refFret) {
+  const rootPitch = OPEN[0] + ROOT_FRET;
+  const notePitch = (rootPitch + degSemi) % 12;
+  const openPitch = OPEN[stringIdx] % 12;
+  const base      = (notePitch - openPitch + 12) % 12;
+  const candidates = [base, base+12, base+24].filter(f => f >= 0 && f <= 22);
+  return candidates.reduce((best, f) =>
+    Math.abs(f - refFret) <= Math.abs(best - refFret) ? f : best
+  );
+}
+
+// Build one box using its hardcoded degree assignment.
+// Returns array of { s, fret, deg } with absolute fret numbers.
+function buildBox(boxIdx, scale) {
+  const semiMap   = SEMI[scale];
+  const degAssign = BOX_DEGREES[scale][boxIdx];
+
+  // Anchor the position: find where the first degree of low E sits
+  const anchorDeg  = degAssign[0][0];
+  const anchorFret = closestFret(semiMap[anchorDeg], 0, ROOT_FRET + semiMap[anchorDeg]);
+
+  const notes = [];
+  for (let si = 0; si < 6; si++) {
+    const [d1, d2] = degAssign[si];
+    const f1 = closestFret(semiMap[d1], si, anchorFret);
+    const f2 = closestFret(semiMap[d2], si, f1 + 1);
+    notes.push({ s: SNAME[si], fret: f1, deg: d1 });
+    notes.push({ s: SNAME[si], fret: f2, deg: d2 });
+  }
+  return notes;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+
+let scaleMode = 'minor';
+let showMode  = 'all';
+
+function renderShape(shapeIdx, absNotes, nextAbsNotes, cfg) {
+  const triad = cfg.triad;
+
+  // Convert this shape to relative coordinates
+  const minF = Math.min(...absNotes.map(n => n.fret));
+  const maxF = Math.max(...absNotes.map(n => n.fret));
+
+  // Shape notes with relative fret position
+  const shapeNotes = absNotes.map(n => ({
+    ...n,
+    relFret: n.fret - minF,
+    isCross: false,
+  }));
+
+  // Cross-shape notes: triad tones from next shape that sit ABOVE this shape's max fret
+  // Also include the few that sit just below minF (i.e. the previous shape bleeds down)
+  const crossNotes = nextAbsNotes
+    .filter(n => triad.has(n.deg) && n.fret > maxF)
+    .map(n => ({ ...n, relFret: n.fret - minF, isCross: true }));
+
+  const allNotes = [...shapeNotes, ...crossNotes];
+  const maxRel   = Math.max(...allNotes.map(n => n.relFret));
+  const W        = maxRel + 2; // fret window width
+
+  // ── Fretboard HTML ──
+  let fb = `<div class="fb"><div class="fb-nums">`;
+  for (let f = 0; f < W; f++) {
+    fb += `<div class="fb-num">${f + minF}</div>`; // show absolute fret numbers
+  }
+  fb += '</div>';
+
+  // Render strings high e → low E
+  [...SNAME].reverse().forEach(sname => {
+    fb += `<div class="fb-row" data-s="${sname}">`;
+    fb += `<div class="fb-name">${sname}</div>`;
+    fb += `<div class="fb-frets" style="--fw:${W}">`;
+
+    for (let f = 0; f < W; f++) {
+      fb += '<div class="fb-fret">';
+
+      const note = allNotes.find(n => n.s === sname && n.relFret === f);
+      if (note) {
+        const inTriad = triad.has(note.deg);
+        if (!(showMode === 'triad' && !inTriad)) {
+          let cls;
+          if (note.isCross) {
+            cls = note.deg === 'R'          ? 'cross-root'
+                : note.deg === cfg.thirdDeg ? 'cross-third'
+                : note.deg === '5'          ? 'cross-fifth'
+                : null;
+          } else {
+            cls = note.deg === 'R'          ? 'root'
+                : note.deg === cfg.thirdDeg ? 'third'
+                : note.deg === '5'          ? 'fifth'
+                : 'scale';
+          }
+          if (cls) fb += `<div class="dot ${cls}">${note.deg}</div>`;
+        }
+      }
+
+      fb += '</div>';
+    }
+
+    fb += '</div></div>';
+  });
+  fb += '</div>';
+
+  // ── Badges ──
+  const inShapeTriadCount = shapeNotes.filter(n => triad.has(n.deg)).length;
+  const crossCount        = crossNotes.length;
+  const startDeg          = absNotes.find(n => n.s === 'E')?.deg ?? '?';
+
+  return `<div class="shape-block">
+    <div class="shape-header">
+      <div class="shape-title"><strong>Shape ${shapeIdx + 1}</strong> · starts on ${startDeg}</div>
+      <div class="shape-badges">
+        <span class="badge">frets ${minF}–${maxF}</span>
+        <span class="badge triad-badge">${inShapeTriadCount} triad tones within shape</span>
+        ${crossCount ? `<span class="badge" style="border-color:var(--col-ghost);color:var(--col-ghost)">${crossCount} extend into next shape</span>` : ''}
+      </div>
+    </div>
+    <div class="shape-body">${fb}</div>
+    <div class="shape-note">${cfg.shapeNotes[shapeIdx]}</div>
+  </div>`;
+}
+
+function render() {
+  const cfg    = SCALES[scaleMode];
+  const boxes  = Array.from({ length: 5 }, (_, i) => buildBox(i, scaleMode));
+
+  document.getElementById('introText').innerHTML       = cfg.intro;
+  document.getElementById('legThird').textContent      = cfg.thirdDeg;
+  document.getElementById('legThirdLabel').textContent = cfg.thirdLabel;
+
+  document.getElementById('shapesWrap').innerHTML = boxes.map((notes, i) =>
+    renderShape(i, notes, boxes[(i + 1) % 5], cfg)
+  ).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setScale(s) {
+  scaleMode = s;
+  document.getElementById('scMin').classList.toggle('active', s === 'minor');
+  document.getElementById('scMaj').classList.toggle('active', s === 'major');
+  render();
+}
+
+function setShow(s) {
+  showMode = s;
+  document.getElementById('shAll').classList.toggle('active',   s === 'all');
+  document.getElementById('shTriad').classList.toggle('active', s === 'triad');
+  render();
+}
+
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('darkBtn').textContent = isDark ? '◑ Light' : '◐ Dark';
+  document.documentElement.style.background = isDark ? '#141210' : '#f5f0e8';
+}
+
+render();
+</script>
+</body>
+</html>
