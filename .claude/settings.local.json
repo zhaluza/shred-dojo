@@ -37,7 +37,8 @@
       "Bash(curl -s https://raw.githubusercontent.com/CoderLine/alphaTab/main/packages/alphatab/src/synth/MidiFileSequencer.ts)",
       "Bash(npx react-router:*)",
       "Bash(node:*)",
-      "Bash(xxd app/routes/shape-explorer.tsx)"
+      "Bash(xxd app/routes/shape-explorer.tsx)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

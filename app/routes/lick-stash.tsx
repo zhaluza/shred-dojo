@@ -1,8 +1,8 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/lick-stash";
-import { Logo } from "~/components/Logo";
 import { LIGHT_THEME, DARK_THEME } from "~/components/scalePositions.theme";
 import { LICK_PACKS } from "~/components/lickStash.data";
+import { Nav } from "~/components/Nav";
 import { useState, useEffect } from "react";
 
 export function meta({}: Route.MetaArgs) {
@@ -38,40 +38,7 @@ export default function LickStash() {
       className="min-h-screen flex flex-col font-mono bg-[var(--bg)] text-[var(--text)]"
       style={theme}
     >
-      {/* Header */}
-      <header className="px-8 pt-8 pb-6 flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="no-underline">
-            <Logo pickWidth={28} />
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link
-              to="/scale-positions"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Scales
-            </Link>
-            <span
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase border-b pb-px"
-              style={{
-                color: "var(--accent)",
-                borderColor: "var(--accent)",
-              }}
-            >
-              Lick Stash
-            </span>
-          </nav>
-        </div>
-        <button
-          onClick={toggleDark}
-          className="font-display text-[0.6rem] tracking-[0.12em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-3 py-1 hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer"
-        >
-          {isDark ? "Light" : "Dark"}
-        </button>
-      </header>
-
-      {/* Divider */}
-      <div className="w-full h-px bg-[var(--border)]" />
+      <Nav isDark={isDark} toggleDark={toggleDark} />
 
       <main className="flex-1 max-w-[760px] mx-auto w-full px-8 pt-12 pb-16">
         {/* Page title */}

@@ -54,6 +54,8 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 | `--root-col` | `#c0392b` | `#c0392b` | Root note dots |
 | `--faint` | `#c8bfaa` | `#3a3228` | Fret numbers, ghost elements |
 | `--fret-bar` | `#d8cebb` | `#2a2418` | Fretboard bar lines |
+| `--fifth-col` | `#4a6a8a` | `#6a9abf` | 5th degree dots (chord/arpeggio pages) |
+| `--seventh-col` | `#6a4a7a` | `#9a6abf` | 7th degree dots (chord/arpeggio pages) |
 
 **Typography scale** (Tailwind arbitrary values):
 - H1: `font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none`
@@ -229,6 +231,71 @@ Pentatonic shapes use `buildBox(boxIdx, scale)` from `pentatonicTriads.utils.ts`
 ### Notes panel
 
 Below the fretboard, each degree in the shape is shown as a color-coded chip with its interval label (e.g. `b3`) and the actual note name for the selected key (e.g. `C` for A minor). Chips dim when their degree is hidden by the active filter.
+
+## Nav component
+
+`app/components/Nav.tsx` — persistent navigation bar rendered at the top of every page **except** the Coming Soon page (`/` without `?preview=true`).
+
+- **Props**: `isDark: boolean`, `toggleDark: () => void` — each page owns its own dark-mode state and passes it in.
+- **Home link**: the logo links to `/?preview=true` to bypass the Coming Soon gate.
+- **Active link detection**: uses `useLocation()`. `/lick-stash` matches both the listing page and individual pack sub-pages (`/lick-stash/:packSlug`); all other links match exactly on `pathname`.
+- **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle. Pages that didn't already do this (PentatonicTriads, IntervalShapes) had persistence added when Nav was introduced.
+- **Nav links** (in order): Scales → `/scale-positions`, Lick Stash → `/lick-stash`, Triads → `/pentatonic-triads`, Intervals → `/interval-shapes`, Shape Explorer → `/shape-explorer`, Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`.
+
+## Chord Voicings feature
+
+The Chord Voicings page (`/chord-voicings`) shows the 5 CAGED chord shapes for five chord types: Major, Minor, Dom 7, Maj 7, Min 7 — rooted on G.
+
+### Files
+
+- `app/components/chordVoicings.types.ts` — `ChordType`, `CHORD_TONES`, `CHORD_LABELS`, `CHORD_TYPES`, `ChordStringVoicing`, `ChordVoicingData`
+- `app/components/chordVoicings.utils.ts` — `buildChordVoicings(chordType)` and `DEG_COLOR` (shared with ArpeggioMaps)
+- `app/components/ChordVoicings.tsx` — all component code
+- `app/routes/chord-voicings.tsx` — route wrapper
+
+### Data model
+
+- `ChordType` — `"maj" | "min" | "dom7" | "maj7" | "min7"`
+- `CHORD_TONES` — the active degrees per chord type (R, 3/b3, 5, and optionally b7/7)
+- `buildChordVoicings(chordType)` — returns 5 `ChordVoicingData` objects (one per CAGED shape). Each describes: `shapeName`, `baseFret` (lowest fret on the neck), `showNut` (true when `baseFret <= 1`), and `strings` — an array of 6 `ChordStringVoicing` entries (open/muted/fret/deg).
+- For each string the best (lowest-fret) chord tone is selected; strings with no chord tones are marked muted.
+
+### Degree colors
+
+`DEG_COLOR` in `chordVoicings.utils.ts` maps degrees to CSS variables. Root → `var(--root-col)`, 3rd/b3 → `var(--sys-caged)`, 5th → `var(--fifth-col)`, 7th/b7 → `var(--seventh-col)`. Shared by both ChordVoicings and ArpeggioMaps.
+
+### ChordDiagram component
+
+Renders a traditional vertical chord diagram (6 columns = strings, rows = frets). Shows: string name headers, mute (✕) or open (○) indicators, a thick nut line (when `showNut`) or a fret-position label, colored dots at each fretted note, and a legend below.
+
+### Controls
+
+**Chord** toggle — Maj / Min / Dom 7 / Maj 7 / Min 7.
+
+## Arpeggio Maps feature
+
+The Arpeggio Maps page (`/arpeggio-maps`) shows chord-tone positions across the neck for two systems — CAGED (5 shapes) or 3nps (7 positions) — and the same five chord types as Chord Voicings. Displayed as full horizontal fretboard diagrams.
+
+### Files
+
+- `app/components/arpeggioMaps.utils.ts` — `buildArpeggioPositions(chordType)` (CAGED, 5 positions) and `buildArpeggio3npsPositions(chordType)` (3nps, 7 positions); both reuse existing builders from `scalePositions.utils.ts`
+- `app/components/ArpeggioMaps.tsx` — all component code (shares `DEG_COLOR`, `CHORD_TONES`, `ChordType` from `chordVoicings.*`)
+- `app/routes/arpeggio-maps.tsx` — route wrapper
+
+### Data model
+
+- `buildArpeggioPositions(chordType)` — calls `buildCagedPositions()` with the chord's scale config. Returns 5 `ScalePosition` objects with `system: "caged"` and a `shapeName` field.
+- `buildArpeggio3npsPositions(chordType)` — calls `buildAllPositions()` and filters to `system === "3nps"`. Returns 7 `ScalePosition` objects (one per scale degree), each with a `scaletone` (1–7) but no `shapeName`.
+- Both use the same `cfgForChordType()` helper (dom7 uses a Mixolydian config so b7 appears in positions).
+
+### Display
+
+Each position is a fretboard card (horizontal, one row per string) with colored degree dots visible only for chord tones. The card header bar and label color indicate the system: amber (`--sys-caged`) for CAGED shapes labeled "{Shape} Shape", red (`--sys-3nps`) for 3nps positions labeled "Pos I–VII".
+
+### Controls
+
+- **System** toggle — CAGED / 3nps (switches between 5 and 7 cards)
+- **Chord** toggle — Maj / Min / Dom 7 / Maj 7 / Min 7
 
 ## Lick Stash feature
 

@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router";
 import type { Route } from "./+types/lick-stash-pack";
-import { Logo } from "~/components/Logo";
 import { LIGHT_THEME, DARK_THEME } from "~/components/scalePositions.theme";
+import { Nav } from "~/components/Nav";
 import { LICK_PACKS } from "~/components/lickStash.data";
 import type { Lick } from "~/components/lickStash.types";
 import { useState, useEffect, useCallback } from "react";
@@ -204,37 +204,7 @@ export default function LickStashPack() {
       className="min-h-screen flex flex-col font-mono bg-[var(--bg)] text-[var(--text)]"
       style={theme}
     >
-      {/* Header */}
-      <header className="px-8 pt-8 pb-6 flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="no-underline">
-            <Logo pickWidth={28} />
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link
-              to="/scale-positions"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Scales
-            </Link>
-            <Link
-              to="/lick-stash"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase no-underline transition-colors"
-              style={{ color: "var(--accent)", borderBottom: "1px solid var(--accent)", paddingBottom: "1px" }}
-            >
-              Lick Stash
-            </Link>
-          </nav>
-        </div>
-        <button
-          onClick={toggleDark}
-          className="font-display text-[0.6rem] tracking-[0.12em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-3 py-1 hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer"
-        >
-          {isDark ? "Light" : "Dark"}
-        </button>
-      </header>
-
-      <div className="w-full h-px bg-[var(--border)]" />
+      <Nav isDark={isDark} toggleDark={toggleDark} />
 
       <main className="flex-1 max-w-[840px] mx-auto w-full px-8 pt-10 pb-16">
         {/* Breadcrumb */}

@@ -4,6 +4,7 @@ import {
   LIGHT_THEME,
   STRING_LINE,
 } from "./scalePositions.theme";
+import { Nav } from "./Nav";
 import type {
   NoteFilter,
   ScaleMode,
@@ -1072,8 +1073,10 @@ export function ScalePositions() {
   return (
     <div
       style={isDark ? DARK_THEME : LIGHT_THEME}
-      className="bg-[var(--bg)] text-[var(--text)] font-mono pb-20 pt-8 px-6 transition-[background,color] duration-200 min-h-screen"
+      className="bg-[var(--bg)] text-[var(--text)] font-mono pb-20 transition-[background,color] duration-200 min-h-screen"
     >
+      <Nav isDark={isDark} toggleDark={toggleDark} />
+      <div className="pt-8 px-6">
       {/* Header */}
       <header className="max-w-[980px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
         <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none">
@@ -1084,17 +1087,9 @@ export function ScalePositions() {
           <br />
           Scale Positions
         </h1>
-        <div className="flex flex-col items-end gap-3">
-          <ControlButton
-            label={isDark ? "◑ Light" : "◐ Dark"}
-            active={false}
-            onClick={toggleDark}
-            small
-          />
-          <div className="text-[0.63rem] text-[var(--muted)] tracking-[0.05em] leading-[1.7] max-w-[18rem] text-right">
-            Diatonic scale shapes across three systems: 3nps, CAGED, and
-            symmetric.
-          </div>
+        <div className="text-[0.63rem] text-[var(--muted)] tracking-[0.05em] leading-[1.7] max-w-[18rem] text-right">
+          Diatonic scale shapes across three systems: 3nps, CAGED, and
+          symmetric.
         </div>
       </header>
 
@@ -1300,6 +1295,7 @@ export function ScalePositions() {
           Pebber Brown
         </a>
       </footer>
+      </div>
     </div>
   );
 }

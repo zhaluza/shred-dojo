@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
+import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
 import type {
   Degree,
@@ -399,43 +400,7 @@ export function ShapeExplorer() {
       className="min-h-screen flex flex-col font-mono bg-[var(--bg)] text-[var(--text)]"
       style={theme}
     >
-      {/* ── Header ── */}
-      <header className="px-6 pt-6 pb-4 flex items-center justify-between flex-wrap gap-3 border-b border-[var(--border)]">
-        <div className="flex items-center gap-6">
-          <Link
-            to="/"
-            className="font-display text-[0.88rem] font-semibold tracking-[0.08em] uppercase text-[var(--text)] no-underline"
-          >
-            Shred Dojo
-          </Link>
-          <nav className="flex items-center gap-4 flex-wrap">
-            <Link
-              to="/scale-positions"
-              className="font-display text-[0.6rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Scale Positions
-            </Link>
-            <Link
-              to="/shape-explorer"
-              className="font-display text-[0.6rem] tracking-[0.1em] uppercase text-[var(--accent)] no-underline"
-            >
-              Shape Explorer
-            </Link>
-            <Link
-              to="/pentatonic-triads"
-              className="font-display text-[0.6rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Triads
-            </Link>
-          </nav>
-        </div>
-        <button
-          onClick={toggleDark}
-          className="font-display text-[0.6rem] tracking-[0.12em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-3 py-[0.3rem] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer"
-        >
-          {isDark ? "Light" : "Dark"}
-        </button>
-      </header>
+      <Nav isDark={isDark} toggleDark={toggleDark} />
 
       {/* ── Controls ── */}
       <div className="max-w-[1000px] mx-auto w-full px-6 pt-8 pb-2">

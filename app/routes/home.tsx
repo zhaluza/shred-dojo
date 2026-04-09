@@ -2,6 +2,7 @@ import { Link, useLoaderData } from "react-router";
 import type { Route } from "./+types/home";
 import { Logo } from "~/components/Logo";
 import { LIGHT_THEME, DARK_THEME } from "~/components/scalePositions.theme";
+import { Nav } from "~/components/Nav";
 import { useState, useEffect, useRef } from "react";
 
 export function meta({ data }: Route.MetaArgs) {
@@ -449,6 +450,22 @@ const TOOLS: Array<{
     tag: "Theory",
     body: "Visualize any 3nps, CAGED, or pentatonic shape in any key — see exact fret positions on the neck for major and minor scales.",
   },
+  {
+    label: "Live",
+    live: true,
+    to: "/chord-voicings",
+    title: "Chord Voicings",
+    tag: "Theory",
+    body: "All 5 CAGED chord shapes for major, minor, and seventh chord types — root, 3rd, 5th, and 7th color-coded across every voicing.",
+  },
+  {
+    label: "Live",
+    live: true,
+    to: "/arpeggio-maps",
+    title: "Arpeggio Maps",
+    tag: "Theory",
+    body: "Chord-tone positions for the 5 CAGED shapes — see exactly where root, 3rd, 5th, and 7th land for major, minor, and seventh arpeggios.",
+  },
 ];
 
 const COMING_SOON_TOOLS = [
@@ -470,52 +487,7 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
       className="min-h-screen flex flex-col font-mono bg-[var(--bg)] text-[var(--text)]"
       style={{ ...theme, "--amber": AMBER } as React.CSSProperties}
     >
-      {/* ── Header ── */}
-      <header className="px-8 pt-7 pb-5 flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-7">
-          <Logo pickWidth={26} />
-          <nav className="flex items-center gap-5">
-            <Link
-              to="/scale-positions"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Scales
-            </Link>
-            <Link
-              to="/lick-stash"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Lick Stash
-            </Link>
-            <Link
-              to="/pentatonic-triads"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Triads
-            </Link>
-            <Link
-              to="/interval-shapes"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Intervals
-            </Link>
-            <Link
-              to="/shape-explorer"
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
-            >
-              Shape Explorer
-            </Link>
-          </nav>
-        </div>
-        <button
-          onClick={toggleDark}
-          className="font-display text-[0.6rem] tracking-[0.12em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-3 py-[0.35rem] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer"
-        >
-          {isDark ? "Light" : "Dark"}
-        </button>
-      </header>
-
-      <div className="w-full h-px bg-[var(--border)]" />
+      <Nav isDark={isDark} toggleDark={toggleDark} />
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden">

@@ -8,4 +8,6 @@ export default [
   route("pentatonic-triads", "routes/pentatonic-triads.tsx"),
   route("interval-shapes", "routes/interval-shapes.tsx"),
   route("shape-explorer", "routes/shape-explorer.tsx"),
+  route("chord-voicings", "routes/chord-voicings.tsx"),
+  route("arpeggio-maps", "routes/arpeggio-maps.tsx"),
 ] satisfies RouteConfig;

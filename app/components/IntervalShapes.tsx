@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { Nav } from "./Nav";
 import type { StringName } from "./scalePositions.types";
 import {
   DEG_COLOR,
@@ -430,6 +431,17 @@ export function IntervalShapes() {
   const [mode, setMode] = useState<"diagram" | "flashcard">("diagram");
   const [isDark, setIsDark] = useState(false);
 
+  useEffect(() => {
+    const stored = localStorage.getItem("shred-dojo-dark");
+    if (stored !== null) setIsDark(stored === "true");
+  }, []);
+
+  const toggleDark = () =>
+    setIsDark((prev) => {
+      localStorage.setItem("shred-dojo-dark", String(!prev));
+      return !prev;
+    });
+
   const theme = isDark ? DARK_THEME : LIGHT_THEME;
 
   const handleScaleChange = (s: PentaScaleMode) => {
@@ -441,6 +453,7 @@ export function IntervalShapes() {
       className="min-h-screen font-mono bg-[var(--bg)] text-[var(--text)]"
       style={theme}
     >
+      <Nav isDark={isDark} toggleDark={toggleDark} />
       <div className="max-w-[900px] mx-auto px-5 pt-8 pb-20">
         {/* Header */}
         <header className="mb-6 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-5">
@@ -448,18 +461,10 @@ export function IntervalShapes() {
             Interval{" "}
             <span style={{ color: "var(--accent)" }}>Shapes</span>
           </h1>
-          <div className="flex flex-col items-end gap-2">
-            <CtrlBtn
-              label={isDark ? "◑ Light" : "◐ Dark"}
-              active={false}
-              onClick={() => setIsDark((d) => !d)}
-              small
-            />
-            <div className="text-[0.58rem] text-[var(--muted)] tracking-[0.1em] uppercase text-right leading-[1.7]">
-              G root · two-string shapes
-              <br />
-              diagram &amp; flashcard mode
-            </div>
+          <div className="text-[0.58rem] text-[var(--muted)] tracking-[0.1em] uppercase text-right leading-[1.7]">
+            G root · two-string shapes
+            <br />
+            diagram &amp; flashcard mode
           </div>
         </header>
 
