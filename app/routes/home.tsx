@@ -441,6 +441,14 @@ const TOOLS: Array<{
     tag: "Theory",
     body: "The recurring two-string shapes that make up every pentatonic position. Diagram and flashcard modes for major and minor.",
   },
+  {
+    label: "Live",
+    live: true,
+    to: "/shape-explorer",
+    title: "Shape Explorer",
+    tag: "Theory",
+    body: "Visualize any 3nps, CAGED, or pentatonic shape in any key — see exact fret positions on the neck for major and minor scales.",
+  },
 ];
 
 const COMING_SOON_TOOLS = [
@@ -490,6 +498,12 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
               className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
             >
               Intervals
+            </Link>
+            <Link
+              to="/shape-explorer"
+              className="font-display text-[0.65rem] tracking-[0.1em] uppercase text-[var(--muted)] no-underline hover:text-[var(--text)] transition-colors"
+            >
+              Shape Explorer
             </Link>
           </nav>
         </div>

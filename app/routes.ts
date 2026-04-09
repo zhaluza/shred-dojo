@@ -7,4 +7,5 @@ export default [
   route("lick-stash/:packSlug", "routes/lick-stash-pack.tsx"),
   route("pentatonic-triads", "routes/pentatonic-triads.tsx"),
   route("interval-shapes", "routes/interval-shapes.tsx"),
+  route("shape-explorer", "routes/shape-explorer.tsx"),
 ] satisfies RouteConfig;

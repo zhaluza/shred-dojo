@@ -192,6 +192,44 @@ The Interval Shapes page (`/interval-shapes`) teaches the recurring two-string i
 - **Scale** — Minor / Major (re-renders both panels; `FlashcardPanel` is keyed on `scale` to reset index)
 - **Mode** — Diagram / Flashcard
 
+## Shape Explorer feature
+
+The Shape Explorer (`/shape-explorer`) is a focused single-shape visualizer — optimized for studying one position at a time, with key selection so fret numbers reflect the actual guitar neck.
+
+### Files
+
+- `app/components/ShapeExplorer.tsx` — all component code (self-contained, no sibling utils/types files)
+- `app/routes/shape-explorer.tsx` — route wrapper
+
+### What it does
+
+Unlike the Scale Positions page (which emphasizes side-by-side system comparison), Shape Explorer puts a single shape centre stage:
+
+- **Key selector** — 12 chromatic keys (E through Eb). Fret numbers on the fretboard shift to show the real neck position for the chosen key.
+- **System** — 3nps (7 positions), CAGED (5 shapes), or Penta (5 pentatonic boxes built from `buildBox()` in `pentatonicTriads.utils.ts`).
+- **Scale** — Minor / Major.
+- **Show filter** — All / Penta / Chord (hidden when System = Penta, which is implicitly penta-only).
+- **Shape navigator** — Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
+
+### Key transposition
+
+All shapes are built in G (ROOT_FRET = 3 on low E). For a chosen key K:
+
+```
+keyOffset = (keyFret - ROOT_FRET + 12) % 12
+displayStartFret = shape.startFret + keyOffset
+```
+
+Fret labels on the fretboard are rendered as `f + displayStartFret` (absolute guitar frets), so the shape dots stay at relative positions 0..N while the numbers reflect the real neck position. Fret inlay dots (single at 3, 5, 7, 9; double at 12, 24) are drawn based on the absolute fret value.
+
+### Pentatonic boxes
+
+Pentatonic shapes use `buildBox(boxIdx, scale)` from `pentatonicTriads.utils.ts`, returning `BoxNote[]` (absolute frets in G). These are converted to `ScaleString[]` via `boxNotesToScaleStrings()` (defined locally in `ShapeExplorer.tsx`), which normalizes to relative frets with `toRelative()` and records `startFret = minFret % 12`. All pentatonic notes have `penta: true`; only the root gets the red dot treatment.
+
+### Notes panel
+
+Below the fretboard, each degree in the shape is shown as a color-coded chip with its interval label (e.g. `b3`) and the actual note name for the selected key (e.g. `C` for A minor). Chips dim when their degree is hidden by the active filter.
+
 ## Lick Stash feature
 
 The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of Guitar Pro tabs that users can view, play, and loop.
