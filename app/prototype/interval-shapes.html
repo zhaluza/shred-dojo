@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pentatonic Interval Shapes</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Source+Code+Pro:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #f5f0e8;
+    --surface:  #ede8dc;
+    --border:   #c8bfaa;
+    --text:     #1a1612;
+    --muted:    #8a8070;
+    --accent:   #8b1a1a;
+    --amber:    #c8a060;
+    --faint:    #c8bfaa;
+    --fret-bar: #d8cebb;
+    --str-E:    #8a7a58;
+    --str-A:    #a09060;
+    --str-D:    #b0a878;
+    --str-G:    #c0b898;
+    --str-Be:   #c8bfaa;
+    --col-root: #c0392b;
+    --col-b3:   #5a7ab0;
+    --col-4:    #8a6030;
+    --col-5:    #3a7a3a;
+    --col-b7:   #7a3a7a;
+    --col-2:    #5a8080;
+    --col-3:    #3a7a3a;
+    --col-6:    #7a5a30;
+  }
+  body.dark {
+    --bg: #141210; --surface: #1e1a16; --border: #352e24;
+    --text: #e8e0d0; --muted: #6a6058; --accent: #c8604a;
+    --amber: #c8a060; --faint: #3a3228; --fret-bar: #2a2418;
+    --str-E: #5a5040; --str-A: #6a6048; --str-D: #7a7058;
+    --str-G: #8a8068; --str-Be: #6a6258;
+    background: #141210; color: #e8e0d0;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #f5f0e8; color: #1a1612; }
+  html { transition: background 0.2s; }
+  body { font-family: 'Source Code Pro', monospace; padding: 2rem 1.5rem 5rem; transition: background 0.2s, color 0.2s; }
+
+  header { max-width: 900px; margin: 0 auto 2rem; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1rem; border-bottom: 2px solid var(--text); padding-bottom: 1.5rem; }
+  h1 { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: clamp(1.8rem,4vw,2.8rem); letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; }
+  h1 em { color: var(--accent); font-style: normal; }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+  .header-meta { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: right; line-height: 1.8; }
+
+  .btn { background: none; border: 1px solid var(--border); color: var(--text); cursor: pointer; font-family: 'Oswald', sans-serif; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.35rem 0.85rem; transition: all 0.1s; }
+  .btn:hover { border-color: var(--text); }
+  .btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .controls { max-width: 900px; margin: 0 auto 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; }
+  .ctrl-label { font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .spacer { flex: 1; }
+
+  /* ── Colour legend ── */
+  .legend { max-width: 900px; margin: 0 auto 2rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+  .leg { display: flex; align-items: center; gap: 0.4rem; font-size: 0.58rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .leg-dot { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.42rem; color: #fff; font-weight: 600; flex-shrink: 0; }
+
+  /* ── Mode panels ── */
+  .panel { max-width: 900px; margin: 0 auto; display: none; }
+  .panel.active { display: block; }
+
+  /* ═══ DIAGRAM MODE ═══ */
+  .intro { font-size: 0.72rem; color: var(--muted); line-height: 1.8; margin-bottom: 2rem; }
+  .intro strong { color: var(--text); font-weight: 400; }
+
+  .shapes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0; }
+
+  .shape-card { border: 1px solid var(--border); margin: -1px 0 0 -1px; background: var(--surface); }
+  .shape-card-header { padding: 0.8rem 1rem 0.6rem; border-bottom: 1px solid var(--border); }
+  .shape-card-title { font-family: 'Oswald', sans-serif; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 0.2rem; }
+  .shape-card-sub { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .shape-card-body { padding: 1rem 1.25rem 0.75rem; }
+  .shape-card-desc { padding: 0.6rem 1rem 0.8rem; border-top: 1px solid var(--border); font-size: 0.62rem; color: var(--muted); line-height: 1.7; }
+
+  /* Two-string mini fretboard */
+  .mini-fb { display: flex; flex-direction: column; gap: 0; }
+  .mini-row { display: flex; align-items: center; height: 36px; }
+  .mini-name { width: 1.6rem; font-size: 0.5rem; color: var(--muted); text-align: right; padding-right: 0.5rem; flex-shrink: 0; }
+  .mini-frets { flex: 1; display: flex; position: relative; align-items: center; height: 100%; }
+  .mini-frets::before { content: ''; position: absolute; inset: 0; pointer-events: none; background-image: repeating-linear-gradient(to right, transparent 0%, transparent calc(100% / var(--fw) - 1px), var(--fret-bar) calc(100% / var(--fw) - 1px), var(--fret-bar) calc(100% / var(--fw))); }
+  .mini-frets::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); pointer-events: none; height: 1px; background: var(--str-G); }
+  .mini-row[data-s="E"]  .mini-frets::after, .mini-row[data-s="e"]  .mini-frets::after { height: 0.5px; background: var(--str-Be); }
+  .mini-row[data-s="A"]  .mini-frets::after { height: 1.5px; background: var(--str-A); }
+  .mini-row[data-s="D"]  .mini-frets::after { height: 1.5px; background: var(--str-D); }
+  .mini-row[data-s="B"]  .mini-frets::after { height: 1px; background: var(--str-Be); }
+  .mini-fret { flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+  .mini-nums { display: flex; padding-left: 1.6rem; margin-bottom: 0.15rem; }
+  .mini-num { flex: 1; text-align: center; font-size: 0.42rem; color: var(--faint); }
+
+  /* Occurrences list */
+  .occurrences { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .occ-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .occ-label { font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); min-width: 3.5rem; }
+  .occ-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+  .occ-tag { font-size: 0.5rem; padding: 0.12rem 0.4rem; border: 1px solid var(--border); color: var(--muted); letter-spacing: 0.05em; }
+  .occ-tag.has-root { border-color: var(--col-root); color: var(--col-root); }
+
+  /* ═══ FLASHCARD MODE ═══ */
+  .fc-progress {
+    max-width: 480px; margin: 0 auto 1rem;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  }
+  .fc-dots { display: flex; gap: 5px; }
+  .fc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
+  .fc-dot.done { background: var(--amber); }
+  .fc-dot.cur  { background: var(--text); }
+
+  .fc-card {
+    max-width: 480px; margin: 0 auto;
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; user-select: none;
+    transition: border-color 0.15s;
+  }
+  .fc-card:hover { border-color: var(--text); }
+
+  .fc-top {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .fc-meta {
+    font-family: 'Oswald', sans-serif; font-size: 0.75rem;
+    letter-spacing: 0.06em; color: var(--text); text-transform: uppercase;
+  }
+  .fc-instruction {
+    font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .fc-fretboard { padding: 1.25rem 1.25rem 1rem; }
+
+  .fc-tap-hint {
+    padding: 0.65rem 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.52rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted); text-align: center;
+    transition: color 0.15s;
+  }
+  .fc-card.revealed .fc-tap-hint { color: var(--amber); content: 'tap again to reset'; }
+
+  .fc-nav {
+    max-width: 480px; margin: 0.75rem auto 0;
+    display: flex; gap: 0.75rem;
+  }
+
+  /* ── Shared dot styles ── */
+  .dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 400; position: relative; z-index: 2; transition: all 0.15s; }
+  .dot.hidden-deg { background: var(--text); color: var(--bg); }
+  .dot.revealed-deg { transition: all 0.3s; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Pentatonic<br><em>Interval Shapes</em></h1>
+  <div class="header-right">
+    <button class="btn" id="darkBtn" onclick="toggleDark()" style="font-size:0.65rem;padding:0.3rem 0.7rem">◐ Dark</button>
+    <div class="header-meta">G root · two-string shapes<br>diagram &amp; flashcard mode</div>
+  </div>
+</header>
+
+<div class="controls">
+  <span class="ctrl-label">Scale</span>
+  <button class="btn active" id="scMin" onclick="setScale('minor')">Minor</button>
+  <button class="btn"        id="scMaj" onclick="setScale('major')">Major</button>
+  <div class="spacer"></div>
+  <span class="ctrl-label">Mode</span>
+  <button class="btn active" id="modeDiagram"   onclick="setMode('diagram')">Diagram</button>
+  <button class="btn"        id="modeFlashcard" onclick="setMode('flashcard')">Flashcard</button>
+</div>
+
+<div class="legend" id="legendEl"></div>
+
+<!-- DIAGRAM PANEL -->
+<div class="panel active" id="panel-diagram">
+  <p class="intro" id="diagramIntro"></p>
+  <div class="shapes-grid" id="shapesGrid"></div>
+</div>
+
+<!-- FLASHCARD PANEL -->
+<div class="panel" id="panel-flashcard">
+  <div class="fc-progress">
+    <span id="fcProgressLabel"></span>
+    <div class="fc-dots" id="fcDots"></div>
+    <span id="fcCounter"></span>
+  </div>
+  <div class="fc-card" id="fcCard" onclick="fcToggleReveal()">
+    <div class="fc-top">
+      <div class="fc-meta" id="fcMeta"></div>
+      <div class="fc-instruction" id="fcInstruction"></div>
+    </div>
+    <div class="fc-fretboard" id="fcFretboard"></div>
+    <div class="fc-tap-hint" id="fcTapHint">Tap to reveal</div>
+  </div>
+  <div class="fc-nav">
+    <button class="btn" onclick="event.stopPropagation();fcPrev()">← Prev</button>
+    <button class="btn" onclick="event.stopPropagation();fcNext()">Next →</button>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// SCALE & INTERVAL DATA
+// ─────────────────────────────────────────────────────────────────────────────
+
+const OPEN  = [0,5,10,15,19,24];
+const SNAME = ['E','A','D','G','B','e'];
+const ROOT_FRET = 3;
+
+const SEMI = {
+  minor: { 'R':0, 'b3':3, '4':5, '5':7, 'b7':10 },
+  major: { 'R':0, '2':2,  '3':4, '5':7,  '6':9  },
+};
+
+// Colour per interval degree
+const DEG_COLOR = {
+  'R':  '#c0392b',  // red
+  'b3': '#5a7ab0',  // blue
+  '4':  '#8a6030',  // brown
+  '5':  '#3a7a3a',  // green
+  'b7': '#7a3a7a',  // purple
+  '2':  '#5a8080',  // teal
+  '3':  '#3a7a3a',  // green (same as 5 is fine — distinguishable by label)
+  '6':  '#8a7030',  // gold
+};
+
+const DEG_NAMES = {
+  'R':'Root','b3':'Minor 3rd','4':'Perfect 4th','5':'Perfect 5th','b7':'Minor 7th',
+  '2':'Major 2nd','3':'Major 3rd','6':'Major 6th',
+};
+
+// Hardcoded standard box degree assignments (low E → high e)
+const BOX_DEGREES = {
+  minor: [
+    [['R','b3'],['4','5'],['b7','R'],['b3','4'],['5','b7'],['R','b3']],
+    [['b3','4'],['5','b7'],['R','b3'],['4','5'],['b7','R'],['b3','4']],
+    [['4','5'],['b7','R'],['b3','4'],['5','b7'],['R','b3'],['4','5']],
+    [['5','b7'],['R','b3'],['4','5'],['b7','R'],['b3','4'],['5','b7']],
+    [['b7','R'],['b3','4'],['5','b7'],['R','b3'],['4','5'],['b7','R']],
+  ],
+  major: [
+    [['R','2'],['3','5'],['6','R'],['2','3'],['5','6'],['R','2']],
+    [['2','3'],['5','6'],['R','2'],['3','5'],['6','R'],['2','3']],
+    [['3','5'],['6','R'],['2','3'],['5','6'],['R','2'],['3','5']],
+    [['5','6'],['R','2'],['3','5'],['6','R'],['2','3'],['5','6']],
+    [['6','R'],['2','3'],['5','6'],['R','2'],['3','5'],['6','R']],
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHAPE DEFINITIONS
+// Each two-string shape defined by:
+//   loDegs: [deg1, deg2] on lower string
+//   hiDegs: [deg1, deg2] on upper string
+//   loSpan: fret gap on lower string (1=half step, 2=whole step, 3=minor 3rd)
+//   hiSpan: fret gap on upper string
+//   offset: fret offset of upper string's first note relative to lower's first
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Verified directly from computed box data.
+// loOff/hiOff: offset of first note from shape minimum fret.
+// loSpan/hiSpan: fret distance between the two notes on that string.
+const SHAPES = {
+  minor: [
+    // key (0,3,0,2): lo=[R@0,b3@3]  hi=[4@0,5@2]
+    { id:'min-A', title:'Root–b3 / 4–5', subtitle:'4× on P4 pairs',
+      loDegs:['R','b3'], loOff:0, loSpan:3,
+      hiDegs:['4','5'],  hiOff:0, hiSpan:2,
+      occurrences:[{box:1,pair:'E–A'},{box:2,pair:'D–G'},{box:3,pair:'B–e'},{box:4,pair:'A–D'}],
+      description:'Root and b3 span 3 frets on the lower string. 4th and 5th start at the same fret as the root on the upper string, 2 frets apart.' },
+    // key (0,2,0,2): lo=[b7@0,R@2]  hi=[b3@0,4@2]
+    { id:'min-B', title:'b7–Root / b3–4', subtitle:'4× on P4 pairs',
+      loDegs:['b7','R'], loOff:0, loSpan:2,
+      hiDegs:['b3','4'], hiOff:0, hiSpan:2,
+      occurrences:[{box:1,pair:'D–G'},{box:2,pair:'B–e'},{box:3,pair:'A–D'},{box:5,pair:'E–A'}],
+      description:'Both strings span 2 frets, starting at the same fret. The most compact shape — two whole-step pairs stacked vertically.' },
+    // key (0,3,0,3): lo=[5@0,b7@3]  hi=[R@0,b3@3]
+    { id:'min-C', title:'5–b7 / Root–b3', subtitle:'4× on P4 pairs',
+      loDegs:['5','b7'], loOff:0, loSpan:3,
+      hiDegs:['R','b3'], hiOff:0, hiSpan:3,
+      occurrences:[{box:1,pair:'B–e'},{box:2,pair:'A–D'},{box:4,pair:'E–A'},{box:5,pair:'D–G'}],
+      description:'Both strings span 3 frets, starting at the same fret. Root on the upper string — the 5th below leads into it.' },
+    // key (1,3,0,3): lo=[b3@1,4@3]  hi=[5@0,b7@3]
+    { id:'min-D', title:'b3–4 / 5–b7', subtitle:'4× on P4 pairs',
+      loDegs:['b3','4'], loOff:1, loSpan:2,
+      hiDegs:['5','b7'], hiOff:0, hiSpan:3,
+      occurrences:[{box:2,pair:'E–A'},{box:3,pair:'D–G'},{box:4,pair:'B–e'},{box:5,pair:'A–D'}],
+      description:'The 5th is the lowest note. Lower string starts 1 fret in. No root in this shape — it sits between root positions.' },
+    // Box 1 G-B: key (0,2,0,3): lo=[b3@0,4@2]  hi=[5@0,b7@3]
+    { id:'min-GB1', title:'b3–4 / 5–b7  (G–B)', subtitle:'Box 1 G–B only',
+      loDegs:['b3','4'], loOff:0, loSpan:2,
+      hiDegs:['5','b7'], hiOff:0, hiSpan:3,
+      occurrences:[{box:1,pair:'G–B'}],
+      description:'G: b3–4 (2 frets). B: 5–b7 (3 frets), same start fret. B string spans wider due to the G→B tuning gap.' },
+    // Box 2+4 G-B: key (0,2,1,3): lo=[4@0,5@2]  hi=[b7@1,R@3]
+    { id:'min-GB24', title:'4–5 / b7–Root  (G–B)', subtitle:'Box 2 & 4 G–B',
+      loDegs:['4','5'], loOff:0, loSpan:2,
+      hiDegs:['b7','R'], hiOff:1, hiSpan:2,
+      occurrences:[{box:2,pair:'G–B'},{box:4,pair:'G–B'}],
+      description:'G: 4–5 (2 frets). B: b7–Root (2 frets), starting 1 fret higher. Root lands at the top of the B string.' },
+    // Box 3 G-B: key (0,3,1,4): lo=[5@0,b7@3]  hi=[R@1,b3@4]
+    { id:'min-GB3', title:'5–b7 / Root–b3  (G–B)', subtitle:'Box 3 G–B only',
+      loDegs:['5','b7'], loOff:0, loSpan:3,
+      hiDegs:['R','b3'], hiOff:1, hiSpan:3,
+      occurrences:[{box:3,pair:'G–B'}],
+      description:'G: 5–b7 (3 frets). B: Root–b3 (3 frets), starting 1 fret higher. Widest G–B shape — 4 frets total.' },
+    // Box 5 G-B: key (0,3,1,3): lo=[R@0,b3@3]  hi=[4@1,5@3]
+    { id:'min-GB5', title:'Root–b3 / 4–5  (G–B)', subtitle:'Box 5 G–B only',
+      loDegs:['R','b3'], loOff:0, loSpan:3,
+      hiDegs:['4','5'],  hiOff:1, hiSpan:2,
+      occurrences:[{box:5,pair:'G–B'}],
+      description:'G: Root–b3 (3 frets). B: 4–5 (2 frets), starting 1 fret higher than the root.' },
+  ],
+  major: [
+    // key (1,3,0,3): lo=[R@1,2@3]  hi=[3@0,5@3]
+    { id:'maj-A', title:'Root–2 / 3–5', subtitle:'4× on P4 pairs',
+      loDegs:['R','2'], loOff:1, loSpan:2,
+      hiDegs:['3','5'], hiOff:0, hiSpan:3,
+      occurrences:[{box:1,pair:'E–A'},{box:2,pair:'D–G'},{box:3,pair:'B–e'},{box:4,pair:'A–D'}],
+      description:'The 3rd sits 1 fret below the root on the upper string. Root and 2nd are on the lower string 2 frets apart. The 3rd — the defining major colour — flanks the root.' },
+    // key (0,2,0,2): lo=[5@0,6@2]  hi=[R@0,2@2]
+    { id:'maj-B', title:'5–6 / Root–2', subtitle:'4× on P4 pairs',
+      loDegs:['5','6'], loOff:0, loSpan:2,
+      hiDegs:['R','2'], hiOff:0, hiSpan:2,
+      occurrences:[{box:1,pair:'B–e'},{box:2,pair:'A–D'},{box:4,pair:'E–A'},{box:5,pair:'D–G'}],
+      description:'Both strings span 2 frets, starting at the same fret. Root on the upper string, 5th on the lower. Most compact major shape.' },
+    // key (0,3,0,2): lo=[6@0,R@3]  hi=[2@0,3@2]
+    { id:'maj-C', title:'6–Root / 2–3', subtitle:'4× on P4 pairs',
+      loDegs:['6','R'], loOff:0, loSpan:3,
+      hiDegs:['2','3'], hiOff:0, hiSpan:2,
+      occurrences:[{box:1,pair:'D–G'},{box:2,pair:'B–e'},{box:3,pair:'A–D'},{box:5,pair:'E–A'}],
+      description:'Root on the lower string, 3 frets above the 6th. 2nd and 3rd on the upper string start at the same fret as the 6th, spanning 2 frets.' },
+    // key (0,3,0,3): lo=[3@0,5@3]  hi=[6@0,R@3]
+    { id:'maj-D', title:'3–5 / 6–Root', subtitle:'4× on P4 pairs',
+      loDegs:['3','5'], loOff:0, loSpan:3,
+      hiDegs:['6','R'], hiOff:0, hiSpan:3,
+      occurrences:[{box:1,pair:'A–D'},{box:3,pair:'E–A'},{box:4,pair:'D–G'},{box:5,pair:'B–e'}],
+      description:'Both strings span 3 frets, starting at the same fret. Root on upper string, 3rd on lower. Widest and most symmetrical major shape.' },
+    // Box 1+3 G-B: key (0,2,1,3): lo=[2@0,3@2]  hi=[5@1,6@3]
+    { id:'maj-GB13', title:'2–3 / 5–6  (G–B)', subtitle:'Box 1 & 3 G–B',
+      loDegs:['2','3'], loOff:0, loSpan:2,
+      hiDegs:['5','6'], hiOff:1, hiSpan:2,
+      occurrences:[{box:1,pair:'G–B'},{box:3,pair:'G–B'}],
+      description:'G: 2–3 (2 frets). B: 5–6 (2 frets), starting 1 fret higher.' },
+    // Box 2 G-B: key (0,3,1,4): lo=[3@0,5@3]  hi=[6@1,R@4]
+    { id:'maj-GB2', title:'3–5 / 6–Root  (G–B)', subtitle:'Box 2 G–B only',
+      loDegs:['3','5'], loOff:0, loSpan:3,
+      hiDegs:['6','R'], hiOff:1, hiSpan:3,
+      occurrences:[{box:2,pair:'G–B'}],
+      description:'G: 3–5 (3 frets). B: 6–Root (3 frets), starting 1 fret higher. Root at the top — widest major G–B shape.' },
+    // Box 4 G-B: key (0,3,1,3): lo=[6@0,R@3]  hi=[2@1,3@3]
+    { id:'maj-GB4', title:'6–Root / 2–3  (G–B)', subtitle:'Box 4 G–B only',
+      loDegs:['6','R'], loOff:0, loSpan:3,
+      hiDegs:['2','3'], hiOff:1, hiSpan:2,
+      occurrences:[{box:4,pair:'G–B'}],
+      description:'G: 6–Root (3 frets). B: 2–3 (2 frets), starting 1 fret higher than the 6th.' },
+    // Box 5 G-B: key (0,2,0,3): lo=[R@0,2@2]  hi=[3@0,5@3]
+    { id:'maj-GB5', title:'Root–2 / 3–5  (G–B)', subtitle:'Box 5 G–B only',
+      loDegs:['R','2'], loOff:0, loSpan:2,
+      hiDegs:['3','5'], hiOff:0, hiSpan:3,
+      occurrences:[{box:5,pair:'G–B'}],
+      description:'G: Root–2 (2 frets). B: 3–5 (3 frets), starting at the same fret as the root.' },
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FRETBOARD RENDERING (mini two-string)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function renderMiniShape(shape, strLo, strHi, revealed) {
+  const loNotes = [
+    { rel: shape.loOff,                deg: shape.loDegs[0] },
+    { rel: shape.loOff + shape.loSpan, deg: shape.loDegs[1] },
+  ];
+  const hiNotes = [
+    { rel: shape.hiOff,                deg: shape.hiDegs[0] },
+    { rel: shape.hiOff + shape.hiSpan, deg: shape.hiDegs[1] },
+  ];
+  const maxRel = Math.max(...loNotes.map(n=>n.rel), ...hiNotes.map(n=>n.rel));
+  const W = maxRel + 2;
+
+  const renderRow = (sname, notes) => {
+    let h = `<div class="mini-row" data-s="${sname}"><div class="mini-name">${sname}</div><div class="mini-frets" style="--fw:${W}">`;
+    for (let f = 0; f < W; f++) {
+      h += `<div class="mini-fret">`;
+      const note = notes.find(n => n.rel === f);
+      if (note) {
+        if (note.deg === 'R' || revealed) {
+          h += `<div class="dot" style="background:${DEG_COLOR[note.deg]};color:#fff">${note.deg}</div>`;
+        } else {
+          h += `<div class="dot" style="background:var(--border);color:var(--muted)">?</div>`;
+        }
+      }
+      h += `</div>`;
+    }
+    return h + `</div></div>`;
+  };
+
+  let h = `<div class="mini-nums">`;
+  for (let f = 0; f < W; f++) h += `<div class="mini-num">${f}</div>`;
+  return h + `</div><div class="mini-fb">${renderRow(strHi, hiNotes)}${renderRow(strLo, loNotes)}</div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIAGRAM MODE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function renderDiagram() {
+  const shapes = SHAPES[scaleMode];
+  const cfg    = scaleMode === 'minor'
+    ? { degs: ['R','b3','4','5','b7'], title: 'minor pentatonic' }
+    : { degs: ['R','2','3','5','6'],   title: 'major pentatonic' };
+
+  document.getElementById('diagramIntro').innerHTML =
+    `The ${cfg.title} scale has ${cfg.degs.length} intervals.
+    On each adjacent string pair, exactly <strong>two notes appear on each string</strong> —
+    forming a recurring two-string shape.
+    There are only <strong>${shapes.length} distinct shapes</strong> across all 5 boxes.
+    Once you know these shapes, you can read any position instantly.`;
+
+  // Update legend
+  const legendEl = document.getElementById('legendEl');
+  legendEl.innerHTML = cfg.degs.map(d =>
+    `<div class="leg">
+      <div class="leg-dot" style="background:${DEG_COLOR[d]}">${d}</div>
+      ${DEG_NAMES[d]}
+    </div>`
+  ).join('');
+
+  const grid = document.getElementById('shapesGrid');
+  grid.innerHTML = shapes.map(shape => {
+    const loStr = shape.occurrences[0].pair.split('–')[0];
+    const hiStr = shape.occurrences[0].pair.split('–')[1];
+
+    const occRows = shape.occurrences.map(o =>
+      `<span class="occ-tag ${o.pair.includes('E') || ['R','b3','5'].some(d => shape.loDegs.includes(d) || shape.hiDegs.includes(d)) ? 'has-root' : ''}"
+       style="${shape.loDegs.includes('R') || shape.hiDegs.includes('R') ? 'border-color:var(--col-root);color:var(--col-root)' : ''}">
+       Box ${o.box} · ${o.pair}</span>`
+    ).join('');
+
+    return `<div class="shape-card">
+      <div class="shape-card-header">
+        <div class="shape-card-title">${shape.title}</div>
+        <div class="shape-card-sub">${shape.subtitle}</div>
+      </div>
+      <div class="shape-card-body">
+        ${renderMiniShape(shape, loStr, hiStr, true)}
+        <div class="occurrences">
+          <div class="occ-row">
+            <span class="occ-label">Appears in</span>
+            <div class="occ-tags">${occRows}</div>
+          </div>
+        </div>
+      </div>
+      <div class="shape-card-desc">${shape.description}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FLASHCARD MODE
+// ─────────────────────────────────────────────────────────────────────────────
+
+let fcIdx      = 0;
+let fcRevealed = false;
+
+function renderFlashcard() {
+  const shapes = SHAPES[scaleMode];
+  const shape  = shapes[fcIdx];
+  const loStr  = shape.occurrences[0].pair.split('–')[0];
+  const hiStr  = shape.occurrences[0].pair.split('–')[1];
+
+  document.getElementById('fcProgressLabel').textContent = `${fcIdx+1} / ${shapes.length}`;
+  document.getElementById('fcDots').innerHTML = shapes.map((_,i) =>
+    `<div class="fc-dot ${i < fcIdx ? 'done' : i === fcIdx ? 'cur' : ''}"></div>`
+  ).join('');
+
+  document.getElementById('fcMeta').textContent        = `Strings ${shape.occurrences[0].pair}`;
+  document.getElementById('fcInstruction').textContent = fcRevealed ? 'revealed' : 'name the intervals';
+  document.getElementById('fcFretboard').innerHTML     = renderMiniShape(shape, loStr, hiStr, fcRevealed);
+  document.getElementById('fcTapHint').textContent     = fcRevealed ? 'Tap to reset' : 'Tap to reveal';
+  document.getElementById('fcCard').classList.toggle('revealed', fcRevealed);
+}
+
+function fcToggleReveal() { fcRevealed = !fcRevealed; renderFlashcard(); }
+function fcNext() { fcIdx = (fcIdx+1) % SHAPES[scaleMode].length; fcRevealed=false; renderFlashcard(); }
+function fcPrev() { fcIdx = (fcIdx-1+SHAPES[scaleMode].length) % SHAPES[scaleMode].length; fcRevealed=false; renderFlashcard(); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+let scaleMode = 'minor';
+let viewMode  = 'diagram';
+
+function setScale(s) {
+  scaleMode = s;
+  fcIdx = 0;
+  document.getElementById('scMin').classList.toggle('active', s === 'minor');
+  document.getElementById('scMaj').classList.toggle('active', s === 'major');
+  if (viewMode === 'diagram') renderDiagram();
+  else renderFlashcard();
+}
+
+function setMode(m) {
+  viewMode = m;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${m}`).classList.add('active');
+  document.getElementById('modeDiagram').classList.toggle('active',   m === 'diagram');
+  document.getElementById('modeFlashcard').classList.toggle('active', m === 'flashcard');
+  if (m === 'diagram') renderDiagram();
+  else { fcIdx = 0; renderFlashcard(); }
+}
+
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('darkBtn').textContent = isDark ? '◑ Light' : '◐ Dark';
+  document.documentElement.style.background = isDark ? '#141210' : '#f5f0e8';
+}
+
+renderDiagram();
+</script>
+</body>
+</html>
