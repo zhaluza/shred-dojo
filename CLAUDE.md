@@ -155,6 +155,43 @@ Each shape card has a **"▼ Neck context"** toggle. When expanded, it renders a
 - **Scale** — Minor / Major toggle (clears expanded state on change)
 - **Show** — All notes / Triad only (hides non-triad scale tones in all fretboard views)
 
+## Interval Shapes feature
+
+The Interval Shapes page (`/interval-shapes`) teaches the recurring two-string interval shapes that appear within the 5 standard pentatonic box positions, rooted on G.
+
+### Files
+
+- `app/components/intervalShapes.utils.ts` — shape definitions, degree metadata
+- `app/components/IntervalShapes.tsx` — all component code
+- `app/routes/interval-shapes.tsx` — route wrapper
+
+### Data model
+
+- `SHAPES` — `Record<PentaScaleMode, IntervalShape[]>` with entries for `"minor"` and `"major"`. Each `IntervalShape` describes a two-string pattern:
+  - `loDegs` / `hiDegs` — `[PentaDegree, PentaDegree]` for the lower / upper string
+  - `loOff` / `hiOff` — fret offset of the first note from the shape's leftmost position
+  - `loSpan` / `hiSpan` — fret distance between the two notes on that string
+  - `occurrences` — list of `{ box, pair }` (e.g. `{ box: 1, pair: "E–A" }`)
+  - `description` — prose explanation shown in diagram cards and flashcard reveal
+- `DEG_COLOR` — color per `PentaDegree` (roots red, 3rds blue/green, etc.)
+- `DEG_NAMES` — readable name per degree
+- `SCALE_DEGREES` — ordered degree arrays per scale mode
+
+### Shapes breakdown
+
+- **Standard shapes** (P4-tuned pairs, id does not contain "GB") — 4 recurring shapes for minor, 4 for major, each appearing 4× across boxes
+- **G–B variants** (id contains "GB") — separate shapes for each box's G–B pair, where the minor-3rd tuning gap shifts the upper-string notes up by 1 fret
+
+### Modes
+
+- **Diagram** — grid of `ShapeCard` components showing all shapes at once, split into P4 and G–B sections. Dots are always revealed.
+- **Flashcard** — one shape at a time; dots for non-root degrees are hidden (`?`) until the user taps to reveal. Navigation cycles through all shapes for the selected scale. Description appears below the card when revealed.
+
+### Controls
+
+- **Scale** — Minor / Major (re-renders both panels; `FlashcardPanel` is keyed on `scale` to reset index)
+- **Mode** — Diagram / Flashcard
+
 ## Lick Stash feature
 
 The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of Guitar Pro tabs that users can view, play, and loop.
