@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router";
 import { PickIcon } from "./Logo";
 
 const NAV_LINKS = [
-  { to: "/scale-positions", label: "Scales" },
+  { to: "/scale-positions", label: "Scale Patterns" },
   { to: "/lick-stash", label: "Lick Stash" },
   { to: "/pentatonic-triads", label: "Triads" },
   { to: "/interval-shapes", label: "Intervals" },

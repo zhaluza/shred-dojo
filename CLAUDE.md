@@ -80,7 +80,7 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 
 The main component (`app/components/ScalePositions.tsx`) owns all state:
 
-- `scaleMode` / `noteFilter` / `selectedSystems` — filter controls
+- `scaleMode` / `noteFilter` / `selectedSystems` / `keyIdx` — filter controls
 - `selectedIdx` — which cell is highlighted in the grid (persists after modal closes)
 - `modalIdx` — which position is open in the modal (`null` = closed); set on cell click, cleared on modal close or scale change
 - `unifiedScaletones` — `Set<number>` of scaletones currently showing a unified (merged) fretboard view; cleared on system or scale change
@@ -92,6 +92,8 @@ The main component (`app/components/ScalePositions.tsx`) owns all state:
 **CAGED system** — defined in `scalePositions.utils.ts` as `CAGED_SHAPES`, an array of 5 shape definitions (E, D, C, A, G in neck order). Each shape specifies interval patterns per string for both major and minor. The `buildCagedPositions()` function generates `ScalePosition` objects with `system: "caged"` and a `shapeName` field. CAGED scaletone mapping differs between major and minor (derived from the first interval on the E string).
 
 **Cross-system fret alignment** — every `ScalePosition` has a `startFret: number` field equal to `rawMinFret % 12` (the absolute minimum fret before `toRelative()` normalization, mod 12). When two systems are paired in the grid, `gridItems` computes a `fretOffset` for each cell by comparing their `startFret` values: the position with the higher `startFret` gets `fretOffset = diff`, shifting its dots to the right so both fretboards show the same physical neck region. The offset is threaded as a prop through `PositionCell` → `Fretboard` → `StringRow`; `StringRow` uses `n.fret === f - fretOffset` for note lookup, and `Fretboard` expands `fretCount` by `fretOffset`. `ShapeModal` always uses `fretOffset=0` (single position, no alignment needed). For minor scale, CAGED shapes E, C, and G extend one fret lower than their paired 3nps/sym positions (offset=1); D and A are naturally aligned (offset=0). **CAGED fret-count matching** — when 3nps + CAGED are paired, `gridItems` also computes a `fretCount` override for each CAGED cell: `Math.max(naturalCAGED, natural3nps)`, ensuring both fretboards display the same number of frets. This is passed as an optional `fretCount` prop through `PositionCell` → `Fretboard`, where it overrides the locally-computed value.
+
+**Key selection** — a 12-key selector (E through Eb) shifts all fretboard fret numbers to reflect the real guitar neck position for the chosen key. `keyIdx` state is persisted to `localStorage` under `"shred-dojo-key"` (lazy initializer, same pattern as `"shred-dojo-dark"`). `keyOffset = (keyFret - ROOT_FRET + 12) % 12`. For each `PositionCell`, `displayStartFret = pos.startFret + keyOffset - fretOffset` (subtracting `fretOffset` keeps column 0 aligned when positions are shifted for comparison). For `UnifiedCell`, `displayStartFret = Math.min(posA.startFret, posB.startFret) + keyOffset`. Both `Fretboard` and `UnifiedFretboard` accept a `displayStartFret?: number` prop; when provided, fret numbers render as `f + displayStartFret` and fret inlay dot markers are drawn above the fret number row. `FRET_INLAYS` and `FRET_DOUBLE` sets are exported from `scalePositions.utils.ts` and shared with `ShapeExplorer.tsx`.
 
 **Fretboard size variants** — `Fretboard`, `StringRow`, and `Dot` accept a `large` boolean prop. When `large={true}`: string rows are `h-[42px]` (vs `29px`), dots are `w-7 h-7` (vs `w-5 h-5`), and text sizes scale up proportionally. Used by `ShapeModal` for the enlarged view.
 
@@ -196,7 +198,7 @@ The Interval Shapes page (`/interval-shapes`) teaches the recurring two-string i
 
 ## Shape Explorer feature
 
-The Shape Explorer (`/shape-explorer`) is a focused single-shape visualizer — optimized for studying one position at a time, with key selection so fret numbers reflect the actual guitar neck.
+The Shape Explorer (`/shape-explorer`) is a scale shape visualizer with two complementary views: **Focus** (one shape at a time, full-width fretboard) and **Overview** (all shapes in a compact grid). Key selection makes fret numbers reflect the actual guitar neck for any of 12 keys.
 
 ### Files
 
@@ -205,13 +207,16 @@ The Shape Explorer (`/shape-explorer`) is a focused single-shape visualizer — 
 
 ### What it does
 
-Unlike the Scale Positions page (which emphasizes side-by-side system comparison), Shape Explorer puts a single shape centre stage:
+Unlike the Scale Patterns page (which emphasizes side-by-side system comparison), Shape Explorer can show either one shape in depth or all shapes at a glance:
 
 - **Key selector** — 12 chromatic keys (E through Eb). Fret numbers on the fretboard shift to show the real neck position for the chosen key.
 - **System** — 3nps (7 positions), CAGED (5 shapes), or Penta (5 pentatonic boxes built from `buildBox()` in `pentatonicTriads.utils.ts`).
 - **Scale** — Minor / Major.
 - **Show filter** — All / Penta / Chord (hidden when System = Penta, which is implicitly penta-only).
-- **Shape navigator** — Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
+- **View** — Focus (single shape with navigator/pills/notes panel) or Overview (compact grid of all shapes). Switching system always resets to Focus. Clicking a cell in Overview jumps to Focus for that shape.
+- **Shape navigator** — (Focus mode only) Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
+
+**Overview grid** — rendered by `OverviewGrid` sub-component. Uses CSS grid `auto-fill minmax(220px, 1fr)`. Each cell shows a compact fretboard (`compact` prop on `ExplorerFretboard`, `StringRow`, and `Dot`) with correct `displayStartFret` for the selected key. The currently selected shape gets `border-[var(--text)]`. Compact sizing: dots `w-4 h-4` (vs `w-8 h-8`), string rows `h-[28px]` (vs `h-[50px]`).
 
 ### Key transposition
 
@@ -240,7 +245,7 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
 - **Home link**: the logo links to `/?preview=true` to bypass the Coming Soon gate.
 - **Active link detection**: uses `useLocation()`. `/lick-stash` matches both the listing page and individual pack sub-pages (`/lick-stash/:packSlug`); all other links match exactly on `pathname`.
 - **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle. Pages that didn't already do this (PentatonicTriads, IntervalShapes) had persistence added when Nav was introduced.
-- **Nav links** (in order): Scales → `/scale-positions`, Lick Stash → `/lick-stash`, Triads → `/pentatonic-triads`, Intervals → `/interval-shapes`, Shape Explorer → `/shape-explorer`, Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`.
+- **Nav links** (in order): Scale Patterns → `/scale-positions`, Lick Stash → `/lick-stash`, Triads → `/pentatonic-triads`, Intervals → `/interval-shapes`, Shape Explorer → `/shape-explorer`, Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`.
 
 ## Chord Voicings feature
 

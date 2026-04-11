@@ -33,7 +33,7 @@ export const SCALES: Record<ScaleMode, ScaleConfig> = {
     penta: new Set<Degree>(["R", "2", "3", "5", "6"]),
     chordTones: new Set<Degree>(["R", "3", "5"]),
     diaLabel: "Diatonic only (4, 7)",
-    title: "Natural Major",
+    title: "Major",
   },
 };
 
