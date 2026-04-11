@@ -18,11 +18,20 @@ import type {
 import {
   buildAllPositions,
   buildCagedPositions,
+  FRET_DOUBLE,
+  FRET_INLAYS,
   mergePositions,
+  ROOT_FRET,
   SCALES,
 } from "./scalePositions.utils";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"] as const;
+
+const NOTE_NAMES = [
+  "E", "F", "F#", "G", "Ab", "A", "Bb", "B", "C", "Db", "D", "Eb",
+] as const;
+
+const KEYS = NOTE_NAMES.map((name, fret) => ({ name, fret }));
 
 const MODES: Record<ScaleMode, string[]> = {
   major: ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"],
@@ -232,6 +241,7 @@ function Fretboard({
   large = false,
   fretOffset = 0,
   fretCount: fretCountProp,
+  displayStartFret,
 }: {
   strings: ScaleString[];
   noteFilter: NoteFilter;
@@ -239,24 +249,45 @@ function Fretboard({
   large?: boolean;
   fretOffset?: number;
   fretCount?: number;
+  displayStartFret?: number;
 }) {
   const maxFret = Math.max(
     ...strings.flatMap((s) => s.notes.map((n) => n.fret)),
   );
   const fretCount = fretCountProp ?? maxFret + 2 + fretOffset;
+  const pl = large ? "pl-[2.4rem]" : "pl-[1.9rem]";
 
   return (
     <div className="w-full">
+      {/* Fret inlay markers — only when key is selected */}
+      {displayStartFret !== undefined && (
+        <div className={`flex ${pl} h-[14px] mb-[0.1rem]`}>
+          {Array.from({ length: fretCount }, (_, f) => {
+            const abs = f + displayStartFret;
+            return (
+              <div key={f} className="flex-1 flex items-center justify-center flex-col gap-[3px]">
+                {FRET_DOUBLE.has(abs) ? (
+                  <>
+                    <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                    <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                  </>
+                ) : FRET_INLAYS.has(abs) ? (
+                  <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Fret numbers */}
-      <div
-        className={`flex ${large ? "pl-[2.4rem]" : "pl-[1.9rem]"} mb-[0.15rem]`}
-      >
+      <div className={`flex ${pl} mb-[0.15rem]`}>
         {Array.from({ length: fretCount }, (_, f) => (
           <div
             key={f}
             className={`flex-1 text-center ${large ? "text-[0.6rem]" : "text-[0.45rem]"} text-[var(--faint)]`}
           >
-            {f}
+            {displayStartFret !== undefined ? f + displayStartFret : f}
           </div>
         ))}
       </div>
@@ -409,11 +440,13 @@ function UnifiedFretboard({
   noteFilter,
   chordTones,
   orderedSystems,
+  displayStartFret,
 }: {
   strings: UnifiedString[];
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   orderedSystems: [System, System];
+  displayStartFret?: number;
 }) {
   const maxFret = Math.max(
     ...strings.flatMap((s) => s.notes.map((n) => n.fret)),
@@ -422,13 +455,34 @@ function UnifiedFretboard({
 
   return (
     <div className="w-full">
+      {/* Fret inlay markers — only when key is selected */}
+      {displayStartFret !== undefined && (
+        <div className="flex pl-[1.9rem] h-[14px] mb-[0.1rem]">
+          {Array.from({ length: fretCount }, (_, f) => {
+            const abs = f + displayStartFret;
+            return (
+              <div key={f} className="flex-1 flex items-center justify-center flex-col gap-[3px]">
+                {FRET_DOUBLE.has(abs) ? (
+                  <>
+                    <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                    <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                  </>
+                ) : FRET_INLAYS.has(abs) ? (
+                  <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex pl-[1.9rem] mb-[0.15rem]">
         {Array.from({ length: fretCount }, (_, f) => (
           <div
             key={f}
             className="flex-1 text-center text-[0.45rem] text-[var(--faint)]"
           >
-            {f}
+            {displayStartFret !== undefined ? f + displayStartFret : f}
           </div>
         ))}
       </div>
@@ -458,6 +512,7 @@ function UnifiedCell({
   orderedSystems,
   showModes,
   scaleMode,
+  keyOffset,
 }: {
   posA: ScalePosition;
   posB: ScalePosition;
@@ -468,6 +523,7 @@ function UnifiedCell({
   orderedSystems: [System, System];
   showModes?: boolean;
   scaleMode?: ScaleMode;
+  keyOffset?: number;
 }) {
   const mergedStrings = useMemo(
     () => mergePositions(posA, posB, fretOffsetA, fretOffsetB),
@@ -550,6 +606,11 @@ function UnifiedCell({
           noteFilter={noteFilter}
           chordTones={chordTones}
           orderedSystems={orderedSystems}
+          displayStartFret={
+            keyOffset !== undefined
+              ? Math.min(posA.startFret, posB.startFret) + keyOffset
+              : undefined
+          }
         />
       </div>
     </div>
@@ -581,6 +642,7 @@ function PositionCell({
   fretCount,
   showModes = false,
   scaleMode = "major",
+  displayStartFret,
 }: {
   pos: ScalePosition;
   isSelected: boolean;
@@ -591,6 +653,7 @@ function PositionCell({
   fretCount?: number;
   showModes?: boolean;
   scaleMode?: ScaleMode;
+  displayStartFret?: number;
 }) {
   const sysColor = `var(--sys-${pos.system})`;
   const [minFret, maxFret] = fretRange(pos.strings, fretOffset);
@@ -662,6 +725,7 @@ function PositionCell({
           chordTones={chordTones}
           fretOffset={fretOffset}
           fretCount={fretCount}
+          displayStartFret={displayStartFret}
         />
       </div>
     </div>
@@ -901,6 +965,12 @@ function toggleSystem(current: System[], clicked: System): System[] {
 
 export function ScalePositions() {
   const [isDark, setIsDark] = useState(false);
+  const [keyIdx, setKeyIdx] = useState(() => {
+    if (typeof window === "undefined") return 3; // SSR: default G
+    const s = localStorage.getItem("shred-dojo-key");
+    const n = s !== null ? Number(s) : NaN;
+    return Number.isInteger(n) && n >= 0 && n < 12 ? n : 3;
+  });
   const [scaleMode, setScaleMode] = useState<ScaleMode>("major");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
   const [selectedSystems, setSelectedSystems] = useState<System[]>(() =>
@@ -934,6 +1004,14 @@ export function ScalePositions() {
 
   const cfg = SCALES[scaleMode];
   const chordTones = cfg.chordTones;
+
+  const selectedKey = KEYS[keyIdx];
+  const keyOffset = (selectedKey.fret - ROOT_FRET + 12) % 12;
+
+  function handleKeyChange(idx: number) {
+    setKeyIdx(idx);
+    localStorage.setItem("shred-dojo-key", String(idx));
+  }
 
   // Build all positions (3nps + sym + caged)
   const allPositions = useMemo(() => {
@@ -1080,9 +1158,9 @@ export function ScalePositions() {
       {/* Header */}
       <header className="max-w-[980px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
         <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none">
-          {scaleMode === "minor" ? "Natural " : ""}
+          {selectedKey.name}{" "}
           <em className="text-[var(--accent)] not-italic">
-            {scaleMode === "minor" ? "Minor" : "Major"}
+            {cfg.title}
           </em>
           <br />
           Scale Positions
@@ -1163,6 +1241,22 @@ export function ScalePositions() {
         })}
       </div>
 
+      {/* Key selector row */}
+      <div className="max-w-[980px] mx-auto flex gap-2 flex-wrap items-center border-b border-[var(--border)] pb-5 mb-6">
+        <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
+          Key
+        </span>
+        {KEYS.map((key, i) => (
+          <ControlButton
+            key={key.name}
+            label={key.name}
+            active={keyIdx === i}
+            onClick={() => handleKeyChange(i)}
+            small
+          />
+        ))}
+      </div>
+
       {/* Legend */}
       <Legend diaLabel={cfg.diaLabel} />
 
@@ -1207,6 +1301,7 @@ export function ScalePositions() {
                   orderedSystems={orderedSystems as [System, System]}
                   showModes={showModes}
                   scaleMode={scaleMode}
+                  keyOffset={keyOffset}
                 />
               </Fragment>
             );
@@ -1242,6 +1337,7 @@ export function ScalePositions() {
               fretCount={fretCount}
               showModes={showModes}
               scaleMode={scaleMode}
+              displayStartFret={pos.startFret + keyOffset - fretOffset}
             />
           );
           return (

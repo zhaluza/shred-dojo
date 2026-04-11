@@ -13,6 +13,8 @@ import type {
 import {
   buildAllPositions,
   buildCagedPositions,
+  FRET_DOUBLE,
+  FRET_INLAYS,
   ROOT_FRET,
   SCALES,
   SNAME,
@@ -39,8 +41,6 @@ const MODE_NAMES: Record<ScaleMode, string[]> = {
 
 const DEGREE_ORDER: Degree[] = ["R", "2", "b3", "3", "4", "5", "b6", "6", "b7", "7"];
 
-const FRET_INLAYS = new Set([3, 5, 7, 9, 12, 15, 17, 19, 21, 24]);
-const FRET_DOUBLE = new Set([12, 24]);
 
 type ExplorerSystem = "3nps" | "caged" | "penta";
 
@@ -87,7 +87,7 @@ function boxNotesToScaleStrings(boxNotes: BoxNote[]): { strings: ScaleString[]; 
 
 // ─── Dot ──────────────────────────────────────────────────────────────────────
 
-function Dot({ note, visible }: { note: ScaleNote; visible: boolean }) {
+function Dot({ note, visible, compact = false }: { note: ScaleNote; visible: boolean; compact?: boolean }) {
   let bg: string, fg: string, border: string | undefined;
   if (note.deg === "R") {
     bg = "var(--root-col)"; fg = "#fff";
@@ -100,7 +100,8 @@ function Dot({ note, visible }: { note: ScaleNote; visible: boolean }) {
   return (
     <div
       className={[
-        "w-8 h-8 text-[0.62rem] rounded-full flex items-center justify-center",
+        compact ? "w-4 h-4 text-[0.38rem]" : "w-8 h-8 text-[0.62rem]",
+        "rounded-full flex items-center justify-center",
         "relative z-[2] font-display font-semibold tracking-tight",
         "transition-[opacity,transform] duration-[150ms]",
         visible ? "" : "opacity-0 scale-[0.1] pointer-events-none",
@@ -121,13 +122,17 @@ function StringRow({
   fretCount,
   noteFilter,
   chordTones,
+  compact = false,
 }: {
   str: ScaleString;
   fretCount: number;
   noteFilter: NoteFilter;
   chordTones: Set<string>;
+  compact?: boolean;
 }) {
   const line = STRING_LINE[str.name];
+  const rowH = compact ? "h-[28px]" : "h-[50px]";
+  const labelW = compact ? "w-[1.6rem] text-[0.45rem]" : "w-[2.4rem] text-[0.55rem]";
 
   function isVisible(note: ScaleNote): boolean {
     if (noteFilter === "all") return true;
@@ -137,8 +142,8 @@ function StringRow({
   }
 
   return (
-    <div className="flex items-center h-[50px]">
-      <div className="w-[2.4rem] text-[0.55rem] text-right pr-[0.5rem] shrink-0 text-[var(--muted)] font-display tracking-[0.08em] uppercase">
+    <div className={`flex items-center ${rowH}`}>
+      <div className={`${labelW} text-right pr-[0.5rem] shrink-0 text-[var(--muted)] font-display tracking-[0.08em] uppercase`}>
         {str.name}
       </div>
 
@@ -163,9 +168,9 @@ function StringRow({
           return (
             <div
               key={f}
-              className="flex-1 h-[50px] flex items-center justify-center relative z-[1]"
+              className={`flex-1 ${rowH} flex items-center justify-center relative z-[1]`}
             >
-              {note && <Dot note={note} visible={isVisible(note)} />}
+              {note && <Dot note={note} visible={isVisible(note)} compact={compact} />}
             </div>
           );
         })}
@@ -181,19 +186,23 @@ function ExplorerFretboard({
   noteFilter,
   chordTones,
   displayStartFret,
+  compact = false,
 }: {
   strings: ScaleString[];
   noteFilter: NoteFilter;
   chordTones: Set<string>;
   displayStartFret: number;
+  compact?: boolean;
 }) {
   const maxRelFret = Math.max(...strings.flatMap((s) => s.notes.map((n) => n.fret)));
   const fretCount = maxRelFret + 3;
 
+  const inlayDot = compact ? "w-[3px] h-[3px]" : "w-[5px] h-[5px]";
+
   return (
     <div className="w-full select-none">
       {/* Fret inlay markers */}
-      <div className="flex pl-[2.4rem] h-[16px] mb-1">
+      <div className={`flex ${compact ? "pl-[1.6rem] h-[10px]" : "pl-[2.4rem] h-[16px]"} mb-1`}>
         {Array.from({ length: fretCount }, (_, f) => {
           const abs = f + displayStartFret;
           const isDouble = FRET_DOUBLE.has(abs);
@@ -205,20 +214,11 @@ function ExplorerFretboard({
             >
               {isDouble ? (
                 <>
-                  <div
-                    className="w-[5px] h-[5px] rounded-full"
-                    style={{ backgroundColor: "var(--faint)" }}
-                  />
-                  <div
-                    className="w-[5px] h-[5px] rounded-full"
-                    style={{ backgroundColor: "var(--faint)" }}
-                  />
+                  <div className={`${inlayDot} rounded-full`} style={{ backgroundColor: "var(--faint)" }} />
+                  <div className={`${inlayDot} rounded-full`} style={{ backgroundColor: "var(--faint)" }} />
                 </>
               ) : hasInlay ? (
-                <div
-                  className="w-[5px] h-[5px] rounded-full"
-                  style={{ backgroundColor: "var(--faint)" }}
-                />
+                <div className={`${inlayDot} rounded-full`} style={{ backgroundColor: "var(--faint)" }} />
               ) : null}
             </div>
           );
@@ -226,11 +226,11 @@ function ExplorerFretboard({
       </div>
 
       {/* Fret numbers — actual guitar frets for selected key */}
-      <div className="flex pl-[2.4rem] mb-[0.2rem]">
+      <div className={`flex ${compact ? "pl-[1.6rem]" : "pl-[2.4rem]"} mb-[0.2rem]`}>
         {Array.from({ length: fretCount }, (_, f) => (
           <div
             key={f}
-            className="flex-1 text-center text-[0.5rem] text-[var(--faint)] font-mono"
+            className={`flex-1 text-center ${compact ? "text-[0.38rem]" : "text-[0.5rem]"} text-[var(--faint)] font-mono`}
           >
             {f + displayStartFret}
           </div>
@@ -245,6 +245,7 @@ function ExplorerFretboard({
           fretCount={fretCount}
           noteFilter={noteFilter}
           chordTones={chordTones}
+          compact={compact}
         />
       ))}
     </div>
@@ -287,12 +288,73 @@ function ControlBtn({
   );
 }
 
+// ─── OverviewGrid ─────────────────────────────────────────────────────────────
+
+function OverviewGrid({
+  shapes,
+  selectedIdx,
+  keyOffset,
+  effectiveFilter,
+  chordTones,
+  onSelect,
+}: {
+  shapes: ShapeData[];
+  selectedIdx: number;
+  keyOffset: number;
+  effectiveFilter: NoteFilter;
+  chordTones: Set<string>;
+  onSelect: (idx: number) => void;
+}) {
+  return (
+    <div
+      className="grid gap-3"
+      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
+    >
+      {shapes.map((shape, i) => {
+        const displayStartFret = shape.startFret + keyOffset;
+        const isActive = i === selectedIdx;
+        return (
+          <div
+            key={i}
+            onClick={() => onSelect(i)}
+            className={[
+              "border cursor-pointer transition-colors duration-100 p-3",
+              isActive
+                ? "border-[var(--text)] bg-[var(--surface)]"
+                : "border-[var(--border)] hover:bg-[var(--surface)] hover:border-[var(--text)]",
+            ].join(" ")}
+          >
+            <div className="mb-2">
+              <p className="font-display text-[0.68rem] tracking-[0.1em] uppercase text-[var(--text)] leading-tight">
+                {shape.label}
+              </p>
+              {shape.subLabel && (
+                <p className="text-[0.42rem] tracking-[0.12em] uppercase text-[var(--muted)] mt-[0.1rem]">
+                  {shape.subLabel}
+                </p>
+              )}
+            </div>
+            <ExplorerFretboard
+              strings={shape.strings}
+              noteFilter={effectiveFilter}
+              chordTones={chordTones}
+              displayStartFret={displayStartFret}
+              compact
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── ShapeExplorer ────────────────────────────────────────────────────────────
 
 export function ShapeExplorer() {
   const [scaleMode, setScaleMode] = useState<ScaleMode>("minor");
   const [system, setSystem] = useState<ExplorerSystem>("3nps");
   const [shapeIdx, setShapeIdx] = useState(0);
+  const [viewMode, setViewMode] = useState<"focus" | "overview">("focus");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
   const [keyIdx, setKeyIdx] = useState(3); // Default: G (fret 3)
   const [isDark, setIsDark] = useState(false);
@@ -381,6 +443,7 @@ export function ShapeExplorer() {
   function changeSystem(sys: ExplorerSystem) {
     setSystem(sys);
     setShapeIdx(0);
+    setViewMode("focus");
   }
 
   function changeMode(mode: ScaleMode) {
@@ -494,6 +557,27 @@ export function ShapeExplorer() {
               </div>
             </div>
           )}
+
+          {/* View mode */}
+          <div className="flex flex-col gap-[0.4rem]">
+            <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
+              View
+            </p>
+            <div className="flex gap-1">
+              <ControlBtn
+                label="Focus"
+                active={viewMode === "focus"}
+                onClick={() => setViewMode("focus")}
+                small
+              />
+              <ControlBtn
+                label="Overview"
+                active={viewMode === "overview"}
+                onClick={() => setViewMode("overview")}
+                small
+              />
+            </div>
+          </div>
         </div>
 
         {/* Key selector */}
@@ -517,6 +601,20 @@ export function ShapeExplorer() {
 
       {/* ── Main content ── */}
       <main className="flex-1 max-w-[1000px] mx-auto w-full px-6 pb-12">
+        {viewMode === "overview" ? (
+          <OverviewGrid
+            shapes={shapes}
+            selectedIdx={safeIdx}
+            keyOffset={keyOffset}
+            effectiveFilter={effectiveFilter}
+            chordTones={cfg.chordTones}
+            onSelect={(idx) => {
+              setShapeIdx(idx);
+              setViewMode("focus");
+            }}
+          />
+        ) : (
+        <>
         {/* Shape navigator header */}
         <div className="flex items-center gap-3 mb-3">
           <button
@@ -672,6 +770,8 @@ export function ShapeExplorer() {
             })}
           </div>
         </div>
+        </>
+        )}
       </main>
 
       {/* ── Footer ── */}

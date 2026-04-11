@@ -15,6 +15,9 @@ export const OPEN: number[] = [0, 5, 10, 15, 19, 24];
 export const SNAME: StringName[] = ["E", "A", "D", "G", "B", "e"];
 export const ROOT_FRET = 3;
 
+export const FRET_INLAYS = new Set([3, 5, 7, 9, 12, 15, 17, 19, 21, 24]);
+export const FRET_DOUBLE = new Set([12, 24]);
+
 export const SCALES: Record<ScaleMode, ScaleConfig> = {
   minor: {
     scale: ["R", "2", "b3", "4", "5", "6", "b7"],
