@@ -52,6 +52,7 @@ function ControlButton({
   small,
   disabled,
   title,
+  normalCase,
 }: {
   label: string;
   active: boolean;
@@ -59,6 +60,7 @@ function ControlButton({
   small?: boolean;
   disabled?: boolean;
   title?: string;
+  normalCase?: boolean;
 }) {
   return (
     <button
@@ -70,7 +72,7 @@ function ControlButton({
         small
           ? "text-[0.65rem] px-[0.7rem] py-[0.3rem] tracking-[0.1em]"
           : "text-[0.75rem] px-[0.85rem] py-[0.35rem] tracking-[0.08em]",
-        "uppercase",
+        normalCase ? "" : "uppercase",
         disabled
           ? "bg-transparent text-[var(--muted)] border-[var(--border)] opacity-40 cursor-not-allowed"
           : active
@@ -1158,7 +1160,7 @@ export function ScalePositions() {
       {/* Header */}
       <header className="max-w-[980px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
         <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none">
-          {selectedKey.name}{" "}
+          <span className="normal-case">{selectedKey.name}</span>{" "}
           <em className="text-[var(--accent)] not-italic">
             {cfg.title}
           </em>
@@ -1253,6 +1255,7 @@ export function ScalePositions() {
             active={keyIdx === i}
             onClick={() => handleKeyChange(i)}
             small
+            normalCase
           />
         ))}
       </div>

@@ -41,8 +41,8 @@ const MODE_NAMES: Record<ScaleMode, string[]> = {
 
 const DEGREE_ORDER: Degree[] = ["R", "2", "b3", "3", "4", "5", "b6", "6", "b7", "7"];
 
-
 type ExplorerSystem = "3nps" | "caged" | "penta";
+type ViewMode = "focus" | "overview" | "pair";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +51,18 @@ interface ShapeData {
   startFret: number; // raw min fret % 12, for key-offset calculation
   label: string;
   subLabel?: string;
+}
+
+interface CombinedNote {
+  fret: number;
+  deg: Degree;
+  penta: boolean;
+  which: "a" | "b" | "both";
+}
+
+interface CombinedString {
+  name: StringName;
+  notes: CombinedNote[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,6 +97,60 @@ function boxNotesToScaleStrings(boxNotes: BoxNote[]): { strings: ScaleString[]; 
   };
 }
 
+function buildCombinedStrings(
+  shapeA: ShapeData,
+  shapeB: ShapeData,
+  dsfA: number,
+  dsfB: number,
+): { strings: CombinedString[]; displayStartFret: number; fretCount: number } {
+  // Map "stringName:absFret" -> note info for each shape
+  const mapA = new Map<string, { deg: Degree; penta: boolean }>();
+  for (const str of shapeA.strings) {
+    for (const n of str.notes) {
+      mapA.set(`${str.name}:${n.fret + dsfA}`, { deg: n.deg, penta: n.penta ?? false });
+    }
+  }
+  const mapB = new Map<string, { deg: Degree; penta: boolean }>();
+  for (const str of shapeB.strings) {
+    for (const n of str.notes) {
+      mapB.set(`${str.name}:${n.fret + dsfB}`, { deg: n.deg, penta: n.penta ?? false });
+    }
+  }
+
+  const allKeys = new Set([...mapA.keys(), ...mapB.keys()]);
+  let minFret = Infinity, maxFret = -Infinity;
+  for (const key of allKeys) {
+    const f = parseInt(key.slice(key.indexOf(":") + 1));
+    if (f < minFret) minFret = f;
+    if (f > maxFret) maxFret = f;
+  }
+  if (!isFinite(minFret)) { minFret = 0; maxFret = 4; }
+
+  const strings: CombinedString[] = SNAME.map((name) => {
+    const fretNotes = new Map<number, CombinedNote>();
+    for (const key of allKeys) {
+      const colon = key.indexOf(":");
+      if (key.slice(0, colon) !== name) continue;
+      const absFret = parseInt(key.slice(colon + 1));
+      const inA = mapA.has(key);
+      const inB = mapB.has(key);
+      const note = mapA.get(key) ?? mapB.get(key)!;
+      fretNotes.set(absFret, {
+        fret: absFret - minFret,
+        deg: note.deg,
+        penta: note.penta,
+        which: inA && inB ? "both" : inA ? "a" : "b",
+      });
+    }
+    return {
+      name,
+      notes: [...fretNotes.values()].sort((a, b) => a.fret - b.fret),
+    };
+  });
+
+  return { strings, displayStartFret: minFret, fretCount: maxFret - minFret + 3 };
+}
+
 // ─── Dot ──────────────────────────────────────────────────────────────────────
 
 function Dot({ note, visible, compact = false }: { note: ScaleNote; visible: boolean; compact?: boolean }) {
@@ -109,6 +175,56 @@ function Dot({ note, visible, compact = false }: { note: ScaleNote; visible: boo
         .filter(Boolean)
         .join(" ")}
       style={{ backgroundColor: bg, color: fg, border }}
+    >
+      {note.deg}
+    </div>
+  );
+}
+
+// ─── CombinedDot ──────────────────────────────────────────────────────────────
+
+function CombinedDot({ note, visible }: { note: CombinedNote; visible: boolean }) {
+  let bg: string, fg: string, border: string | undefined, boxShadow: string | undefined;
+
+  if (note.deg === "R") {
+    bg = "var(--root-col)";
+    fg = "#fff";
+    // Shape B root or shared root gets a blue ring to indicate presence in B
+    if (note.which === "b" || note.which === "both") {
+      boxShadow = "0 0 0 2px var(--surface), 0 0 0 3.5px var(--fifth-col)";
+    }
+  } else if (note.which === "b") {
+    bg = "var(--fifth-col)";
+    fg = "#fff";
+  } else if (note.which === "both") {
+    // A styling with blue ring to show it's also in B
+    if (note.penta) {
+      bg = "var(--text)"; fg = "var(--bg)";
+    } else {
+      bg = "var(--bg)"; fg = "var(--text)"; border = "1.5px solid var(--text)";
+    }
+    boxShadow = "0 0 0 2px var(--surface), 0 0 0 3.5px var(--fifth-col)";
+  } else {
+    // which === "a" — standard appearance
+    if (note.penta) {
+      bg = "var(--text)"; fg = "var(--bg)";
+    } else {
+      bg = "var(--bg)"; fg = "var(--text)"; border = "1.5px solid var(--text)";
+    }
+  }
+
+  return (
+    <div
+      className={[
+        "w-8 h-8 text-[0.62rem]",
+        "rounded-full flex items-center justify-center",
+        "relative z-[2] font-display font-semibold tracking-tight",
+        "transition-[opacity,transform] duration-[150ms]",
+        visible ? "" : "opacity-0 scale-[0.1] pointer-events-none",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={{ backgroundColor: bg, color: fg, border, boxShadow }}
     >
       {note.deg}
     </div>
@@ -171,6 +287,65 @@ function StringRow({
               className={`flex-1 ${rowH} flex items-center justify-center relative z-[1]`}
             >
               {note && <Dot note={note} visible={isVisible(note)} compact={compact} />}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── CombinedStringRow ────────────────────────────────────────────────────────
+
+function CombinedStringRow({
+  str,
+  fretCount,
+  noteFilter,
+  chordTones,
+}: {
+  str: CombinedString;
+  fretCount: number;
+  noteFilter: NoteFilter;
+  chordTones: Set<string>;
+}) {
+  const line = STRING_LINE[str.name];
+
+  function isVisible(note: CombinedNote): boolean {
+    if (noteFilter === "all") return true;
+    if (noteFilter === "penta") return note.deg === "R" || note.penta;
+    if (noteFilter === "chord") return chordTones.has(note.deg);
+    return true;
+  }
+
+  return (
+    <div className="flex items-center h-[50px]">
+      <div className="w-[2.4rem] text-[0.55rem] text-right pr-[0.5rem] shrink-0 text-[var(--muted)] font-display tracking-[0.08em] uppercase">
+        {str.name}
+      </div>
+      <div
+        className="flex-1 flex relative items-center h-full"
+        style={{
+          backgroundImage: `repeating-linear-gradient(
+            to right,
+            transparent 0%,
+            transparent calc(100% / ${fretCount} - 1px),
+            var(--fret-bar) calc(100% / ${fretCount} - 1px),
+            var(--fret-bar) calc(100% / ${fretCount})
+          )`,
+        }}
+      >
+        <div
+          className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none"
+          style={{ height: line.height, backgroundColor: line.colorVar }}
+        />
+        {Array.from({ length: fretCount }, (_, f) => {
+          const note = str.notes.find((n) => n.fret === f);
+          return (
+            <div
+              key={f}
+              className="flex-1 h-[50px] flex items-center justify-center relative z-[1]"
+            >
+              {note && <CombinedDot note={note} visible={isVisible(note)} />}
             </div>
           );
         })}
@@ -252,6 +427,67 @@ function ExplorerFretboard({
   );
 }
 
+// ─── CombinedFretboard ────────────────────────────────────────────────────────
+
+function CombinedFretboard({
+  strings,
+  fretCount,
+  noteFilter,
+  chordTones,
+  displayStartFret,
+}: {
+  strings: CombinedString[];
+  fretCount: number;
+  noteFilter: NoteFilter;
+  chordTones: Set<string>;
+  displayStartFret: number;
+}) {
+  return (
+    <div className="w-full select-none">
+      {/* Fret inlay markers */}
+      <div className="flex pl-[2.4rem] h-[16px] mb-1">
+        {Array.from({ length: fretCount }, (_, f) => {
+          const abs = f + displayStartFret;
+          const isDouble = FRET_DOUBLE.has(abs);
+          const hasInlay = FRET_INLAYS.has(abs);
+          return (
+            <div key={f} className="flex-1 flex items-center justify-center flex-col gap-[3px]">
+              {isDouble ? (
+                <>
+                  <div className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                  <div className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+                </>
+              ) : hasInlay ? (
+                <div className="w-[5px] h-[5px] rounded-full" style={{ backgroundColor: "var(--faint)" }} />
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Fret numbers */}
+      <div className="flex pl-[2.4rem] mb-[0.2rem]">
+        {Array.from({ length: fretCount }, (_, f) => (
+          <div key={f} className="flex-1 text-center text-[0.5rem] text-[var(--faint)] font-mono">
+            {f + displayStartFret}
+          </div>
+        ))}
+      </div>
+
+      {/* Strings — high e at top */}
+      {[...strings].reverse().map((str) => (
+        <CombinedStringRow
+          key={str.name}
+          str={str}
+          fretCount={fretCount}
+          noteFilter={noteFilter}
+          chordTones={chordTones}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── ControlBtn ───────────────────────────────────────────────────────────────
 
 function ControlBtn({
@@ -260,19 +496,22 @@ function ControlBtn({
   onClick,
   small,
   disabled,
+  normalCase,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
   small?: boolean;
   disabled?: boolean;
+  normalCase?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={[
-        "font-display border transition-all duration-100 uppercase",
+        "font-display border transition-all duration-100",
+        normalCase ? "" : "uppercase",
         small
           ? "text-[0.6rem] tracking-[0.1em] px-[0.65rem] py-[0.25rem]"
           : "text-[0.72rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem]",
@@ -354,7 +593,8 @@ export function ShapeExplorer() {
   const [scaleMode, setScaleMode] = useState<ScaleMode>("minor");
   const [system, setSystem] = useState<ExplorerSystem>("3nps");
   const [shapeIdx, setShapeIdx] = useState(0);
-  const [viewMode, setViewMode] = useState<"focus" | "overview">("focus");
+  const [pairIdx, setPairIdx] = useState(1);
+  const [viewMode, setViewMode] = useState<ViewMode>("focus");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
   const [keyIdx, setKeyIdx] = useState(3); // Default: G (fret 3)
   const [isDark, setIsDark] = useState(false);
@@ -413,15 +653,25 @@ export function ShapeExplorer() {
   }, [system, positions3nps, positionsCaged, pentaBoxes, scaleMode]);
 
   const safeIdx = Math.min(shapeIdx, shapes.length - 1);
+  const pairSafeIdx = Math.min(pairIdx, shapes.length - 1);
   const shape = shapes[safeIdx];
+  const shapeB = shapes[pairSafeIdx];
 
   // Key offset: how far the selected key is from G (ROOT_FRET=3)
   const keyOffset = (selectedKey.fret - ROOT_FRET + 12) % 12;
   // Actual guitar fret where this shape starts for the selected key
   const displayStartFret = shape.startFret + keyOffset;
+  const displayStartFretB = shapeB.startFret + keyOffset;
 
   // Penta system always shows penta filter
   const effectiveFilter: NoteFilter = system === "penta" ? "penta" : noteFilter;
+
+  // Merged fretboard for Pair view
+  const combined = useMemo(
+    () => buildCombinedStrings(shape, shapeB, displayStartFret, displayStartFretB),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shape, shapeB, displayStartFret, displayStartFretB],
+  );
 
   // Unique degrees that appear in this shape, sorted by interval order
   const degreesInShape = useMemo(() => {
@@ -443,6 +693,7 @@ export function ShapeExplorer() {
   function changeSystem(sys: ExplorerSystem) {
     setSystem(sys);
     setShapeIdx(0);
+    setPairIdx(1);
     setViewMode("focus");
   }
 
@@ -473,7 +724,7 @@ export function ShapeExplorer() {
             Shape Explorer
           </p>
           <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none">
-            {selectedKey.name}{" "}
+            <span className="normal-case">{selectedKey.name}</span>{" "}
             <span style={{ color: "var(--accent)" }}>
               {scaleMode === "minor" ? "Minor" : "Major"}
             </span>
@@ -571,6 +822,12 @@ export function ShapeExplorer() {
                 small
               />
               <ControlBtn
+                label="Pair"
+                active={viewMode === "pair"}
+                onClick={() => setViewMode("pair")}
+                small
+              />
+              <ControlBtn
                 label="Overview"
                 active={viewMode === "overview"}
                 onClick={() => setViewMode("overview")}
@@ -593,6 +850,7 @@ export function ShapeExplorer() {
                 active={keyIdx === i}
                 onClick={() => setKeyIdx(i)}
                 small
+                normalCase
               />
             ))}
           </div>
@@ -613,6 +871,170 @@ export function ShapeExplorer() {
               setViewMode("focus");
             }}
           />
+        ) : viewMode === "pair" ? (
+          <>
+            {/* Shape A + B selectors */}
+            <div className="flex flex-col gap-4 mb-5">
+              {/* Shape A */}
+              <div>
+                <p className="text-[0.42rem] tracking-[0.16em] uppercase mb-2" style={{ color: "var(--text)" }}>
+                  Shape A
+                </p>
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    onClick={() => setShapeIdx((i) => Math.max(0, i - 1))}
+                    disabled={safeIdx === 0}
+                    className={[
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      safeIdx === 0
+                        ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
+                        : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
+                    ].join(" ")}
+                  >
+                    ← Prev
+                  </button>
+                  <div className="flex-1 min-w-0 flex flex-col items-center">
+                    <p className="font-display text-[0.88rem] tracking-[0.1em] uppercase text-[var(--text)] text-center leading-tight">
+                      {shape.label}
+                    </p>
+                    {shape.subLabel && (
+                      <p className="text-[0.48rem] tracking-[0.14em] uppercase text-[var(--muted)] mt-[0.15rem] text-center">
+                        {shape.subLabel}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShapeIdx((i) => Math.min(shapes.length - 1, i + 1))}
+                    disabled={safeIdx === shapes.length - 1}
+                    className={[
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      safeIdx === shapes.length - 1
+                        ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
+                        : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
+                    ].join(" ")}
+                  >
+                    Next →
+                  </button>
+                </div>
+                <div className="flex items-center justify-center gap-1 flex-wrap">
+                  {shapes.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setShapeIdx(i)}
+                      className={[
+                        "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem]",
+                        i === safeIdx
+                          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
+                          : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]",
+                      ].join(" ")}
+                    >
+                      {shapeNavLabel(s, i)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Shape B */}
+              <div>
+                <p className="text-[0.42rem] tracking-[0.16em] uppercase mb-2" style={{ color: "var(--fifth-col)" }}>
+                  Shape B
+                </p>
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    onClick={() => setPairIdx((i) => Math.max(0, i - 1))}
+                    disabled={pairSafeIdx === 0}
+                    className={[
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      pairSafeIdx === 0
+                        ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
+                        : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
+                    ].join(" ")}
+                  >
+                    ← Prev
+                  </button>
+                  <div className="flex-1 min-w-0 flex flex-col items-center">
+                    <p className="font-display text-[0.88rem] tracking-[0.1em] uppercase text-center leading-tight" style={{ color: "var(--fifth-col)" }}>
+                      {shapeB.label}
+                    </p>
+                    {shapeB.subLabel && (
+                      <p className="text-[0.48rem] tracking-[0.14em] uppercase text-[var(--muted)] mt-[0.15rem] text-center">
+                        {shapeB.subLabel}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setPairIdx((i) => Math.min(shapes.length - 1, i + 1))}
+                    disabled={pairSafeIdx === shapes.length - 1}
+                    className={[
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      pairSafeIdx === shapes.length - 1
+                        ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
+                        : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
+                    ].join(" ")}
+                  >
+                    Next →
+                  </button>
+                </div>
+                <div className="flex items-center justify-center gap-1 flex-wrap">
+                  {shapes.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPairIdx(i)}
+                      className={[
+                        "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem]",
+                        i === pairSafeIdx
+                          ? "text-[#fff] border-[var(--fifth-col)]"
+                          : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--fifth-col)] hover:text-[var(--text)]",
+                      ].join(" ")}
+                      style={i === pairSafeIdx ? { backgroundColor: "var(--fifth-col)" } : {}}
+                    >
+                      {shapeNavLabel(s, i)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Combined legend */}
+            <div className="flex flex-wrap gap-4 mb-4">
+              <div className="flex items-center gap-[0.4rem] text-[0.5rem] text-[var(--muted)] tracking-[0.08em] uppercase">
+                <div className="w-[13px] h-[13px] rounded-full shrink-0" style={{ backgroundColor: "var(--text)" }} />
+                {shape.label} (A)
+              </div>
+              <div className="flex items-center gap-[0.4rem] text-[0.5rem] text-[var(--muted)] tracking-[0.08em] uppercase">
+                <div className="w-[13px] h-[13px] rounded-full shrink-0" style={{ backgroundColor: "var(--fifth-col)" }} />
+                {shapeB.label} (B)
+              </div>
+              <div className="flex items-center gap-[0.4rem] text-[0.5rem] text-[var(--muted)] tracking-[0.08em] uppercase">
+                <div
+                  className="w-[13px] h-[13px] rounded-full shrink-0"
+                  style={{
+                    backgroundColor: "var(--text)",
+                    boxShadow: "0 0 0 2px var(--bg), 0 0 0 3.5px var(--fifth-col)",
+                  }}
+                />
+                Both
+              </div>
+              <div className="flex items-center gap-[0.4rem] text-[0.5rem] text-[var(--muted)] tracking-[0.08em] uppercase">
+                <div className="w-[13px] h-[13px] rounded-full shrink-0" style={{ backgroundColor: "var(--root-col)" }} />
+                Root
+              </div>
+            </div>
+
+            {/* Combined fretboard */}
+            <div
+              className="border border-[var(--border)] p-5 mb-5"
+              style={{ backgroundColor: "var(--surface)" }}
+            >
+              <CombinedFretboard
+                strings={combined.strings}
+                fretCount={combined.fretCount}
+                noteFilter={effectiveFilter}
+                chordTones={cfg.chordTones}
+                displayStartFret={combined.displayStartFret}
+              />
+            </div>
+          </>
         ) : (
         <>
         {/* Shape navigator header */}
@@ -784,7 +1206,7 @@ export function ShapeExplorer() {
             to="/scale-positions"
             className="text-[0.5rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
           >
-            Scale Positions →
+            Compare Systems →
           </Link>
           <Link
             to="/pentatonic-triads"

@@ -402,69 +402,64 @@ const HERO_DECO_ROWS: Array<{
   },
 ];
 
-const TOOLS: Array<{
+const TOOL_CATEGORIES: Array<{
   label: string;
-  live: boolean;
-  to: string;
-  title: string;
-  body: string;
-  tag: string;
+  tools: Array<{ to: string; title: string; body: string }>;
 }> = [
   {
-    label: "Live",
-    live: true,
-    to: "/scale-positions",
-    title: "Scale Positions",
-    tag: "Theory",
-    body: "All 7 diatonic positions across major and minor — 3nps, CAGED, and symmetric systems mapped side by side.",
+    label: "Scales",
+    tools: [
+      {
+        to: "/shape-explorer",
+        title: "Shape Explorer",
+        body: "Focus on one shape at a time or see all shapes in an overview grid. Pick your key and system — fret numbers reflect the real neck.",
+      },
+      {
+        to: "/scale-positions",
+        title: "Systems",
+        body: "See the full neck at once — all 7 positions across 3nps, CAGED, and symmetric systems, paired side by side or merged into a unified view. In any key.",
+      },
+    ],
   },
   {
-    label: "Live",
-    live: true,
-    to: "/lick-stash",
-    title: "Lick Stash",
-    tag: "Vocabulary",
-    body: "Curated lick packs organized by style and technique. Learn, loop, and internalize real vocabulary for the stage.",
+    label: "Pentatonic",
+    tools: [
+      {
+        to: "/pentatonic-triads",
+        title: "Pentatonic Triads",
+        body: "Triad intervals (root, 3rd, 5th) mapped across all 5 pentatonic boxes — see how they connect across position boundaries.",
+      },
+      {
+        to: "/interval-shapes",
+        title: "Interval Shapes",
+        body: "The recurring two-string shapes that make up every pentatonic position. Diagram and flashcard modes for major and minor.",
+      },
+    ],
   },
   {
-    label: "Live",
-    live: true,
-    to: "/pentatonic-triads",
-    title: "Pentatonic Triads",
-    tag: "Theory",
-    body: "Triad intervals (root, 3rd, 5th) mapped across all 5 pentatonic shapes — see how they connect across position boundaries.",
+    label: "Harmony",
+    tools: [
+      {
+        to: "/chord-voicings",
+        title: "Chord Voicings",
+        body: "All 5 CAGED chord shapes for major, minor, and seventh chord types — root, 3rd, 5th, and 7th color-coded across every voicing.",
+      },
+      {
+        to: "/arpeggio-maps",
+        title: "Arpeggio Maps",
+        body: "Chord-tone positions for the 5 CAGED shapes — see exactly where root, 3rd, 5th, and 7th land for major, minor, and seventh arpeggios.",
+      },
+    ],
   },
   {
-    label: "Live",
-    live: true,
-    to: "/interval-shapes",
-    title: "Interval Shapes",
-    tag: "Theory",
-    body: "The recurring two-string shapes that make up every pentatonic position. Diagram and flashcard modes for major and minor.",
-  },
-  {
-    label: "Live",
-    live: true,
-    to: "/shape-explorer",
-    title: "Shape Explorer",
-    tag: "Theory",
-    body: "Visualize any 3nps, CAGED, or pentatonic shape in any key — see exact fret positions on the neck for major and minor scales.",
-  },
-  {
-    label: "Live",
-    live: true,
-    to: "/chord-voicings",
-    title: "Chord Voicings",
-    tag: "Theory",
-    body: "All 5 CAGED chord shapes for major, minor, and seventh chord types — root, 3rd, 5th, and 7th color-coded across every voicing.",
-  },
-  {
-    label: "Live",
-    live: true,
-    to: "/arpeggio-maps",
-    title: "Arpeggio Maps",
-    tag: "Theory",
-    body: "Chord-tone positions for the 5 CAGED shapes — see exactly where root, 3rd, 5th, and 7th land for major, minor, and seventh arpeggios.",
+    label: "Vocabulary",
+    tools: [
+      {
+        to: "/lick-stash",
+        title: "Lick Stash",
+        body: "Curated lick packs organized by style and technique. Learn, loop, and internalize real vocabulary you can use on stage.",
+      },
+    ],
   },
 ];
 
@@ -570,7 +565,7 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
               to="/scale-positions"
               className="font-display text-[0.72rem] tracking-[0.1em] uppercase border border-[var(--text)] bg-[var(--text)] text-[var(--bg)] px-5 py-[0.6rem] no-underline hover:opacity-80 transition-opacity"
             >
-              Explore Scales
+              Explore Systems
             </Link>
             <Link
               to="/lick-stash"
@@ -588,65 +583,59 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
       </div>
 
       {/* ── Tools ── */}
-      <section className="max-w-[900px] mx-auto w-full px-8 pt-16 pb-4">
-        <p className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mb-6">
-          Available Now
-        </p>
+      <section className="max-w-[900px] mx-auto w-full px-8 pt-16 pb-4 flex flex-col gap-10">
+        {TOOL_CATEGORIES.map((cat) => (
+          <div key={cat.label}>
+            {/* Category header */}
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[0.52rem] tracking-[0.22em] uppercase text-[var(--muted)] shrink-0">
+                {cat.label}
+              </span>
+              <div className="flex-1 h-px bg-[var(--border)]" />
+            </div>
 
-        <div className="grid grid-cols-2 max-[600px]:grid-cols-1 border border-[var(--border)]">
-          {TOOLS.map((tool, i) => {
-            const n = TOOLS.length;
-            const col = i % 2;
-            const totalRows = Math.ceil(n / 2);
-            const isLastRow = Math.floor(i / 2) === totalRows - 1;
-            const hasRightNeighbor = i + 1 < n;
-            const needsRightBorder = col === 0 && hasRightNeighbor;
-            const needsBottomBorder = !isLastRow;
-            return (
-            <Link
-              key={tool.to}
-              to={tool.to}
-              className={[
-                "no-underline text-[var(--text)] p-7 hover:bg-[var(--surface)] transition-colors group",
-                needsRightBorder ? "border-r border-[var(--border)] max-[600px]:border-r-0" : "",
-                needsBottomBorder ? "border-b border-[var(--border)]" : "",
-                i < n - 1 ? "max-[600px]:border-b max-[600px]:border-[var(--border)]" : "",
-              ].join(" ")}
-            >
-              {/* Card top row */}
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <span
-                    className="text-[0.48rem] tracking-[0.12em] uppercase block mb-1"
-                    style={{ color: "var(--accent)" }}
+            {/* Tool cards */}
+            <div className={[
+              "border border-[var(--border)]",
+              cat.tools.length === 1 ? "" : "grid grid-cols-2 max-[600px]:grid-cols-1",
+            ].join(" ")}>
+              {cat.tools.map((tool, i) => {
+                const isLeft = i % 2 === 0;
+                const hasRight = i + 1 < cat.tools.length;
+                const isLast = i === cat.tools.length - 1;
+                return (
+                  <Link
+                    key={tool.to}
+                    to={tool.to}
+                    className={[
+                      "no-underline text-[var(--text)] p-7 hover:bg-[var(--surface)] transition-colors group block",
+                      isLeft && hasRight ? "border-r border-[var(--border)] max-[600px]:border-r-0 max-[600px]:border-b max-[600px]:border-[var(--border)]" : "",
+                      !isLast && cat.tools.length > 2 ? "border-b border-[var(--border)]" : "",
+                    ].join(" ")}
                   >
-                    {tool.label}
-                  </span>
-                  <span
-                    className="text-[0.48rem] tracking-[0.12em] uppercase"
-                    style={{ color: AMBER }}
-                  >
-                    {tool.tag}
-                  </span>
-                </div>
-                <span className="text-[0.9rem] text-[var(--faint)] group-hover:text-[var(--muted)] transition-colors leading-none">
-                  →
-                </span>
-              </div>
-
-              {/* Card title */}
-              <h2 className="font-display text-[1.05rem] tracking-[0.06em] uppercase leading-tight mb-3">
-                {tool.title}
-              </h2>
-
-              {/* Card body */}
-              <p className="text-[0.67rem] leading-[1.75] text-[var(--muted)]">
-                {tool.body}
-              </p>
-            </Link>
-            );
-          })}
-        </div>
+                    <div className="flex items-start justify-between mb-6">
+                      <span
+                        className="text-[0.48rem] tracking-[0.12em] uppercase"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        Live
+                      </span>
+                      <span className="text-[0.9rem] text-[var(--faint)] group-hover:text-[var(--muted)] transition-colors leading-none">
+                        →
+                      </span>
+                    </div>
+                    <h2 className="font-display text-[1.05rem] tracking-[0.06em] uppercase leading-tight mb-3">
+                      {tool.title}
+                    </h2>
+                    <p className="text-[0.67rem] leading-[1.75] text-[var(--muted)]">
+                      {tool.body}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </section>
 
       {/* ── Coming Soon ── */}
@@ -695,7 +684,7 @@ function HomePage({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => v
             to="/scale-positions"
             className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
           >
-            Scale Positions →
+            Systems →
           </Link>
           <Link
             to="/lick-stash"

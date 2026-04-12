@@ -213,10 +213,12 @@ Unlike the Scale Patterns page (which emphasizes side-by-side system comparison)
 - **System** — 3nps (7 positions), CAGED (5 shapes), or Penta (5 pentatonic boxes built from `buildBox()` in `pentatonicTriads.utils.ts`).
 - **Scale** — Minor / Major.
 - **Show filter** — All / Penta / Chord (hidden when System = Penta, which is implicitly penta-only).
-- **View** — Focus (single shape with navigator/pills/notes panel) or Overview (compact grid of all shapes). Switching system always resets to Focus. Clicking a cell in Overview jumps to Focus for that shape.
-- **Shape navigator** — (Focus mode only) Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
+- **View** — Focus (single shape with navigator/pills/notes panel), Pair (two shapes overlaid on one fretboard), or Overview (compact grid of all shapes). Switching system always resets to Focus. Clicking a cell in Overview jumps to Focus for that shape.
+- **Shape navigator** — (Focus and Pair modes) Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
 
 **Overview grid** — rendered by `OverviewGrid` sub-component. Uses CSS grid `auto-fill minmax(220px, 1fr)`. Each cell shows a compact fretboard (`compact` prop on `ExplorerFretboard`, `StringRow`, and `Dot`) with correct `displayStartFret` for the selected key. The currently selected shape gets `border-[var(--text)]`. Compact sizing: dots `w-4 h-4` (vs `w-8 h-8`), string rows `h-[28px]` (vs `h-[50px]`).
+
+**Pair view** — shows two independently selectable shapes (A and B) merged onto a single fretboard spanning their combined fret range on the neck. Shape selectors for both A and B have their own prev/next buttons and labeled pills; B's active pill uses `--fifth-col` (blue) to distinguish from A's standard styling. Merging is done by `buildCombinedStrings()` (defined locally in `ShapeExplorer.tsx`), which converts both shapes to absolute frets (relative fret + `displayStartFret`), finds the overall min/max fret, and produces `CombinedString[]` / `CombinedNote[]` with a `which: "a" | "b" | "both"` field. The `CombinedDot` component renders: A-only = standard appearance; B-only = `--fifth-col` blue fill; both = standard appearance + blue ring (`boxShadow`); root in B or shared = `--root-col` + blue ring. All note filters (All / Penta / Chord) apply to both shapes. Switching system resets `pairIdx` to 1.
 
 ### Key transposition
 
@@ -245,7 +247,12 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
 - **Home link**: the logo links to `/?preview=true` to bypass the Coming Soon gate.
 - **Active link detection**: uses `useLocation()`. `/lick-stash` matches both the listing page and individual pack sub-pages (`/lick-stash/:packSlug`); all other links match exactly on `pathname`.
 - **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle. Pages that didn't already do this (PentatonicTriads, IntervalShapes) had persistence added when Nav was introduced.
-- **Nav links** (in order): Scale Patterns → `/scale-positions`, Lick Stash → `/lick-stash`, Triads → `/pentatonic-triads`, Intervals → `/interval-shapes`, Shape Explorer → `/shape-explorer`, Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`.
+- **Nav structure**: Links are organized into 4 category groups rendered with a small label above each group and `|` separators between groups (hidden at `max-[700px]`):
+  - **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`
+  - **Pentatonic**: Triads → `/pentatonic-triads`, Intervals → `/interval-shapes`
+  - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`
+  - **Vocabulary**: Lick Stash → `/lick-stash`
+- **Active link detection**: `/lick-stash` uses `pathname.startsWith("/lick-stash")` to match both listing and pack sub-pages; all other links match exactly on `pathname`.
 
 ## Chord Voicings feature
 
