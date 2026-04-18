@@ -196,6 +196,43 @@ The Interval Shapes page (`/interval-shapes`) teaches the recurring two-string i
 - **Scale** — Minor / Major (re-renders both panels; `FlashcardPanel` is keyed on `scale` to reset index)
 - **Mode** — Diagram / Flashcard
 
+## Pentatonic Colors feature
+
+The Pentatonic Colors page (`/pentatonic-colors`) shows Box 1 of the minor or major pentatonic (rooted on G) and lets the user layer "color notes" from related modes/scales onto the same fretboard. Pentatonic notes render in standard degree colors; color notes render as amber/gold dots labeled with their interval name (e.g. `b5`, `6`, `maj7`).
+
+### Files
+
+- `app/components/pentatonicColors.utils.ts` — types, mode configs, `buildColorNotes()`
+- `app/components/PentatonicColors.tsx` — all component code
+- `app/routes/pentatonic-colors.tsx` — route wrapper
+
+### Data model
+
+- `ColorDegreeLabel` — union of all color-note interval names: `"b2" | "2" | "b5" | "b6" | "6" | "4" | "#4" | "b7" | "maj7"`
+- `ColorNote` — `{ string: StringName, fret: number, degLabel: ColorDegreeLabel }`
+- `ColorModeConfig` — `{ id, label, addedSemis: Array<{ semi, degLabel }>, description }`
+- `MINOR_COLOR_MODES` — 5 configs: Aeolian (`2`+`b6`), Blues (`b5`), Dorian (`6`), Phrygian (`b2`), Harmonic Minor (`2`+`b6`+`maj7`)
+- `MAJOR_COLOR_MODES` — 3 configs: Ionian (`4`+`maj7`), Lydian (`#4`+`maj7`), Mixolydian (`4`+`b7`)
+
+### Color note computation
+
+`buildColorNotes(boxNotes, config, displayMin, displayMax) → ColorNote[]`:
+1. Computes `refFret = (displayMin + displayMax) / 2`
+2. For each string and each `{ semi, degLabel }` in the config, calls `_closestFret(semi, stringIdx, refFret)` — a local duplicate of the unexported `closestFret` from `pentatonicTriads.utils.ts`
+3. Includes the note only if its fret falls within `[displayMin, displayMax]` and doesn't collide with an existing pentatonic note
+
+The `displayMin` / `displayMax` passed in are `boxMinFret - 1` / `boxMaxFret + 1` (one fret of padding each side), so color notes at the edges of the box region are visible.
+
+### Dot colors
+
+- **Pentatonic dots** (`PentaDot`) — root: `#c0392b`; b3/3: `#5a9a5a` (dark) / `#3a6a3a` (light); 5: `#5a7aaa` (dark) / `#3a5a8a` (light); other scale tones: `var(--text)` fill
+- **Color dots** (`ColorDot`) — amber: `#c8a060` (dark) / `#9a7830` (light); white text; interval label inside
+
+### Controls
+
+- **Scale** toggle — Minor / Major (resets mode to first option on change)
+- **Color** toggle — mode options change based on selected scale
+
 ## Shape Explorer feature
 
 The Shape Explorer (`/shape-explorer`) is a scale shape visualizer with two complementary views: **Focus** (one shape at a time, full-width fretboard) and **Overview** (all shapes in a compact grid). Key selection makes fret numbers reflect the actual guitar neck for any of 12 keys.
@@ -249,7 +286,7 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
 - **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle. Pages that didn't already do this (PentatonicTriads, IntervalShapes) had persistence added when Nav was introduced.
 - **Nav structure**: Links are organized into 4 category groups rendered with a small label above each group and `|` separators between groups (hidden at `max-[700px]`):
   - **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`
-  - **Pentatonic**: Triads → `/pentatonic-triads`, Intervals → `/interval-shapes`
+  - **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
   - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`
   - **Vocabulary**: Lick Stash → `/lick-stash`
 - **Active link detection**: `/lick-stash` uses `pathname.startsWith("/lick-stash")` to match both listing and pack sub-pages; all other links match exactly on `pathname`.

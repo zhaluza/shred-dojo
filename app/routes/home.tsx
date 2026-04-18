@@ -430,6 +430,11 @@ const TOOL_CATEGORIES: Array<{
         body: "Triad intervals (root, 3rd, 5th) mapped across all 5 pentatonic boxes — see how they connect across position boundaries.",
       },
       {
+        to: "/pentatonic-colors",
+        title: "Pentatonic Colors",
+        body: "Take Box 1 of the minor or major pentatonic and add color notes from modes like Aeolian, Dorian, Phrygian, Lydian, and more.",
+      },
+      {
         to: "/interval-shapes",
         title: "Interval Shapes",
         body: "The recurring two-string shapes that make up every pentatonic position. Diagram and flashcard modes for major and minor.",

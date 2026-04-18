@@ -6,6 +6,7 @@ export default [
   route("lick-stash", "routes/lick-stash.tsx"),
   route("lick-stash/:packSlug", "routes/lick-stash-pack.tsx"),
   route("pentatonic-triads", "routes/pentatonic-triads.tsx"),
+  route("pentatonic-colors", "routes/pentatonic-colors.tsx"),
   route("interval-shapes", "routes/interval-shapes.tsx"),
   route("shape-explorer", "routes/shape-explorer.tsx"),
   route("chord-voicings", "routes/chord-voicings.tsx"),

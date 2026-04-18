@@ -14,6 +14,7 @@ const NAV_GROUPS = [
     label: "Pentatonic",
     links: [
       { to: "/pentatonic-triads", label: "Pentatonic Triads" },
+      { to: "/pentatonic-colors", label: "Colors" },
       { to: "/interval-shapes", label: "Intervals" },
     ],
   },
