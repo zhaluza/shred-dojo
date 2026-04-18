@@ -225,7 +225,7 @@ The `displayMin` / `displayMax` passed in are `boxMinFret - 1` / `boxMaxFret + 1
 
 ### Dot colors
 
-- **Pentatonic dots** (`PentaDot`) — root: `#c0392b`; b3/3: `#5a9a5a` (dark) / `#3a6a3a` (light); 5: `#5a7aaa` (dark) / `#3a5a8a` (light); other scale tones: `var(--text)` fill
+- **Pentatonic dots** (`PentaDot`) — same root/3rd/5th colors as the Pentatonic Triads feature; other scale tones use `var(--text)` fill
 - **Color dots** (`ColorDot`) — amber: `#c8a060` (dark) / `#9a7830` (light); white text; interval label inside
 
 ### Controls
@@ -282,14 +282,13 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
 
 - **Props**: `isDark: boolean`, `toggleDark: () => void` — each page owns its own dark-mode state and passes it in.
 - **Home link**: the logo links to `/?preview=true` to bypass the Coming Soon gate.
-- **Active link detection**: uses `useLocation()`. `/lick-stash` matches both the listing page and individual pack sub-pages (`/lick-stash/:packSlug`); all other links match exactly on `pathname`.
-- **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle. Pages that didn't already do this (PentatonicTriads, IntervalShapes) had persistence added when Nav was introduced.
+- **Active link detection**: uses `useLocation()`. `/lick-stash` uses `pathname.startsWith("/lick-stash")` to match both the listing page and pack sub-pages; all other links match exactly on `pathname`.
+- **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle.
 - **Nav structure**: Links are organized into 4 category groups rendered with a small label above each group and `|` separators between groups (hidden at `max-[700px]`):
   - **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`
   - **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
   - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`
   - **Vocabulary**: Lick Stash → `/lick-stash`
-- **Active link detection**: `/lick-stash` uses `pathname.startsWith("/lick-stash")` to match both listing and pack sub-pages; all other links match exactly on `pathname`.
 
 ## Chord Voicings feature
 
@@ -313,10 +312,6 @@ The Chord Voicings page (`/chord-voicings`) shows the 5 CAGED chord shapes for f
 
 `DEG_COLOR` in `chordVoicings.utils.ts` maps degrees to CSS variables. Root → `var(--root-col)`, 3rd/b3 → `var(--sys-caged)`, 5th → `var(--fifth-col)`, 7th/b7 → `var(--seventh-col)`. Shared by both ChordVoicings and ArpeggioMaps.
 
-### ChordDiagram component
-
-Renders a traditional vertical chord diagram (6 columns = strings, rows = frets). Shows: string name headers, mute (✕) or open (○) indicators, a thick nut line (when `showNut`) or a fret-position label, colored dots at each fretted note, and a legend below.
-
 ### Controls
 
 **Chord** toggle — Maj / Min / Dom 7 / Maj 7 / Min 7.
@@ -336,10 +331,6 @@ The Arpeggio Maps page (`/arpeggio-maps`) shows chord-tone positions across the 
 - `buildArpeggioPositions(chordType)` — calls `buildCagedPositions()` with the chord's scale config. Returns 5 `ScalePosition` objects with `system: "caged"` and a `shapeName` field.
 - `buildArpeggio3npsPositions(chordType)` — calls `buildAllPositions()` and filters to `system === "3nps"`. Returns 7 `ScalePosition` objects (one per scale degree), each with a `scaletone` (1–7) but no `shapeName`.
 - Both use the same `cfgForChordType()` helper (dom7 uses a Mixolydian config so b7 appears in positions).
-
-### Display
-
-Each position is a fretboard card (horizontal, one row per string) with colored degree dots visible only for chord tones. The card header bar and label color indicate the system: amber (`--sys-caged`) for CAGED shapes labeled "{Shape} Shape", red (`--sys-3nps`) for 3nps positions labeled "Pos I–VII".
 
 ### Controls
 
