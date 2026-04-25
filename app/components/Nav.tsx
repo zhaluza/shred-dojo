@@ -8,6 +8,7 @@ const NAV_GROUPS = [
     links: [
       { to: "/shape-explorer", label: "Shape Explorer" },
       { to: "/scale-positions", label: "Systems" },
+      { to: "/wylde-scales", label: "Wylde" },
     ],
   },
   {

@@ -11,4 +11,5 @@ export default [
   route("shape-explorer", "routes/shape-explorer.tsx"),
   route("chord-voicings", "routes/chord-voicings.tsx"),
   route("arpeggio-maps", "routes/arpeggio-maps.tsx"),
+  route("wylde-scales", "routes/wylde-scales.tsx"),
 ] satisfies RouteConfig;

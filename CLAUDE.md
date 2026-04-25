@@ -363,9 +363,53 @@ The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of 
 - **Vite plugin**: `@coderline/alphatab-vite` handles web worker bundling, audio worklet setup, and copies font/soundfont assets to the build output automatically.
 - **Cleanup**: `api.destroy()` is called in the `useEffect` cleanup to prevent memory leaks and detached DOM nodes.
 
+## Wylde Scales feature
+
+The Wylde Scales page (`/wylde-scales`) visualizes Zakk Wylde's 3-notes-per-string approach to the diatonic scale, pairing each of the 7 modal positions with its corresponding pentatonic box.
+
+### Files
+
+- `app/components/wyldeScales.utils.ts` — `buildWylde()`, `buildAllWyldePositions()`, mode names
+- `app/components/WyldeScales.tsx` — all component code (self-contained)
+- `app/routes/wylde-scales.tsx` — route wrapper
+
+### How Wylde's 3nps differs from standard systems
+
+**vs. `build3nps`**: Strings E, A, D, G are identical (3 consecutive scale degrees each). On B string, Wylde resets the degree cursor to `(startDegIdx + 4) % 7` — one step back — instead of continuing sequentially. This repeats G string's last degree on B, keeping the shape in a compact 4–5 fret window. As a consequence, the high e string naturally cycles back to the same 3 degrees as the low E string.
+
+**vs. `buildSym`**: Sym drops G string to 2 notes so B can start cleanly. Wylde keeps G at 3 notes and deliberately overlaps the G→B transition.
+
+The `buildWylde` function is identical to `build3nps` except for one line: at `si === 4` (B string), `degCursor` is reset.
+
+### Data model
+
+- `WyldePosition` — `{ degIdx, modeName, strings: ScaleString[], startFret, pentaBoxIdx, pentaBox: BoxNote[], pentaRawMin }`
+- `buildAllWyldePositions(scale)` — builds all 7 positions. For each, finds the penta box whose raw min fret is closest to the diatonic's raw min fret (no modulo — direct distance comparison).
+- `pentaRawMin` — the raw (non-normalized) minimum absolute fret of the matched penta box. Required for octave-correct display (see below).
+
+### Fret coordinate system / octave normalization
+
+Both the diatonic shape and the pentatonic box are built internally in G (ROOT_FRET = 3). Key transposition works the same as other pages: `keyOffset = (keyFret - ROOT_FRET + 12) % 12`, `displayStartFret = startFret + keyOffset`.
+
+**Critical**: the diatonic uses `startFret = rawMin % 12` (normalized), but penta boxes are built with raw absolute frets that can be at fret 12–15 for boxes near the octave boundary. Adding `keyOffset` directly to raw penta frets shifts them a full octave in the wrong direction.
+
+The fix: penta display frets use the same normalization as diatonic:
+```
+pentaAbsStart = (pentaRawMin % 12) + keyOffset
+pentaDisplayFret = (penta.fret - pentaRawMin) + pentaOffset
+// where pentaOffset = pentaAbsStart - displayStartFret
+```
+
+This mirrors `toRelative()` for the penta box and keeps diatonic and pentatonic in the same neck region for all 12 keys.
+
+### Controls
+
+- **Scale** — Minor / Major (rebuilds all 7 positions)
+- **Key** — 12 chromatic keys E through Eb (persisted to `"shred-dojo-key"` localStorage)
+
 ## React Router v7 conventions
 
-- Routes live in `app/routes/` using the file-based convention
+- Routes are explicitly registered in `app/routes.ts` (not auto-discovered). Add every new route there with `route("path", "routes/file.tsx")`.
 - Use `loader` / `action` exports for data fetching and mutations
 - Type route props with the generated types from `./+types/<route-name>`
 - Use `<Link>`, `<Form>`, `useFetcher`, `useLoaderData`, etc. from `react-router`
