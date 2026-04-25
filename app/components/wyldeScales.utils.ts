@@ -52,15 +52,18 @@ export function buildAllWyldePositions(scale: ScaleMode): WyldePosition[] {
   const pentaScale = scale as PentaScaleMode;
   const boxes = Array.from({ length: 5 }, (_, i) => buildBox(i, pentaScale));
   const boxRawMins = boxes.map((b) => Math.min(...b.map((n) => n.fret)));
+  // Match by E string start fret for better positional alignment
+  const boxEStarts = boxes.map((b) => b.find((n) => n.string === "E")!.fret);
 
   return Array.from({ length: 7 }, (_, degIdx) => {
     const raw = buildWylde(degIdx, cfg);
     const rawMin = Math.min(...raw.flatMap((s) => s.notes.map((n) => n.fret)));
+    const eStart = ROOT_FRET + cfg.semi[cfg.scale[degIdx]];
 
     let bestBox = 0;
     let bestDist = Infinity;
     for (let i = 0; i < 5; i++) {
-      const d = Math.abs(rawMin - boxRawMins[i]);
+      const d = Math.abs(eStart - boxEStarts[i]);
       if (d < bestDist) {
         bestDist = d;
         bestBox = i;
