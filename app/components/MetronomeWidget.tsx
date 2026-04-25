@@ -7,6 +7,8 @@ const MAX_BPM = 240;
 const BEATS = 4;
 const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_S = 0.1;
+const NOTE_NAMES = ["E", "F", "F#", "G", "Ab", "A", "Bb", "B", "C", "Db", "D", "Eb"] as const;
+const E2_HZ = 82.41;
 
 // ─── Audio ────────────────────────────────────────────────────────────────────
 
@@ -32,7 +34,6 @@ function scheduleClick(
   osc.start(time);
   osc.stop(time + 0.06);
 
-  // Schedule visual update to match audio timing
   const msFromNow = Math.max(0, (time - ctx.currentTime) * 1000);
   setTimeout(() => onBeat(beat), msFromNow);
 }
@@ -60,6 +61,9 @@ export function MetronomeWidget() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [pulse, setPulse] = useState(false);
+  const [editingBpm, setEditingBpm] = useState(false);
+  const [bpmInputVal, setBpmInputVal] = useState("");
+  const [droneKey, setDroneKey] = useState<number | null>(null);
 
   // Refs — stable across renders, used by scheduler
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -70,12 +74,15 @@ export function MetronomeWidget() {
   const isPlayingRef = useRef(false);
   const tapTimesRef = useRef<number[]>([]);
   const dragStartRef = useRef<{ y: number; bpm: number } | null>(null);
+  const dragMovedRef = useRef(false);
+  const bpmInputElRef = useRef<HTMLInputElement>(null);
+  const droneOscRef = useRef<OscillatorNode | null>(null);
+  const droneGainRef = useRef<GainNode | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
 
-  // Dark mode — poll localStorage every 500ms (pages each manage their own state,
-  // no shared context, so polling is the least-invasive sync strategy)
+  // Dark mode — poll localStorage every 500ms
   useEffect(() => {
     if (!mounted) return;
     const sync = () => setIsDark(localStorage.getItem("shred-dojo-dark") === "true");
@@ -83,6 +90,14 @@ export function MetronomeWidget() {
     const id = setInterval(sync, 500);
     return () => clearInterval(id);
   }, [mounted]);
+
+  // Auto-focus BPM input when entering edit mode
+  useEffect(() => {
+    if (editingBpm && bpmInputElRef.current) {
+      bpmInputElRef.current.focus();
+      bpmInputElRef.current.select();
+    }
+  }, [editingBpm]);
 
   // Visual beat callback — stable, no re-render deps
   const onBeat = useCallback((beat: number) => {
@@ -141,19 +156,28 @@ export function MetronomeWidget() {
     }
   }, []);
 
-  // BPM drag — vertical mouse drag on the BPM number
+  // BPM drag — vertical drag on number; click (no drag) enters type mode
   const handleBpmMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (editingBpm) return;
       e.preventDefault();
+      dragMovedRef.current = false;
       dragStartRef.current = { y: e.clientY, bpm };
       const move = (ev: MouseEvent) => {
         if (!dragStartRef.current) return;
         const delta = dragStartRef.current.y - ev.clientY;
-        setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM,
-          Math.round(dragStartRef.current.bpm + delta * 0.6)
-        )));
+        if (Math.abs(delta) > 3) dragMovedRef.current = true;
+        if (dragMovedRef.current) {
+          setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM,
+            Math.round(dragStartRef.current.bpm + delta * 0.6)
+          )));
+        }
       };
       const up = () => {
+        if (!dragMovedRef.current) {
+          setBpmInputVal(String(bpmRef.current));
+          setEditingBpm(true);
+        }
         dragStartRef.current = null;
         window.removeEventListener("mousemove", move);
         window.removeEventListener("mouseup", up);
@@ -161,18 +185,82 @@ export function MetronomeWidget() {
       window.addEventListener("mousemove", move);
       window.addEventListener("mouseup", up);
     },
-    [bpm]
+    [bpm, editingBpm]
   );
 
-  // BPM scroll wheel — scroll over number to nudge
+  const commitBpmInput = useCallback(() => {
+    const val = parseInt(bpmInputVal, 10);
+    if (!isNaN(val) && bpmInputVal.trim() !== "") {
+      setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, val)));
+    }
+    setEditingBpm(false);
+  }, [bpmInputVal]);
+
+  // BPM scroll wheel
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY < 0 ? 1 : -1;
     setBpm((b) => Math.min(MAX_BPM, Math.max(MIN_BPM, b + delta)));
   }, []);
 
+  // Drone — sustained sine wave at root note
+  const startDrone = useCallback((semitone: number) => {
+    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+    const ctx = audioCtxRef.current;
+    if (ctx.state === "suspended") ctx.resume();
+
+    // Fade out and stop any existing drone
+    if (droneGainRef.current && droneOscRef.current) {
+      const g = droneGainRef.current;
+      g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+      droneOscRef.current.stop(ctx.currentTime + 0.08);
+      droneOscRef.current = null;
+      droneGainRef.current = null;
+    }
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = E2_HZ * Math.pow(2, semitone / 12);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    droneOscRef.current = osc;
+    droneGainRef.current = gain;
+  }, []);
+
+  const stopDrone = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (!ctx || !droneGainRef.current || !droneOscRef.current) return;
+    const g = droneGainRef.current;
+    g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    droneOscRef.current.stop(ctx.currentTime + 0.14);
+    droneOscRef.current = null;
+    droneGainRef.current = null;
+  }, []);
+
+  const handleDroneKey = useCallback((semitone: number) => {
+    if (droneKey === semitone) {
+      stopDrone();
+      setDroneKey(null);
+    } else {
+      startDrone(semitone);
+      setDroneKey(semitone);
+    }
+  }, [droneKey, startDrone, stopDrone]);
+
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    // Stop drone directly via refs (closure captures latest refs)
+    const ctx = audioCtxRef.current;
+    if (ctx && droneGainRef.current && droneOscRef.current) {
+      droneGainRef.current.gain.setValueAtTime(0, ctx.currentTime);
+      droneOscRef.current.stop();
+    }
     audioCtxRef.current?.close();
   }, []);
 
@@ -266,25 +354,54 @@ export function MetronomeWidget() {
 
           {/* BPM display */}
           <div style={{ textAlign: "center", padding: "4px 12px 2px" }}>
-            <div
-              onMouseDown={handleBpmMouseDown}
-              onWheel={handleWheel}
-              style={{
-                fontFamily: "'Oswald', sans-serif",
-                fontSize: "3.6rem",
-                fontWeight: 600,
-                lineHeight: 1,
-                color: C.text,
-                cursor: "ns-resize",
-                userSelect: "none",
-                letterSpacing: "-0.02em",
-                display: "inline-block",
-                transition: "transform 50ms",
-                transform: pulse && isPlaying ? "scale(1.05)" : "scale(1)",
-              }}
-            >
-              {bpm}
-            </div>
+            {editingBpm ? (
+              <input
+                ref={bpmInputElRef}
+                type="text"
+                inputMode="numeric"
+                value={bpmInputVal}
+                onChange={(e) => setBpmInputVal(e.target.value)}
+                onBlur={commitBpmInput}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitBpmInput();
+                  if (e.key === "Escape") setEditingBpm(false);
+                }}
+                style={{
+                  fontFamily: "'Oswald', sans-serif",
+                  fontSize: "3.6rem",
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  color: C.text,
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: `2px solid ${C.accent}`,
+                  outline: "none",
+                  width: "100%",
+                  textAlign: "center",
+                  letterSpacing: "-0.02em",
+                }}
+              />
+            ) : (
+              <div
+                onMouseDown={handleBpmMouseDown}
+                onWheel={handleWheel}
+                style={{
+                  fontFamily: "'Oswald', sans-serif",
+                  fontSize: "3.6rem",
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  color: C.text,
+                  cursor: "ns-resize",
+                  userSelect: "none",
+                  letterSpacing: "-0.02em",
+                  display: "inline-block",
+                  transition: "transform 50ms",
+                  transform: pulse && isPlaying ? "scale(1.05)" : "scale(1)",
+                }}
+              >
+                {bpm}
+              </div>
+            )}
             <div style={{
               fontFamily: "'Source Code Pro', monospace",
               fontSize: "0.44rem",
@@ -294,7 +411,7 @@ export function MetronomeWidget() {
               marginTop: 3,
               marginBottom: 10,
             }}>
-              bpm · drag or scroll
+              bpm · drag · scroll · click
             </div>
           </div>
 
@@ -360,6 +477,45 @@ export function MetronomeWidget() {
               {isPlaying ? "Stop" : "Start"}
             </button>
           </div>
+
+          {/* Drone section */}
+          <div style={{ borderTop: `1px solid ${C.faint}`, padding: "10px 12px 13px" }}>
+            <div style={{
+              fontFamily: "'Source Code Pro', monospace",
+              fontSize: "0.44rem",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: C.muted,
+              marginBottom: 7,
+            }}>
+              Drone {droneKey !== null ? `· ${NOTE_NAMES[droneKey]}` : ""}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 3 }}>
+              {NOTE_NAMES.map((name, i) => {
+                const active = droneKey === i;
+                return (
+                  <button
+                    key={name}
+                    onClick={() => handleDroneKey(i)}
+                    style={{
+                      fontFamily: "'Oswald', sans-serif",
+                      fontSize: "0.6rem",
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                      padding: "5px 0",
+                      background: active ? C.accent : "transparent",
+                      border: `1px solid ${active ? C.accent : C.border}`,
+                      color: active ? (isDark ? C.bg : "#fff") : C.text,
+                      cursor: "pointer",
+                      transition: "background 80ms, color 80ms, border-color 80ms",
+                    }}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -387,6 +543,15 @@ export function MetronomeWidget() {
       >
         <span style={{ fontSize: "0.9rem", lineHeight: 1 }}>♩</span>
         <span style={{ minWidth: "2.6ch", textAlign: "right" }}>{bpm}</span>
+        {droneKey !== null && (
+          <span style={{
+            fontSize: "0.55rem",
+            color: isPlaying ? C.bg : C.accent,
+            opacity: 0.9,
+          }}>
+            ~{NOTE_NAMES[droneKey]}
+          </span>
+        )}
         <span
           style={{
             width: 6,

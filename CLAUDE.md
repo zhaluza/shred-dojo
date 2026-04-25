@@ -407,6 +407,41 @@ This mirrors `toRelative()` for the penta box and keeps diatonic and pentatonic 
 - **Scale** — Minor / Major (rebuilds all 7 positions)
 - **Key** — 12 chromatic keys E through Eb (persisted to `"shred-dojo-key"` localStorage)
 
+## MetronomeWidget
+
+`app/components/MetronomeWidget.tsx` — a persistent floating metronome rendered in `root.tsx`, fixed to the bottom-right corner of every page. Self-contained: no props, no context. Manages its own dark-mode sync by polling `localStorage` every 500ms.
+
+### Audio engine
+
+Uses the Web Audio API look-ahead scheduler pattern: a `setTimeout` loop fires every `LOOKAHEAD_MS = 25ms` and schedules click events up to `SCHEDULE_AHEAD_S = 0.1s` ahead of `ctx.currentTime`. This decouples visual timing from audio timing and prevents glitches under UI load. `AudioContext` is created lazily on first play to satisfy browser autoplay policies.
+
+- **Click sound** — `OscillatorNode` (triangle wave). Downbeat: 1100 Hz, vol 0.45. Subdivision: 750 Hz, vol 0.25. Short exponential decay (~60ms).
+- **Drone sound** — `OscillatorNode` (sine wave) with `GainNode` (vol 0.2). Sustained continuously; fades in/out over ~100ms on start/stop/key change to avoid clicks. Base frequency: `E2_HZ = 82.41` Hz; transposed as `82.41 * 2^(semitone / 12)` where semitone is the chromatic distance from E.
+
+### BPM controls
+
+- **Drag** — vertical mouse drag on the BPM number (`ns-resize` cursor). A `dragMoved` flag (threshold: 3px) distinguishes drag from click.
+- **Scroll** — mouse wheel over the BPM number nudges ±1.
+- **Click to type** — clicking the BPM number without dragging enters edit mode: the number becomes a `<input type="text" inputMode="numeric">` pre-selected for typing. Enter or blur commits; Escape cancels.
+- **±1 / ±5 buttons** — fine-adjustment row below the BPM display.
+- **Tap tempo** — averages the last 4 tap intervals.
+- Range: 40–240 BPM.
+
+### Drone
+
+A section at the bottom of the expanded panel with a 6×2 grid of all 12 chromatic keys (same note names as the rest of the app: `E F F# G Ab A Bb B C Db D Eb`). Clicking a key starts the drone on that root; clicking the same key again stops it; clicking a different key crossfades to the new pitch. When a drone is active, the collapsed trigger button shows `~KEY` (e.g. `~A`) next to the BPM.
+
+### State
+
+- `bpm` — current tempo; `bpmRef` mirrors it for use inside the scheduler closure
+- `isPlaying` / `isPlayingRef` — playback state
+- `currentBeat` — 0–3, drives the beat segment indicators
+- `pulse` — 80ms flash on each beat, drives the scale-up animation on the BPM number and the dot in the trigger button
+- `isExpanded` — panel open/closed
+- `isDark` — synced from `localStorage` polling
+- `editingBpm` / `bpmInputVal` — BPM type-in mode
+- `droneKey` — `number | null`; semitone index (0 = E … 11 = Eb), null = drone off
+
 ## React Router v7 conventions
 
 - Routes are explicitly registered in `app/routes.ts` (not auto-discovered). Add every new route there with `route("path", "routes/file.tsx")`.
