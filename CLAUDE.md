@@ -276,19 +276,28 @@ Pentatonic shapes use `buildBox(boxIdx, scale)` from `pentatonicTriads.utils.ts`
 
 Below the fretboard, each degree in the shape is shown as a color-coded chip with its interval label (e.g. `b3`) and the actual note name for the selected key (e.g. `C` for A minor). Chips dim when their degree is hidden by the active filter.
 
+## Home page
+
+`app/routes/home.tsx` — the public landing page at `/`. Always renders the full `HomePage` component (no coming-soon gate).
+
+- **Loader** — returns `{ preview: boolean }` based on `?preview=true` in the URL. The component uses this to unlock Lick Stash entry points and writes `"shred-dojo-preview"` to localStorage when `preview=true`.
+- **Lick Stash gating** — the "Browse Lick Stash" hero CTA and footer link are hidden when `!preview`. The Lick Stash tool card renders as a non-clickable `<div>` at 40% opacity (labeled "Preview only") when `!preview`.
+- **Tool cards** — the `TOOL_CATEGORIES` array drives the tools grid. Cards render as `<Link>` by default; cards with `to === "/lick-stash"` render as a locked `<div>` when not in preview.
+
 ## Nav component
 
-`app/components/Nav.tsx` — persistent navigation bar rendered at the top of every page **except** the Coming Soon page (`/` without `?preview=true`).
+`app/components/Nav.tsx` — persistent navigation bar rendered at the top of every page.
 
 - **Props**: `isDark: boolean`, `toggleDark: () => void` — each page owns its own dark-mode state and passes it in.
-- **Home link**: the logo links to `/?preview=true` to bypass the Coming Soon gate.
+- **Home link**: the logo links to `/`.
 - **Active link detection**: uses `useLocation()`. `/lick-stash` uses `pathname.startsWith("/lick-stash")` to match both the listing page and pack sub-pages; all other links match exactly on `pathname`.
 - **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle.
+- **Preview gating**: `NavLink` entries can carry `preview: true`. Nav reads `localStorage.getItem("shred-dojo-preview")` (and watches `useLocation().search` for `?preview=true` to set it). Preview-gated links render as a faint non-interactive `<span>` when not unlocked; as a normal `<Link>` when unlocked. Currently only Lick Stash is gated.
 - **Nav structure**: Links are organized into 5 category groups rendered with a small label above each group and `|` separators between groups (hidden at `max-[700px]`):
   - **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`, Wylde → `/wylde-scales`
   - **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
   - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`, Circle of Fifths → `/circle-of-fifths`
-  - **Vocabulary**: Lick Stash → `/lick-stash`
+  - **Vocabulary**: Lick Stash → `/lick-stash` *(preview-gated)*
   - **Practice**: Fretboard Notes → `/fretboard-notes`
 
 ## Fretboard Notes feature
@@ -395,7 +404,9 @@ The Arpeggio Maps page (`/arpeggio-maps`) shows chord-tone positions across the 
 
 ## Lick Stash feature
 
-The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of Guitar Pro tabs that users can view, play, and loop.
+The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of Guitar Pro tabs that users can view, play, and loop. The route is publicly accessible but gated in the UI: the Nav link and home-page card are hidden/disabled unless the visitor has unlocked preview mode (see **Preview gating** below).
+
+**Preview gating** — visiting any page with `?preview=true` writes `"shred-dojo-preview": "true"` to localStorage (done in both `HomePage` and `Nav`). Once set it persists across sessions. The Nav then renders the Lick Stash link as a normal `<Link>`; without it the link is a faint non-interactive `<span>`.
 
 ### Routes
 

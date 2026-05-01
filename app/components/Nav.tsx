@@ -1,8 +1,11 @@
-import { Fragment } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { PickIcon } from "./Logo";
 
-const NAV_GROUPS = [
+type NavLink = { to: string; label: string; preview?: true };
+type NavGroup = { label: string; links: NavLink[] };
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: "Scales",
     links: [
@@ -30,7 +33,7 @@ const NAV_GROUPS = [
   {
     label: "Vocabulary",
     links: [
-      { to: "/lick-stash", label: "Lick Stash" },
+      { to: "/lick-stash", label: "Lick Stash", preview: true },
     ],
   },
   {
@@ -39,7 +42,7 @@ const NAV_GROUPS = [
       { to: "/fretboard-notes", label: "Fretboard Notes" },
     ],
   },
-] as const;
+];
 
 export function Nav({
   isDark,
@@ -48,7 +51,15 @@ export function Nav({
   isDark: boolean;
   toggleDark: () => void;
 }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const [isPreview, setIsPreview] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(search).get("preview") === "true") {
+      localStorage.setItem("shred-dojo-preview", "true");
+    }
+    setIsPreview(localStorage.getItem("shred-dojo-preview") === "true");
+  }, [search]);
 
   function isActive(to: string): boolean {
     return to === "/lick-stash"
@@ -61,7 +72,7 @@ export function Nav({
       <div className="flex items-center gap-7 md:gap-9 flex-wrap">
         {/* Logo */}
         <Link
-          to="/?preview=true"
+          to="/"
           className="flex items-center gap-2 no-underline shrink-0"
           aria-label="Shred Dojo home"
         >
@@ -92,20 +103,34 @@ export function Nav({
                 </span>
                 {/* Links */}
                 <div className="flex items-center gap-3 md:gap-4">
-                  {group.links.map(({ to, label }) => (
-                    <Link
-                      key={to}
-                      to={to}
-                      className={[
-                        "font-display text-[0.7rem] md:text-[0.75rem] tracking-[0.09em] uppercase no-underline transition-colors whitespace-nowrap",
-                        isActive(to)
-                          ? "text-[var(--accent)] border-b border-[var(--accent)] pb-px"
-                          : "text-[var(--muted)] hover:text-[var(--text)]",
-                      ].join(" ")}
-                    >
-                      {label}
-                    </Link>
-                  ))}
+                  {group.links.map(({ to, label, preview: requiresPreview }) => {
+                    if (requiresPreview && !isPreview) {
+                      return (
+                        <span
+                          key={to}
+                          className="font-display text-[0.7rem] md:text-[0.75rem] tracking-[0.09em] uppercase whitespace-nowrap cursor-default select-none"
+                          style={{ color: "var(--faint)" }}
+                          title="Preview only"
+                        >
+                          {label}
+                        </span>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={to}
+                        to={to}
+                        className={[
+                          "font-display text-[0.7rem] md:text-[0.75rem] tracking-[0.09em] uppercase no-underline transition-colors whitespace-nowrap",
+                          isActive(to)
+                            ? "text-[var(--accent)] border-b border-[var(--accent)] pb-px"
+                            : "text-[var(--muted)] hover:text-[var(--text)]",
+                        ].join(" ")}
+                      >
+                        {label}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </Fragment>
