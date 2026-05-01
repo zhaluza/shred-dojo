@@ -284,11 +284,67 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
 - **Home link**: the logo links to `/?preview=true` to bypass the Coming Soon gate.
 - **Active link detection**: uses `useLocation()`. `/lick-stash` uses `pathname.startsWith("/lick-stash")` to match both the listing page and pack sub-pages; all other links match exactly on `pathname`.
 - **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle.
-- **Nav structure**: Links are organized into 4 category groups rendered with a small label above each group and `|` separators between groups (hidden at `max-[700px]`):
-  - **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`
+- **Nav structure**: Links are organized into 5 category groups rendered with a small label above each group and `|` separators between groups (hidden at `max-[700px]`):
+  - **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`, Wylde → `/wylde-scales`
   - **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
-  - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`
+  - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`, Circle of Fifths → `/circle-of-fifths`
   - **Vocabulary**: Lick Stash → `/lick-stash`
+  - **Practice**: Fretboard Notes → `/fretboard-notes`
+
+## Fretboard Notes feature
+
+The Fretboard Notes page (`/fretboard-notes`) is an interactive quiz for building instant note-recognition on the guitar neck. A dot is highlighted on a fretboard diagram; the user identifies the note name.
+
+### Files
+
+- `app/components/FretboardNotes.tsx` — all component code (self-contained)
+- `app/routes/fretboard-notes.tsx` — route wrapper
+
+### Data model
+
+- `NOTES` — chromatic note names in order from E: `["E","F","F#","G","Ab","A","Bb","B","C","Db","D","Eb"]`
+- `OPEN_OFFSETS` — semitone offset from E for each open string: `{ E:0, A:5, D:10, G:3, B:7, e:0 }`
+- `noteAt(string, fret)` — returns the `NoteName` at a given position: `NOTES[(OPEN_OFFSETS[s] + fret) % 12]`
+- `NATURAL_IDXS` — `Set` of chromatic indices that are natural notes: `{0,1,3,5,7,8,10}` (E F G A B C D)
+- `NATURAL_NOTES` / `ACCIDENTAL_NOTES` — answer button arrays for each scope
+- `QuizSettings` — `{ strings: StringName[], scope: NoteScope, maxFret: number }`
+- `Question` — `{ string: StringName, fret: number, note: NoteName }`
+- `NoteScope` — `"naturals" | "accidentals" | "both"` (named `NoteScope` to avoid collision with `NoteFilter` from `scalePositions.types.ts`)
+
+### Question pool
+
+`buildPool(cfg)` iterates every (string × fret 0..maxFret) combination, computes the note, and filters by `scope`. `pickNext(pool, prev)` picks a random question, excluding the immediately previous one to avoid repetition (falls back to the full pool when `pool.length === 1`).
+
+### Scoring
+
+- `correct` / `total` — incremented on each button press (every press counts)
+- `streak` — resets to 0 on any wrong answer; increments on correct
+- `highScore` — longest streak for the current settings configuration, persisted to `localStorage` under key `fn-hs-{sortedStrings}-{scope}-{maxFret}`. Loaded from `localStorage` whenever settings change; updated in real time when a new streak high is set.
+
+### Quiz UX
+
+- **Correct**: dot turns green, clicked button turns green, "Correct!" text → auto-advance after 550ms
+- **Wrong**: dot turns red, clicked button turns red (border + tint), "Try again" text → clears after 650ms, stays on same question
+- The question dot uses Tailwind `animate-pulse` (opacity) while no feedback is active, paused via `animationPlayState: "paused"` during feedback
+- Wrong answers do not reveal the correct note — active recall is required
+
+### Fretboard layout
+
+`QuizFretboard` renders a horizontal fretboard with:
+- **Open string column** (36px) — to the left of the nut; shows the fret-0 dot when applicable
+- **Nut** (8px) — `var(--faint)` background, acts as the visual boundary between open and fret 1
+- **Fret cells** (40px each) — frets 1..maxFret, with a 1.5px `var(--fret-bar)` at the right edge of each cell
+- **Position markers** — single dot above frets 3, 5, 7, 9; double dot above 12/24; using `var(--faint)`
+- **Fret numbers** — below the fretboard in `font-mono text-[0.55rem]`; "0" appears under the open column
+- `DISPLAY_STRINGS` order — `["e","B","G","D","A","E"]` (high e at top, low E at bottom, matching guitar-facing perspective)
+- For `maxFret: 22`, total minimum width is ~924px; the container is `overflow-x-auto`
+
+### Controls
+
+- **Strings** — toggle any subset of the 6 strings (at least 1 must remain selected)
+- **Notes** — Naturals / Accidentals / Both; answer buttons shown in two rows (naturals on top, accidentals below) — naturals row hidden when scope is "accidentals", accidentals row hidden when scope is "naturals"
+- **Fret Range** — `0–12` or `0–22`
+- Settings panel shown before quiz starts; score bar (Score / Streak / Best Streak / Quit) shown during quiz
 
 ## Chord Voicings feature
 
@@ -441,6 +497,48 @@ A section at the bottom of the expanded panel with a 6×2 grid of all 12 chromat
 - `isDark` — synced from `localStorage` polling
 - `editingBpm` / `bpmInputVal` — BPM type-in mode
 - `droneKey` — `number | null`; semitone index (0 = E … 11 = Eb), null = drone off
+
+## Circle of Fifths feature
+
+The Circle of Fifths page (`/circle-of-fifths`) shows an interactive SVG diagram of the 12 keys arranged by perfect fifths, with three concentric rings. Clicking a key reveals its scale, diatonic chords, relative minor, and closely related keys.
+
+### Files
+
+- `app/components/circleOfFifths.utils.ts` — `FIFTHS` array (12 `KeyInfo` entries), `keySigLabel()`, `keySigShort()`
+- `app/components/CircleOfFifths.tsx` — all component code (self-contained: `CircleDiagram`, `InfoPanel`, page root)
+- `app/routes/circle-of-fifths.tsx` — route wrapper
+
+### Data model
+
+- `KeyInfo` — `{ major, minor, keySig, scaleNotes, diatonicChords, relatedMajors, relatedMinors }`
+  - `keySig` — positive = sharps, negative = flats, 0 = none
+  - `diatonicChords` — 7 `{ numeral, name, quality }` entries (quality: `"maj" | "min" | "dim"`)
+  - `relatedMajors` — the 2 adjacent major keys on the circle (clockwise + counter-clockwise)
+  - `relatedMinors` — the relative minor of this key plus both neighbors' relative minors (5 closely related keys total)
+- `FIFTHS` — 12 entries clockwise from C (top): C G D A E B F# Db Ab Eb Bb F. All data is hardcoded.
+- `keySigShort(n)` — returns `"3#"` / `"2♭"` / `"·"` for use inside the SVG key-sig ring
+- `keySigLabel(n)` — returns human-readable string (`"3 sharps"`, `"No sharps or flats"`) for the info panel
+
+### SVG diagram
+
+`CircleDiagram` renders a 560×560 SVG (center 280,280) with three concentric rings built from `arcSegmentPath()`:
+
+| Ring | rOuter | rInner | Text r | Content |
+|---|---|---|---|---|
+| Major keys | 260 | 180 | 220 | Key name |
+| Key signature | 178 | 140 | 159 | `keySigShort()` |
+| Relative minor | 138 | 84 | 111 | Minor key name |
+
+Each segment spans 28° with a 2° total gap (1° each side). `segmentAngles(i)` returns `{ start, end, mid }` using `i * 30 - 90` as the base (C at 12 o'clock). SVG fills/strokes use `style={{ fill: "var(--surface)" }}` (not presentation attributes) so CSS variables resolve correctly.
+
+Clicking any ring segment (major or minor) sets `selectedIdx`. The center disc shows the selected key name or "SELECT KEY".
+
+### InfoPanel
+
+Shown below the SVG when a key is selected. Three sections:
+1. **Header** — key name + `keySigLabel()` text
+2. **Diatonic chords** — 7-column grid of `(numeral / note / quality)` per scale degree; quality dim = accent color, min = muted, maj = text
+3. **Footer** — relative minor name + clickable pill buttons for `relatedMajors` + `relatedMinors` (clicking a pill updates `selectedIdx`)
 
 ## React Router v7 conventions
 

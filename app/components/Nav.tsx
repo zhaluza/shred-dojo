@@ -24,12 +24,19 @@ const NAV_GROUPS = [
     links: [
       { to: "/chord-voicings", label: "Chords" },
       { to: "/arpeggio-maps", label: "Arpeggios" },
+      { to: "/circle-of-fifths", label: "Circle of Fifths" },
     ],
   },
   {
     label: "Vocabulary",
     links: [
       { to: "/lick-stash", label: "Lick Stash" },
+    ],
+  },
+  {
+    label: "Practice",
+    links: [
+      { to: "/fretboard-notes", label: "Fretboard Notes" },
     ],
   },
 ] as const;
