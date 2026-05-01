@@ -1,9 +1,9 @@
-import type { Route } from "./+types/fretboard-notes";
+import type { Route } from "./+types/note-recognition";
 import { FretboardNotes } from "~/components/FretboardNotes";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Shred Dojo — Notes on the Fretboard" },
+    { title: "Shred Dojo — Note Recognition" },
     {
       name: "description",
       content:
@@ -12,6 +12,6 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function FretboardNotesRoute() {
+export default function NoteRecognitionRoute() {
   return <FretboardNotes />;
 }

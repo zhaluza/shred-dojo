@@ -249,24 +249,6 @@ function QuizFretboard({
           })}
         </div>
 
-        {/* Fret numbers */}
-        <div className="flex mt-[3px]">
-          <div
-            className="shrink-0 flex items-center justify-center font-mono text-[0.55rem]"
-            style={{ width: OPEN_W + NUT_W, color: "var(--faint)" }}
-          >
-            0
-          </div>
-          {frets.map(f => (
-            <div
-              key={f}
-              className="shrink-0 flex items-center justify-center font-mono text-[0.55rem]"
-              style={{ width: FRET_W, color: "var(--faint)" }}
-            >
-              {f}
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -429,8 +411,8 @@ export function FretboardNotes() {
         {/* Header */}
         <div className="mb-7">
           <h1 className="font-display font-semibold text-[clamp(1.7rem,5vw,2.6rem)] tracking-[0.04em] uppercase leading-none">
-            Notes on the{" "}
-            <span style={{ color: "var(--accent)" }}>Fretboard</span>
+            Note{" "}
+            <span style={{ color: "var(--accent)" }}>Recognition</span>
           </h1>
           <p
             className="mt-[6px] font-mono text-[0.8rem] leading-relaxed max-w-md"
