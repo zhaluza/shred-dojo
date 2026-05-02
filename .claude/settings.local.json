@@ -45,7 +45,11 @@
       "Bash(npm run *)",
       "Bash(npx vitest *)",
       "Bash(curl -s http://localhost:5173/fretboard-notes)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/circle-of-fifths)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/circle-of-fifths)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/staff-notes)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/staff-notes)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/note-recognition)"
     ]
   }
 }

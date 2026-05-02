@@ -14,4 +14,5 @@ export default [
   route("circle-of-fifths", "routes/circle-of-fifths.tsx"),
   route("wylde-scales", "routes/wylde-scales.tsx"),
   route("note-recognition", "routes/note-recognition.tsx"),
+  route("staff-notes", "routes/staff-notes.tsx"),
 ] satisfies RouteConfig;

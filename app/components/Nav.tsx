@@ -40,6 +40,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Practice",
     links: [
       { to: "/note-recognition", label: "Note Recognition" },
+      { to: "/staff-notes", label: "Staff Notes" },
     ],
   },
 ];

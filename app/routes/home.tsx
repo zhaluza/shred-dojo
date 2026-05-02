@@ -131,6 +131,21 @@ const TOOL_CATEGORIES: Array<{
       },
     ],
   },
+  {
+    label: "Practice",
+    tools: [
+      {
+        to: "/note-recognition",
+        title: "Note Recognition",
+        body: "Identify the highlighted fretboard note. Build instant recall across any string, fret range, and note type.",
+      },
+      {
+        to: "/staff-notes",
+        title: "Staff Notes",
+        body: "Read treble clef notes on a music staff. Identify notes from C4 to B5 across naturals and accidentals.",
+      },
+    ],
+  },
 ];
 
 const COMING_SOON_TOOLS = [
