@@ -282,7 +282,7 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
 
 - **Loader** — returns `{ preview: boolean }` based on `?preview=true` in the URL. The component uses this to unlock Lick Stash entry points and writes `"shred-dojo-preview"` to localStorage when `preview=true`.
 - **Lick Stash gating** — the "Browse Lick Stash" hero CTA and footer link are hidden when `!preview`. The Lick Stash tool card renders as a non-clickable `<div>` at 40% opacity (labeled "Preview only") when `!preview`.
-- **Tool cards** — the `TOOL_CATEGORIES` array drives the tools grid. Cards render as `<Link>` by default; cards with `to === "/lick-stash"` render as a locked `<div>` when not in preview.
+- **Tool cards** — the `TOOL_CATEGORIES` array drives the tools grid. Cards render as `<Link>` by default; cards with `to === "/lick-stash"` render as a locked `<div>` when not in preview. Categories: Scales, Pentatonic, Harmony, Vocabulary, Practice. The Practice category contains Note Recognition and Staff Notes.
 
 ## Nav component
 
@@ -298,7 +298,7 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
   - **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
   - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`, Circle of Fifths → `/circle-of-fifths`
   - **Vocabulary**: Lick Stash → `/lick-stash` *(preview-gated)*
-  - **Practice**: Fretboard Notes → `/fretboard-notes`
+  - **Practice**: Fretboard Notes → `/note-recognition`, Staff Notes → `/staff-notes`
 
 ## Fretboard Notes feature
 
@@ -354,6 +354,68 @@ The Fretboard Notes page (`/fretboard-notes`) is an interactive quiz for buildin
 - **Notes** — Naturals / Accidentals / Both; answer buttons shown in two rows (naturals on top, accidentals below) — naturals row hidden when scope is "accidentals", accidentals row hidden when scope is "naturals"
 - **Fret Range** — `0–12` or `0–22`
 - Settings panel shown before quiz starts; score bar (Score / Streak / Best Streak / Quit) shown during quiz
+
+## Staff Notes feature
+
+The Staff Notes page (`/staff-notes`) is a treble clef note-reading quiz. A whole note is displayed on a music staff SVG; the user identifies its name by clicking answer buttons.
+
+### Files
+
+- `app/components/StaffNotes.tsx` — all component code (self-contained, no sibling files)
+- `app/routes/staff-notes.tsx` — route wrapper
+
+### Data model
+
+- `NOTES` — same 12 chromatic note names as Fretboard Notes: `["E","F","F#","G","Ab","A","Bb","B","C","Db","D","Eb"]`
+- `NATURAL_NOTES` / `ACCIDENTAL_NOTES` — answer button arrays: `["C","D","E","F","G","A","B"]` / `["F#","Ab","Bb","Db","Eb"]`
+- `PoolEntry` — `{ noteName: NoteName, octave: 4|5, staffStep: number, midi: number }`
+  - `staffStep` — diatonic position from C4: 0=C4, 1=D4, 2=E4 (bottom staff line), …, 7=C5, …, 10=F5 (top line), 12=A5 (ledger above), 13=B5
+  - Accidentals sit on their letter-name's staff position with an accidental sign (e.g. Ab4 is on A's space at step 5 with a ♭)
+- `FULL_POOL` — 24 static `PoolEntry` objects covering C4–B5, declared as a constant (not derived algorithmically)
+- `StaffSettings` — `{ scope: NoteScope, range: NoteRange }` where `NoteScope = "naturals" | "both"` and `NoteRange = 1 | 2` (1 = C4–B4, 2 = C4–B5)
+
+Pool sizes by settings: naturals+1oct=7, naturals+2oct=14, both+1oct=12, both+2oct=24.
+
+### Question pool
+
+`buildPool(settings)` filters `FULL_POOL` by scope and range. `pickNext(pool, prev)` deduplicates on `(noteName, octave)` — **not** `staffStep`, because e.g. B4 and Bb4 share `staffStep=6` but are distinct questions.
+
+### Scoring
+
+Same pattern as Fretboard Notes: `correct` / `total` / `streak` / `highScore`. `highScore` persisted to localStorage under `sn-hs-{scope}-{range}` (4 distinct keys). `noteStyle` preference persisted separately under `sn-note-style`.
+
+### Staff SVG layout
+
+`StaffDisplay` renders an inline SVG (`viewBox="0 0 280 110"`, `overflow="visible"`) containing:
+
+- **5 staff lines** at y = 25, 37, 49, 61, 73 (F5 top → E4 bottom, 12px apart)
+- **Treble clef** — Unicode character `𝄞` (U+1D11E) as an SVG `<text>` element at `x=4 y=93 fontSize=70 fontFamily="'Times New Roman',serif"`. The G-curl is calibrated to sit on the G4 line (y=61).
+- **Note head** — two concentric ellipses at the same rotation (−16°): outer `rx=11 ry=7` filled in the note color, inner `rx=7 ry=4.5` filled in `var(--surface)`. This produces the standard engraved whole-note ring appearance.
+- **Accidental sign** — `♯` or `♭` as SVG `<text>` to the left of the note head when `noteName` contains `#` or ends in `b`.
+- **Ledger lines** — drawn for `staffStep ≤ 0` (C4, at `y=85`) and `staffStep ≥ 12` (A5/B5, at `y=13`).
+
+Note Y position: `noteY(step) = 73 - (step - 2) * 6`
+
+Note colors: idle standard → `var(--text)`, idle color → `var(--accent)`, correct → `#2d8a40`, wrong → `#b03020`.
+
+### Note style setting
+
+`noteStyle: "standard" | "color"` is separate state (not part of `StaffSettings`, does not affect pool or highscore key). Persisted to `localStorage` under `"sn-note-style"`. Standard renders the note in `var(--text)` (sheet-music black); Color renders in `var(--accent)`.
+
+### Quiz UX
+
+Same pattern as Fretboard Notes: correct answer advances after 550ms (with audio), wrong answer shows "Try again" for 650ms without revealing the correct note.
+
+### Audio
+
+`playNote(ctx, midi)` — triangle oscillator, same envelope as Fretboard Notes. MIDI numbers map directly (C4=60, A4=69, etc.).
+
+### Controls
+
+- **Notes** — Naturals / Naturals + Accidentals
+- **Range** — C4–B4 / C4–B5
+- **Note Style** — Standard / Color
+- Settings panel shown before quiz; score bar (Score / Streak / Best Streak / Quit) shown during quiz
 
 ## Chord Voicings feature
 
