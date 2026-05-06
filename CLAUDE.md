@@ -636,7 +636,7 @@ The Scale Builder page (`/scale-builder`) lets users explore the note content of
 ### Files
 
 - `app/components/scaleBuilder.utils.ts` — constants and pure functions (no React deps)
-- `app/components/ScaleBuilder.tsx` — all component code (`ScaleBuilder`, `NamesView`, `StaffView`, `Chip`)
+- `app/components/ScaleBuilder.tsx` — all component code (`ScaleBuilder`, `NamesView`, `ExerciseProgress`, `NotePalette`, `StaffView`, `Chip`)
 - `app/routes/scale-builder.tsx` — route wrapper
 
 ### Data model
@@ -666,7 +666,7 @@ The Scale Builder page (`/scale-builder`) lets users explore the note content of
 Uses the **VexFlow 5 low-level API** (not EasyScore) for full control over note count and spacing.
 
 - **Dynamic import** inside `useEffect` to avoid SSR (`import("vexflow").then(...)`)
-- **`ResizeObserver`** tracks `containerWidth` state; a separate effect re-renders VexFlow whenever `[scaleNotes, isDark, containerWidth]` changes
+- **`ResizeObserver`** tracks `containerWidth` state; a separate effect re-renders VexFlow whenever its deps change
 - **Cancellation flag** — each effect sets `let cancelled = false` and returns `() => { cancelled = true }`. The `.then()` callback checks `cancelled` before rendering, preventing stale async renders from appending duplicate SVGs
 - **`el.innerHTML = ""`** cleared inside the `.then()` (after the cancelled check), not before the import — ensures only the winning render clears the container
 - **`Voice.Mode.SOFT`** — suppresses beat-count validation so 5, 6, or 7 quarter notes all work without a time signature
@@ -675,10 +675,31 @@ Uses the **VexFlow 5 low-level API** (not EasyScore) for full control over note 
 - **Dark mode**: `ctx.setFillStyle(textColor)` + `ctx.setStrokeStyle(textColor)` applied before any `draw()` calls; cascades to all SVG child elements
 - **Accidentals**: `note.addModifier(new Accidental(accidental), 0)` added explicitly (low-level API does not auto-render accidentals from the key string alone)
 
+**Exercise mode per-note coloring** — `StaffView` accepts optional exercise props (`filledNotes`, `currentSlot`, `feedback`, `completed`). When `filledNotes !== null`, each note is styled via `note.setStyle(...)`:
+- Filled slots → `textColor` (or `#2d8a40` green if `feedback === "correct"` and `i === currentSlot`)
+- Current slot → `~40%` opacity of text color (or `#b03020` red if `feedback === "wrong"`)
+- Future slots → `~12%` opacity ghost (shows correct pitch position as a reading cue)
+
+The effect dep array includes all exercise props (`filledNotes`, `currentSlot`, `feedback`, `completed`) so the staff re-renders on every answer, updating note colors immediately.
+
+### Page mode and exercise state
+
+**`pageMode`** — `"reference" | "exercise"`. In reference mode the existing Names/Staff views are shown. In exercise mode:
+
+- **`ExerciseProgress`** — always shown; a chip row with the root pre-filled (accent color), answered slots filled dark, the current slot showing `"?"` (red border on wrong feedback, green for 450ms on correct), and future slots as `"·"`. Formula step labels sit between chips so the user can apply the formula visually.
+- **`NotePalette`** — 12 note buttons in two rows (naturals: E F G A B C D; accidentals: F# Ab Bb Db Eb). Wrong note turns accent-red for 600ms. Palette is disabled during feedback windows.
+- **Staff view (exercise)** — `StaffView` is rendered below `ExerciseProgress` with ghost notes; the current slot ghost shows the correct pitch position (turns the exercise into note-name reading from staff position). Names view shows only the chip row.
+- **Completion** — "Scale complete" shown in green with a "Try again" button.
+
+**Exercise state** — `filledNotes`, `currentSlot`, `feedback`, `wrongNote`, `completed`. Reset by `initExercise(scaleNotes)` which pre-fills index 0 with the root and sets `currentSlot = 1`. A `useEffect` on `[pageMode, scaleNotes]` calls `initExercise` whenever entering exercise mode or when the key/scale type changes.
+
+**Feedback timing** — correct: fill slot → `feedback = "correct"` → after 450ms advance slot (or complete). Wrong: `wrongNote = noteName` → `feedback = "wrong"` → after 600ms clear. Active recall only — wrong answers are never revealed.
+
 ### State
 
 - `keyIdx` — 0–11, persisted to `"shred-dojo-key"` (shared with other pages)
 - `scaleType` — default `"major"`
+- `pageMode` — `"reference" | "exercise"`
 - `viewMode` — `"names" | "staff"`
 - `isDark` / `toggleDark` — standard per-page dark mode pattern
 
@@ -686,8 +707,9 @@ Uses the **VexFlow 5 low-level API** (not EasyScore) for full control over note 
 
 - **Key** — 12 chip buttons (E through Eb)
 - **Scale** — 5 chip buttons (Major, Minor, Maj Penta, Min Penta, Blues)
-- **Formula row** — displays step labels (W / H / WH) with `—` separators; legend: "W = whole step · H = half step · WH = whole + half"
-- **View** — [Names] [Staff] toggle
+- **Formula row** — displays step labels (W / H / WH) with `—` separators; legend: "W = whole · H = half · WH = whole + half"
+- **Mode** — [Reference] [Exercise] toggle
+- **View** — [Names] [Staff] toggle (applies in both modes)
 
 ## Chord Tones feature
 
