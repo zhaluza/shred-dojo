@@ -39,8 +39,8 @@ function CtrlBtn({
       className={[
         "font-display border transition-all duration-100 cursor-pointer uppercase",
         small
-          ? "text-[0.65rem] tracking-[0.1em] px-[0.7rem] py-[0.28rem]"
-          : "text-[0.75rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem]",
+          ? "text-[0.65rem] tracking-[0.1em] px-[0.7rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
+          : "text-[0.75rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] max-[700px]:py-[0.6rem]",
         active
           ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
           : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
@@ -363,7 +363,7 @@ export function ArpeggioMaps() {
           </span>
           <Link
             to="/chord-voicings"
-            className="font-display text-[0.65rem] tracking-[0.1em] uppercase no-underline border border-[var(--border)] px-3 py-[0.3rem] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--text)] transition-colors"
+            className="font-display text-[0.65rem] tracking-[0.1em] uppercase no-underline border border-[var(--border)] px-3 py-[0.3rem] max-[700px]:py-[0.55rem] max-[700px]:px-4 text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--text)] transition-colors"
           >
             ← Chord Voicings
           </Link>

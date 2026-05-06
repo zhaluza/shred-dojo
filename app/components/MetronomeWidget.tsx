@@ -64,6 +64,9 @@ export function MetronomeWidget() {
   const [editingBpm, setEditingBpm] = useState(false);
   const [bpmInputVal, setBpmInputVal] = useState("");
   const [droneKey, setDroneKey] = useState<number | null>(null);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
 
   // Refs — stable across renders, used by scheduler
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -81,6 +84,13 @@ export function MetronomeWidget() {
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
+
+  // Track window width for responsive panel sizing
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Dark mode — poll localStorage every 500ms
   useEffect(() => {
@@ -188,6 +198,38 @@ export function MetronomeWidget() {
     [bpm, editingBpm]
   );
 
+  // BPM touch drag — same velocity math as mouse drag
+  const handleBpmTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (editingBpm) return;
+      e.preventDefault();
+      dragMovedRef.current = false;
+      dragStartRef.current = { y: e.touches[0].clientY, bpm };
+      const move = (ev: TouchEvent) => {
+        if (!dragStartRef.current) return;
+        const delta = dragStartRef.current.y - ev.touches[0].clientY;
+        if (Math.abs(delta) > 3) dragMovedRef.current = true;
+        if (dragMovedRef.current) {
+          setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM,
+            Math.round(dragStartRef.current.bpm + delta * 0.6)
+          )));
+        }
+      };
+      const up = () => {
+        if (!dragMovedRef.current) {
+          setBpmInputVal(String(bpmRef.current));
+          setEditingBpm(true);
+        }
+        dragStartRef.current = null;
+        window.removeEventListener("touchmove", move);
+        window.removeEventListener("touchend", up);
+      };
+      window.addEventListener("touchmove", move, { passive: false });
+      window.addEventListener("touchend", up);
+    },
+    [bpm, editingBpm]
+  );
+
   const commitBpmInput = useCallback(() => {
     const val = parseInt(bpmInputVal, 10);
     if (!isNaN(val) && bpmInputVal.trim() !== "") {
@@ -267,13 +309,17 @@ export function MetronomeWidget() {
   if (!mounted) return null;
 
   const C = getColors(isDark);
+  const isMobile = windowWidth < 700;
+  const panelWidth = isMobile ? Math.min(windowWidth - 32, 280) : 216;
+  const droneGridCols = isMobile ? 4 : 6;
+  const safeBottom = `calc(env(safe-area-inset-bottom, 0px) + ${isMobile ? 16 : 24}px)`;
 
   return (
     <div
       style={{
         position: "fixed",
-        bottom: 24,
-        right: 24,
+        bottom: safeBottom,
+        right: isMobile ? 12 : 24,
         zIndex: 45,
         display: "flex",
         flexDirection: "column",
@@ -288,7 +334,7 @@ export function MetronomeWidget() {
             background: C.bg,
             border: `1px solid ${C.border}`,
             borderTop: `3px solid ${C.accent}`,
-            width: 216,
+            width: panelWidth,
           }}
         >
           {/* Header */}
@@ -316,9 +362,11 @@ export function MetronomeWidget() {
                 border: "none",
                 cursor: "pointer",
                 color: C.muted,
-                padding: "0 0 0 10px",
+                padding: isMobile ? "8px 0 8px 16px" : "0 0 0 10px",
                 fontSize: "0.6rem",
                 lineHeight: 1,
+                minWidth: isMobile ? 44 : undefined,
+                minHeight: isMobile ? 44 : undefined,
               }}
             >
               ✕
@@ -384,6 +432,7 @@ export function MetronomeWidget() {
             ) : (
               <div
                 onMouseDown={handleBpmMouseDown}
+                onTouchStart={handleBpmTouchStart}
                 onWheel={handleWheel}
                 style={{
                   fontFamily: "'Oswald', sans-serif",
@@ -397,6 +446,7 @@ export function MetronomeWidget() {
                   display: "inline-block",
                   transition: "transform 50ms",
                   transform: pulse && isPlaying ? "scale(1.05)" : "scale(1)",
+                  touchAction: "none",
                 }}
               >
                 {bpm}
@@ -427,11 +477,12 @@ export function MetronomeWidget() {
                   fontSize: "0.58rem",
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
-                  padding: "4px 0",
+                  padding: isMobile ? "8px 0" : "4px 0",
                   background: "transparent",
                   border: `1px solid ${C.border}`,
                   color: C.text,
                   cursor: "pointer",
+                  minHeight: isMobile ? 40 : undefined,
                 }}
               >
                 {d > 0 ? `+${d}` : d}
@@ -449,11 +500,12 @@ export function MetronomeWidget() {
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                padding: "7px 0",
+                padding: isMobile ? "11px 0" : "7px 0",
                 background: "transparent",
                 border: `1px solid ${C.border}`,
                 color: C.text,
                 cursor: "pointer",
+                minHeight: isMobile ? 44 : undefined,
               }}
             >
               Tap
@@ -466,12 +518,13 @@ export function MetronomeWidget() {
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                padding: "7px 0",
+                padding: isMobile ? "11px 0" : "7px 0",
                 background: isPlaying ? C.text : "transparent",
                 border: `1px solid ${isPlaying ? C.text : C.border}`,
                 color: isPlaying ? C.bg : C.text,
                 cursor: "pointer",
                 transition: "background 80ms, color 80ms, border-color 80ms",
+                minHeight: isMobile ? 44 : undefined,
               }}
             >
               {isPlaying ? "Stop" : "Start"}
@@ -490,7 +543,11 @@ export function MetronomeWidget() {
             }}>
               Drone {droneKey !== null ? `· ${NOTE_NAMES[droneKey]}` : ""}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 3 }}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${droneGridCols}, 1fr)`,
+              gap: 3,
+            }}>
               {NOTE_NAMES.map((name, i) => {
                 const active = droneKey === i;
                 return (
@@ -502,12 +559,13 @@ export function MetronomeWidget() {
                       fontSize: "0.6rem",
                       letterSpacing: "0.04em",
                       textTransform: "uppercase",
-                      padding: "5px 0",
+                      padding: isMobile ? "8px 0" : "5px 0",
                       background: active ? C.accent : "transparent",
                       border: `1px solid ${active ? C.accent : C.border}`,
                       color: active ? (isDark ? C.bg : "#fff") : C.text,
                       cursor: "pointer",
                       transition: "background 80ms, color 80ms, border-color 80ms",
+                      minHeight: isMobile ? 36 : undefined,
                     }}
                   >
                     {name}
@@ -528,7 +586,7 @@ export function MetronomeWidget() {
           fontSize: "0.68rem",
           letterSpacing: "0.1em",
           textTransform: "uppercase",
-          padding: "7px 13px",
+          padding: isMobile ? "10px 14px" : "7px 13px",
           display: "flex",
           alignItems: "center",
           gap: 7,
@@ -539,6 +597,7 @@ export function MetronomeWidget() {
           color: isPlaying ? C.bg : C.muted,
           cursor: "pointer",
           transition: "background 100ms, color 100ms, outline 100ms",
+          minHeight: isMobile ? 44 : undefined,
         }}
       >
         <span style={{ fontSize: "0.9rem", lineHeight: 1 }}>♩</span>

@@ -313,7 +313,7 @@ function KeyInfoModal({
     return (
       <button
         onClick={() => { if (idx >= 0) onSelectMajor(label); }}
-        className="font-display text-[0.65rem] tracking-[0.08em] uppercase border border-[var(--border)] text-[var(--text)] bg-transparent px-2 py-[0.2rem] hover:border-[var(--text)] transition-colors cursor-pointer"
+        className="font-display text-[0.65rem] tracking-[0.08em] uppercase border border-[var(--border)] text-[var(--text)] bg-transparent px-2 py-[0.2rem] max-[700px]:py-[0.5rem] max-[700px]:px-3 hover:border-[var(--text)] transition-colors cursor-pointer"
         style={isMajor ? {} : { color: "var(--muted)" }}
       >
         {label}
@@ -345,7 +345,7 @@ function KeyInfoModal({
             </span>
             <button
               onClick={onClose}
-              className="font-display text-[0.75rem] tracking-[0.08em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-2 py-[0.2rem] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer"
+              className="font-display text-[0.75rem] tracking-[0.08em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-2 py-[0.2rem] max-[700px]:py-[0.5rem] max-[700px]:px-3 max-[700px]:min-w-[40px] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer"
             >
               ✕
             </button>

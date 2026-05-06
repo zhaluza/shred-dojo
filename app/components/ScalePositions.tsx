@@ -70,8 +70,8 @@ function ControlButton({
       className={[
         "font-display border transition-all duration-100",
         small
-          ? "text-[0.65rem] px-[0.7rem] py-[0.3rem] tracking-[0.1em]"
-          : "text-[0.75rem] px-[0.85rem] py-[0.35rem] tracking-[0.08em]",
+          ? "text-[0.65rem] px-[0.7rem] py-[0.3rem] tracking-[0.1em] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
+          : "text-[0.75rem] px-[0.85rem] py-[0.35rem] tracking-[0.08em] max-[700px]:py-[0.6rem]",
         normalCase ? "" : "uppercase",
         disabled
           ? "bg-transparent text-[var(--muted)] border-[var(--border)] opacity-40 cursor-not-allowed"
@@ -863,7 +863,7 @@ function ShapeModal({
             </div>
             <button
               onClick={onClose}
-              className="font-display text-[0.65rem] tracking-[0.1em] uppercase border cursor-pointer transition-colors duration-100 px-3 py-[0.35rem] bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]"
+              className="font-display text-[0.65rem] tracking-[0.1em] uppercase border cursor-pointer transition-colors duration-100 px-3 py-[0.35rem] max-[700px]:py-[0.6rem] max-[700px]:min-h-[44px] bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]"
             >
               ✕ Close
             </button>

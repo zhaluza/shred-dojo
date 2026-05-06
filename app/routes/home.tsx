@@ -190,7 +190,7 @@ function HomePage({
       <section className="relative overflow-hidden">
         {/* Decorative fretboard — full width background */}
         <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none select-none"
+          className="absolute inset-x-0 bottom-0 pointer-events-none select-none max-[600px]:hidden"
           style={{ opacity: isDark ? 0.12 : 0.08 }}
           aria-hidden="true"
         >
@@ -223,7 +223,7 @@ function HomePage({
         </div>
 
         {/* Hero content */}
-        <div className="relative z-[1] max-w-[900px] mx-auto w-full px-8 pt-20 pb-24">
+        <div className="relative z-[1] max-w-[900px] mx-auto w-full px-5 md:px-8 pt-12 pb-16 md:pt-20 md:pb-24">
           <p
             className="text-[0.58rem] tracking-[0.24em] uppercase mb-7"
             style={{ color: AMBER }}
@@ -287,7 +287,7 @@ function HomePage({
       </div>
 
       {/* ── Tools ── */}
-      <section className="max-w-[900px] mx-auto w-full px-8 pt-16 pb-4 flex flex-col gap-10">
+      <section className="max-w-[900px] mx-auto w-full px-5 md:px-8 pt-16 pb-4 flex flex-col gap-10">
         {TOOL_CATEGORIES.map((cat) => (
           <div key={cat.label}>
             {/* Category header */}
@@ -362,7 +362,7 @@ function HomePage({
       </section>
 
       {/* ── Coming Soon ── */}
-      <section className="max-w-[900px] mx-auto w-full px-8 pt-4 pb-20">
+      <section className="max-w-[900px] mx-auto w-full px-5 md:px-8 pt-4 pb-20">
         <div className="border border-t-0 border-[var(--border)]">
           <div
             className="px-5 py-3 border-b border-[var(--border)]"
@@ -398,21 +398,21 @@ function HomePage({
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-[var(--border)] px-8 py-5 flex justify-between items-center flex-wrap gap-2">
-        <span className="text-[0.55rem] text-[var(--faint)] tracking-[0.1em] uppercase">
+      <footer className="border-t border-[var(--border)] px-5 md:px-8 py-5 flex justify-between items-center flex-wrap gap-2">
+        <span className="text-[0.65rem] text-[var(--faint)] tracking-[0.1em] uppercase">
           © Shred Dojo
         </span>
         <div className="flex items-center gap-4">
           <Link
             to="/scale-positions"
-            className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
+            className="text-[0.65rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity py-1"
           >
             Systems →
           </Link>
           {preview && (
             <Link
               to="/lick-stash"
-              className="text-[0.55rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity"
+              className="text-[0.65rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity py-1"
             >
               Lick Stash →
             </Link>

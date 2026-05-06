@@ -516,8 +516,8 @@ function ControlBtn({
         "font-display border transition-all duration-100",
         normalCase ? "" : "uppercase",
         small
-          ? "text-[0.6rem] tracking-[0.1em] px-[0.65rem] py-[0.25rem]"
-          : "text-[0.72rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem]",
+          ? "text-[0.6rem] tracking-[0.1em] px-[0.65rem] py-[0.25rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
+          : "text-[0.72rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] max-[700px]:py-[0.6rem]",
         disabled
           ? "opacity-40 cursor-not-allowed border-[var(--border)] text-[var(--muted)] bg-transparent"
           : active
@@ -550,7 +550,7 @@ function OverviewGrid({
   return (
     <div
       className="grid gap-3"
-      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
+      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
     >
       {shapes.map((shape, i) => {
         const displayStartFret = shape.startFret + keyOffset;
@@ -917,7 +917,7 @@ export function ShapeExplorer() {
                     onClick={() => setShapeIdx((i) => Math.max(0, i - 1))}
                     disabled={safeIdx === 0}
                     className={[
-                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] max-[700px]:py-[0.6rem] max-[700px]:min-h-[44px] shrink-0",
                       safeIdx === 0
                         ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
                         : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
@@ -939,7 +939,7 @@ export function ShapeExplorer() {
                     onClick={() => setShapeIdx((i) => Math.min(shapes.length - 1, i + 1))}
                     disabled={safeIdx === shapes.length - 1}
                     className={[
-                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] max-[700px]:py-[0.6rem] max-[700px]:min-h-[44px] shrink-0",
                       safeIdx === shapes.length - 1
                         ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
                         : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
@@ -954,7 +954,7 @@ export function ShapeExplorer() {
                       key={i}
                       onClick={() => setShapeIdx(i)}
                       className={[
-                        "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem]",
+                        "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem] max-[700px]:px-[0.8rem] max-[700px]:py-[0.55rem]",
                         i === safeIdx
                           ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
                           : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]",
@@ -976,7 +976,7 @@ export function ShapeExplorer() {
                     onClick={() => setPairIdx((i) => Math.max(0, i - 1))}
                     disabled={pairSafeIdx === 0}
                     className={[
-                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] max-[700px]:py-[0.6rem] max-[700px]:min-h-[44px] shrink-0",
                       pairSafeIdx === 0
                         ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
                         : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
@@ -998,7 +998,7 @@ export function ShapeExplorer() {
                     onClick={() => setPairIdx((i) => Math.min(shapes.length - 1, i + 1))}
                     disabled={pairSafeIdx === shapes.length - 1}
                     className={[
-                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+                      "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] max-[700px]:py-[0.6rem] max-[700px]:min-h-[44px] shrink-0",
                       pairSafeIdx === shapes.length - 1
                         ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
                         : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
@@ -1013,7 +1013,7 @@ export function ShapeExplorer() {
                       key={i}
                       onClick={() => setPairIdx(i)}
                       className={[
-                        "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem]",
+                        "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem] max-[700px]:px-[0.8rem] max-[700px]:py-[0.55rem]",
                         i === pairSafeIdx
                           ? "text-[#fff] border-[var(--fifth-col)]"
                           : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--fifth-col)] hover:text-[var(--text)]",
@@ -1075,7 +1075,7 @@ export function ShapeExplorer() {
             onClick={() => setShapeIdx((i) => Math.max(0, i - 1))}
             disabled={safeIdx === 0}
             className={[
-              "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+              "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] max-[700px]:py-[0.6rem] max-[700px]:min-h-[44px] shrink-0",
               safeIdx === 0
                 ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
                 : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
@@ -1099,7 +1099,7 @@ export function ShapeExplorer() {
             onClick={() => setShapeIdx((i) => Math.min(shapes.length - 1, i + 1))}
             disabled={safeIdx === shapes.length - 1}
             className={[
-              "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] shrink-0",
+              "font-display text-[0.7rem] tracking-[0.06em] uppercase border transition-all duration-100 px-3 py-[0.35rem] max-[700px]:py-[0.6rem] max-[700px]:min-h-[44px] shrink-0",
               safeIdx === shapes.length - 1
                 ? "border-[var(--border)] text-[var(--muted)] opacity-30 cursor-not-allowed"
                 : "border-[var(--border)] text-[var(--text)] hover:border-[var(--text)] cursor-pointer",
@@ -1116,7 +1116,7 @@ export function ShapeExplorer() {
               key={i}
               onClick={() => setShapeIdx(i)}
               className={[
-                "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem]",
+                "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem] max-[700px]:px-[0.8rem] max-[700px]:py-[0.55rem]",
                 i === safeIdx
                   ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
                   : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]",

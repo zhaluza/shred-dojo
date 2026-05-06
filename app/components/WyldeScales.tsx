@@ -412,7 +412,7 @@ function ControlBtn({
     <button
       onClick={onClick}
       className={[
-        small ? "px-2 py-[0.2rem] text-[0.62rem]" : "px-3 py-[0.3rem] text-[0.7rem]",
+        small ? "px-2 py-[0.2rem] text-[0.62rem] max-[700px]:py-[0.55rem] max-[700px]:px-3" : "px-3 py-[0.3rem] text-[0.7rem] max-[700px]:py-[0.55rem] max-[700px]:px-4",
         "font-display tracking-[0.08em] uppercase border cursor-pointer transition-colors whitespace-nowrap",
         active
           ? "border-[var(--text)] bg-[var(--text)] text-[var(--bg)]"

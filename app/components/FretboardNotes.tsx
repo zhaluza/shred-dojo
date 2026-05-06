@@ -128,7 +128,7 @@ function Chip({
       onClick={onClick}
       disabled={disabled}
       className={[
-        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed",
         active
           ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
           : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
@@ -475,7 +475,7 @@ export function FretboardNotes() {
 
             <button
               onClick={quit}
-              className="ml-auto font-display text-[0.62rem] tracking-[0.1em] uppercase border border-[var(--border)] bg-transparent px-3 py-[0.28rem] cursor-pointer hover:border-[var(--text)] transition-colors"
+              className="ml-auto font-display text-[0.62rem] tracking-[0.1em] uppercase border border-[var(--border)] bg-transparent px-3 py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-4 max-[700px]:min-h-[40px] cursor-pointer hover:border-[var(--text)] transition-colors"
               style={{ color: "var(--muted)" }}
             >
               Quit

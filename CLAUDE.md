@@ -70,6 +70,10 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 - Default: `bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]`
 - Active: `bg-[var(--text)] text-[var(--bg)] border-[var(--text)]`
 
+**Mobile touch targets** — All interactive buttons add `max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]` (small) or `max-[700px]:py-[0.6rem]` (normal) to meet the ~40px minimum height on mobile. Icon-only and narrow buttons also add `max-[700px]:min-h-[44px]`.
+
+**Mobile nav** — Below 700px, the desktop nav row is hidden (`hidden min-[700px]:flex`) and replaced by a hamburger `☰` button (`min-[700px]:hidden`). Clicking it opens a right-side drawer (`fixed top-0 right-0 h-full w-[280px] z-[101]`) with full-width category groups, 48px-minimum-height links, and a dark-mode toggle at the bottom. Body scroll is locked while the drawer is open; the drawer auto-closes on route change.
+
 **Grid / cells** — `grid grid-cols-2 max-[560px]:grid-cols-1 gap-0` with cells using `-mt-px -ml-px` for collapsed borders. Selected cell adds `relative z-[2]`.
 
 **Modal overlay pattern** — `fixed inset-0 z-50` backdrop with `rgba(10,8,6,0.82)` + `backdropFilter: blur(4px)`. Modal panel uses `--surface` bg, `border: 1px solid var(--border)`, `borderTop: 3px solid var(--accent)`. Lock body scroll with `document.body.style.overflow = 'hidden'` on mount, restore on unmount.
@@ -555,6 +559,8 @@ This mirrors `toRelative()` for the penta box and keeps diatonic and pentatonic 
 ## MetronomeWidget
 
 `app/components/MetronomeWidget.tsx` — a persistent floating metronome rendered in `root.tsx`, fixed to the bottom-right corner of every page. Self-contained: no props, no context. Manages its own dark-mode sync by polling `localStorage` every 500ms.
+
+**Mobile layout** — Tracks `windowWidth` via `useState` + `window.resize` listener. On mobile (`< 700px`): panel width is `Math.min(windowWidth - 32, 280)`, drone grid is 4 columns instead of 6, and all buttons are at least 40-44px tall. Bottom position uses `calc(env(safe-area-inset-bottom, 0px) + 16px)` on mobile (24px on desktop). BPM drag supports both mouse (`onMouseDown`) and touch (`onTouchStart`/`onTouchMove`/`onTouchEnd`) with `touchAction: "none"` to prevent scroll conflict.
 
 ### Audio engine
 

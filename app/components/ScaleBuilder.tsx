@@ -32,7 +32,7 @@ function Chip({
     <button
       onClick={onClick}
       className={[
-        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] cursor-pointer transition-all",
+        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem] cursor-pointer transition-all",
         active
           ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
           : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
@@ -153,7 +153,7 @@ function NotePalette({
   function btnCls(note: string) {
     const isWrong = feedback === "wrong" && note === wrongNote;
     return [
-      "font-display text-[0.75rem] tracking-[0.08em] uppercase border px-3 py-[0.28rem] transition-all",
+      "font-display text-[0.75rem] tracking-[0.08em] uppercase border px-3 py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-4 transition-all",
       disabled && !isWrong
         ? "cursor-default opacity-60 bg-transparent text-[var(--text)] border-[var(--border)]"
         : isWrong
@@ -574,7 +574,7 @@ export function ScaleBuilder() {
                   </span>
                   <button
                     onClick={() => initExercise(scaleNotes)}
-                    className="font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] cursor-pointer transition-all bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]"
+                    className="font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem] cursor-pointer transition-all bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]"
                   >
                     Try again
                   </button>
