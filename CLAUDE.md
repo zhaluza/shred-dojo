@@ -8,6 +8,7 @@
 - **Tailwind CSS v4** (via `@tailwindcss/vite` plugin — no `tailwind.config.js`)
 - **Vite**
 - **AlphaTab** (`@coderline/alphatab` + `@coderline/alphatab-vite`) — music notation rendering and playback from Guitar Pro files
+- **VexFlow** (`vexflow`) — treble clef staff rendering for the Scale Builder page
 
 ## Project structure
 
@@ -56,6 +57,7 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 | `--fret-bar` | `#d8cebb` | `#2a2418` | Fretboard bar lines |
 | `--fifth-col` | `#4a6a8a` | `#6a9abf` | 5th degree dots (chord/arpeggio pages) |
 | `--seventh-col` | `#6a4a7a` | `#9a6abf` | 7th degree dots (chord/arpeggio pages) |
+| `--blues-col` | `#4a3aa8` | `#7a6ad8` | b5 "blue note" dots (blues scale mode) |
 
 **Typography scale** (Tailwind arbitrary values):
 - H1: `font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none`
@@ -114,9 +116,10 @@ The Pentatonic Triads page (`/pentatonic-triads`) visualizes the triad intervals
 ### Data model
 
 - `BOX_DEGREES` — hardcoded degree assignments per string per box (low E → high e), two degrees per string, for both major and minor pentatonic. There are 5 boxes each.
-- `SEMI` — semitone offsets per degree per scale type, used to compute absolute fret numbers.
+- `SEMI` — semitone offsets per degree per scale type, used to compute absolute fret numbers. Includes `"b5": 6` for minor (unused in major).
 - `buildBox(boxIdx, scale)` — builds one box as a flat array of `BoxNote` (`{ string, fret, deg }`). Uses `closestFret()` to anchor each note near a reference fret, keeping the shape in the correct neck region.
 - `buildAllBoxes(scale)` — returns all 5 boxes.
+- `bluesNotesForBox(boxNotes)` — given the notes for one box, returns the b5 "blue note" positions. Rule: strings with a `[b3, 4]` pair or a `[4, 5]` pair both receive a b5 note exactly 1 fret above the 4th. Called when blues mode is active; results merged into the box data before rendering.
 - `adjustAdjacentFrets(notes, currentMinF, currentMaxF, side)` — when boxes wrap around the neck (e.g. box 4 → box 0), shifts frets by ±12 so the adjacent box is physically adjacent in fret space. Filters out frets < 0 or > 24.
 
 ### Triad dot colors
@@ -127,6 +130,7 @@ The Pentatonic Triads page (`/pentatonic-triads`) visualizes the triad intervals
 | 3rd | `#3a6a3a` | `#5a9a5a` |
 | 5th | `#3a5a8a` | `#5a7aaa` |
 | Scale tone | `var(--text)` / `var(--bg)` | same |
+| b5 (blue note) | `#4a3aa8` | `#7a6ad8` |
 
 ### Dot variants
 
@@ -154,10 +158,19 @@ Each shape card has a **"▼ Neck context"** toggle. When expanded, it renders a
 - **Cross notes in the combined view** — `leftCross`/`rightCross` notes rendered at full opacity with `connector` variant (accent ring), even though they sit in the dimmed outer zones. These are the key information: triad tones reachable from both shapes without a full position shift.
 - **Priority** — when a fret+string appears in both the main shape and an adjacent shape, the main shape's note wins.
 
+### Blues scale
+
+The blues scale = minor pentatonic + b5 (flat 5, the "blue note", 6 semitones above root). Blues mode is minor-only; the toggle is hidden and auto-cleared when Scale switches to Major.
+
+**b5 placement**: `bluesNotesForBox()` derives b5 positions algorithmically from the existing box notes — no hardcoded per-box data. Any string whose two degrees are `[b3, 4]` or `[4, 5]` receives a b5 exactly 1 fret above the 4th.
+
+**b5 filter behavior**: b5 notes bypass the "Triad only" show-mode filter — they remain visible even when non-triad scale tones are hidden, since seeing the blue note is the whole point of blues mode.
+
 ### Controls
 
-- **Scale** — Minor / Major toggle (clears expanded state on change)
-- **Show** — All notes / Triad only (hides non-triad scale tones in all fretboard views)
+- **Scale** — Minor / Major toggle (clears expanded state on change; clears bluesMode when switching to Major)
+- **Blues** — `[Blues Scale]` toggle, visible only when Scale = Minor. Active state uses `var(--blues-col)` background (indigo).
+- **Show** — All notes / Triad only (hides non-triad scale tones in all fretboard views; b5 remains visible regardless)
 
 ## Interval Shapes feature
 
@@ -249,6 +262,7 @@ Unlike the Scale Patterns page (which emphasizes side-by-side system comparison)
 - **Key selector** — 12 chromatic keys (E through Eb). Fret numbers on the fretboard shift to show the real neck position for the chosen key.
 - **System** — 3nps (7 positions), CAGED (5 shapes), or Penta (5 pentatonic boxes built from `buildBox()` in `pentatonicTriads.utils.ts`).
 - **Scale** — Minor / Major.
+- **Blues** — `[Blues Scale]` toggle, visible only when System = Penta AND Scale = Minor. Adds b5 "blue note" dots (indigo, `var(--blues-col)`) to all penta boxes. Resets automatically when switching System away from Penta or Scale to Major.
 - **Show filter** — All / Penta / Chord (hidden when System = Penta, which is implicitly penta-only).
 - **View** — Focus (single shape with navigator/pills/notes panel), Pair (two shapes overlaid on one fretboard), or Overview (compact grid of all shapes). Switching system always resets to Focus. Clicking a cell in Overview jumps to Focus for that shape.
 - **Shape navigator** — (Focus and Pair modes) Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
@@ -271,6 +285,8 @@ Fret labels on the fretboard are rendered as `f + displayStartFret` (absolute gu
 ### Pentatonic boxes
 
 Pentatonic shapes use `buildBox(boxIdx, scale)` from `pentatonicTriads.utils.ts`, returning `BoxNote[]` (absolute frets in G). These are converted to `ScaleString[]` via `boxNotesToScaleStrings()` (defined locally in `ShapeExplorer.tsx`), which normalizes to relative frets with `toRelative()` and records `startFret = minFret % 12`. All pentatonic notes have `penta: true`; only the root gets the red dot treatment.
+
+When blues mode is active, `bluesNotesForBox()` is called on the raw `BoxNote[]` before conversion and its b5 results are merged in. b5 notes pass through `boxNotesToScaleStrings()` as regular `ScaleNote` objects with `deg: "b5"` and `penta: true`. The `Dot` component checks `note.deg === "b5"` before the generic penta check and applies `var(--blues-col)` (indigo) fill.
 
 ### Notes panel
 
@@ -612,6 +628,66 @@ Shown below the SVG when a key is selected. Three sections:
 1. **Header** — key name + `keySigLabel()` text
 2. **Diatonic chords** — 7-column grid of `(numeral / note / quality)` per scale degree; quality dim = accent color, min = muted, maj = text
 3. **Footer** — relative minor name + clickable pill buttons for `relatedMajors` + `relatedMinors` (clicking a pill updates `selectedIdx`)
+
+## Scale Builder feature
+
+The Scale Builder page (`/scale-builder`) lets users explore the note content of five common scale formulas in any of 12 root keys. Two view modes — **Names** and **Staff** — show the resulting notes as labeled chips or on a VexFlow treble clef staff.
+
+### Files
+
+- `app/components/scaleBuilder.utils.ts` — constants and pure functions (no React deps)
+- `app/components/ScaleBuilder.tsx` — all component code (`ScaleBuilder`, `NamesView`, `StaffView`, `Chip`)
+- `app/routes/scale-builder.tsx` — route wrapper
+
+### Data model
+
+- `KEY_NAMES` — `["E","F","F#","G","Ab","A","Bb","B","C","Db","D","Eb"]` (matches rest of app)
+- `NOTES_FROM_C` — `["C","Db","D","Eb","E","F","F#","G","Ab","A","Bb","B"]` — chromatic lookup ordered from C, used for octave-aware scale construction
+- `SEMI_FROM_C` — `Record<string, number>` mapping each note name → semitone offset from C (0–11)
+- `ScaleType` — `"major" | "minor" | "majorPenta" | "minorPenta" | "blues"`
+- `SCALE_TYPES` — per-type config with `label`, `intervals` (semitone steps including return-to-root), and `steps` (display labels: `"W"`, `"H"`, `"WH"`)
+- `ScaleNote` — `{ note: string, octave: number }`
+
+**Scale formulas:**
+| Scale | Intervals | Steps |
+|---|---|---|
+| Major | 2 2 1 2 2 2 1 | W W H W W W H |
+| Minor | 2 1 2 2 1 2 2 | W H W W H W W |
+| Maj Penta | 2 2 3 2 3 | W W WH W WH |
+| Min Penta | 3 2 2 3 2 | WH W W WH W |
+| Blues | 3 2 1 1 3 2 | WH W H H WH W |
+
+**`buildScale(root, intervals) → ScaleNote[]`** — MIDI arithmetic: `rootMidi = 60 + SEMI_FROM_C[root]`. Iterates `intervals.slice(0, -1)` (drops the return-to-root step), advancing `midi` and deriving `{ note: NOTES_FROM_C[midi % 12], octave: Math.floor(midi / 12) - 1 }` for each step. Produces 7 notes for diatonic, 5 for pentatonic, 6 for blues.
+
+**`toVexNote(sn) → { key, accidental }`** — converts a `ScaleNote` to VexFlow low-level format. Flat detection: `n.length === 2 && n[1] === "b"` (correctly distinguishes "Bb" from "B"). Key format: `"${letter}${acc}/${octave}"` (e.g. `"f#/4"`, `"ab/4"`, `"b/4"`).
+
+### VexFlow integration (`StaffView`)
+
+Uses the **VexFlow 5 low-level API** (not EasyScore) for full control over note count and spacing.
+
+- **Dynamic import** inside `useEffect` to avoid SSR (`import("vexflow").then(...)`)
+- **`ResizeObserver`** tracks `containerWidth` state; a separate effect re-renders VexFlow whenever `[scaleNotes, isDark, containerWidth]` changes
+- **Cancellation flag** — each effect sets `let cancelled = false` and returns `() => { cancelled = true }`. The `.then()` callback checks `cancelled` before rendering, preventing stale async renders from appending duplicate SVGs
+- **`el.innerHTML = ""`** cleared inside the `.then()` (after the cancelled check), not before the import — ensures only the winning render clears the container
+- **`Voice.Mode.SOFT`** — suppresses beat-count validation so 5, 6, or 7 quarter notes all work without a time signature
+- **Formatter width** derived from stave geometry: `stave.getWidth() - (stave.getNoteStartX() - stave.getX()) - 10` — ensures the formatter's X reference matches the stave's note-start X so stems align with note heads
+- **Stave position**: `new Stave(10, 40, containerWidth - 20)` — Y=40 gives the treble clef glyph enough vertical room
+- **Dark mode**: `ctx.setFillStyle(textColor)` + `ctx.setStrokeStyle(textColor)` applied before any `draw()` calls; cascades to all SVG child elements
+- **Accidentals**: `note.addModifier(new Accidental(accidental), 0)` added explicitly (low-level API does not auto-render accidentals from the key string alone)
+
+### State
+
+- `keyIdx` — 0–11, persisted to `"shred-dojo-key"` (shared with other pages)
+- `scaleType` — default `"major"`
+- `viewMode` — `"names" | "staff"`
+- `isDark` / `toggleDark` — standard per-page dark mode pattern
+
+### Controls
+
+- **Key** — 12 chip buttons (E through Eb)
+- **Scale** — 5 chip buttons (Major, Minor, Maj Penta, Min Penta, Blues)
+- **Formula row** — displays step labels (W / H / WH) with `—` separators; legend: "W = whole step · H = half step · WH = whole + half"
+- **View** — [Names] [Staff] toggle
 
 ## React Router v7 conventions
 

@@ -9,16 +9,17 @@ import {
 
 // Degree color map for chord diagrams and legend
 export const DEG_COLOR: Record<Degree, string> = {
-  R:   "var(--root-col)",
-  "2": "var(--muted)",
-  b3:  "var(--sys-caged)",
-  "3": "var(--sys-caged)",
-  "4": "var(--muted)",
-  "5": "var(--fifth-col)",
-  b6:  "var(--muted)",
-  "6": "var(--muted)",
-  b7:  "var(--seventh-col)",
-  "7": "var(--seventh-col)",
+  R:    "var(--root-col)",
+  "2":  "var(--muted)",
+  b3:   "var(--sys-caged)",
+  "3":  "var(--sys-caged)",
+  "4":  "var(--muted)",
+  "b5": "var(--blues-col)",
+  "5":  "var(--fifth-col)",
+  b6:   "var(--muted)",
+  "6":  "var(--muted)",
+  b7:   "var(--seventh-col)",
+  "7":  "var(--seventh-col)",
 };
 
 function cfgForChordType(chordType: ChordType): ScaleConfig {

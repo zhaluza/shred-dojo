@@ -225,6 +225,7 @@ function DegreeLegend({ chordType }: { chordType: ChordType }) {
     b3: "Minor 3rd",
     "3": "Major 3rd",
     "4": "4th",
+    "b5": "Flat 5th",
     "5": "5th",
     b6: "b6th",
     "6": "6th",

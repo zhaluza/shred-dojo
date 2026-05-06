@@ -144,6 +144,11 @@ const TOOL_CATEGORIES: Array<{
         title: "Staff Notes",
         body: "Read treble clef notes on a music staff. Identify notes from C4 to B5 across naturals and accidentals.",
       },
+      {
+        to: "/chord-tones",
+        title: "Chord Tones",
+        body: "Identify the interval of each highlighted note within a scale shape. Works across pentatonic boxes, blues scale, and diatonic 3nps/CAGED positions.",
+      },
     ],
   },
 ];

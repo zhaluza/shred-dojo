@@ -22,6 +22,7 @@ import {
 } from "./scalePositions.utils";
 import {
   buildBox,
+  bluesNotesForBox,
   type PentaScaleMode,
   type BoxNote,
 } from "./pentatonicTriads.utils";
@@ -39,7 +40,7 @@ const MODE_NAMES: Record<ScaleMode, string[]> = {
   minor: ["Aeolian", "Locrian", "Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian"],
 };
 
-const DEGREE_ORDER: Degree[] = ["R", "2", "b3", "3", "4", "5", "b6", "6", "b7", "7"];
+const DEGREE_ORDER: Degree[] = ["R", "2", "b3", "3", "4", "b5", "5", "b6", "6", "b7", "7"];
 
 type ExplorerSystem = "3nps" | "caged" | "penta";
 type ViewMode = "focus" | "overview" | "pair";
@@ -69,7 +70,7 @@ interface CombinedString {
 
 function getNoteForDegree(deg: string, keyFret: number): string {
   const SEMI_MAP: Record<string, number> = {
-    R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "5": 7, b6: 8, "6": 9, b7: 10, "7": 11,
+    R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "b5": 6, "5": 7, b6: 8, "6": 9, b7: 10, "7": 11,
   };
   return NOTE_NAMES[(keyFret + (SEMI_MAP[deg] ?? 0) + 12) % 12];
 }
@@ -157,6 +158,8 @@ function Dot({ note, visible, compact = false }: { note: ScaleNote; visible: boo
   let bg: string, fg: string, border: string | undefined;
   if (note.deg === "R") {
     bg = "var(--root-col)"; fg = "#fff";
+  } else if (note.deg === "b5") {
+    bg = "var(--blues-col)"; fg = "#fff";
   } else if (note.penta) {
     bg = "var(--text)"; fg = "var(--bg)";
   } else {
@@ -598,6 +601,7 @@ export function ShapeExplorer() {
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
   const [keyIdx, setKeyIdx] = useState(3); // Default: G (fret 3)
   const [isDark, setIsDark] = useState(false);
+  const [bluesMode, setBluesMode] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("shred-dojo-dark");
@@ -624,11 +628,15 @@ export function ShapeExplorer() {
   const pentaBoxes: ShapeData[] = useMemo(
     () =>
       Array.from({ length: 5 }, (_, i) => {
-        const boxNotes = buildBox(i, scaleMode as PentaScaleMode);
+        const rawNotes = buildBox(i, scaleMode as PentaScaleMode);
+        const boxNotes =
+          bluesMode && scaleMode === "minor"
+            ? [...rawNotes, ...bluesNotesForBox(rawNotes)]
+            : rawNotes;
         const { strings, startFret } = boxNotesToScaleStrings(boxNotes);
         return { strings, startFret, label: `Box ${i + 1}` };
       }),
-    [scaleMode],
+    [scaleMode, bluesMode],
   );
 
   // Shapes for the selected system
@@ -695,11 +703,13 @@ export function ShapeExplorer() {
     setShapeIdx(0);
     setPairIdx(1);
     setViewMode("focus");
+    if (sys !== "penta") setBluesMode(false);
   }
 
   function changeMode(mode: ScaleMode) {
     setScaleMode(mode);
     setShapeIdx(0);
+    if (mode === "major") setBluesMode(false);
   }
 
   // Short label for shape nav pills
@@ -752,6 +762,28 @@ export function ShapeExplorer() {
               />
             </div>
           </div>
+
+          {/* Blues toggle — penta + minor only */}
+          {system === "penta" && scaleMode === "minor" && (
+            <div className="flex flex-col gap-[0.4rem]">
+              <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
+                Blues
+              </p>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setBluesMode((v) => !v)}
+                  className="font-display text-[0.6rem] tracking-[0.1em] uppercase border transition-all duration-100 cursor-pointer px-[0.65rem] py-[0.25rem]"
+                  style={
+                    bluesMode
+                      ? { backgroundColor: "var(--blues-col)", borderColor: "var(--blues-col)", color: "#fff" }
+                      : { backgroundColor: "transparent", borderColor: "var(--border)", color: "var(--text)" }
+                  }
+                >
+                  Blues Scale
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* System */}
           <div className="flex flex-col gap-[0.4rem]">
@@ -1111,6 +1143,15 @@ export function ShapeExplorer() {
             />
             Pentatonic
           </div>
+          {bluesMode && (
+            <div className="flex items-center gap-[0.4rem] text-[0.5rem] text-[var(--muted)] tracking-[0.08em] uppercase">
+              <div
+                className="w-[13px] h-[13px] rounded-full shrink-0"
+                style={{ backgroundColor: "var(--blues-col)" }}
+              />
+              Blue note (b5)
+            </div>
+          )}
           {system !== "penta" && (
             <div className="flex items-center gap-[0.4rem] text-[0.5rem] text-[var(--muted)] tracking-[0.08em] uppercase">
               <div

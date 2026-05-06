@@ -3,7 +3,7 @@ import type { StringName } from "./scalePositions.types";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type PentaScaleMode = "minor" | "major";
-export type PentaDegree = "R" | "b3" | "4" | "5" | "b7" | "2" | "3" | "6";
+export type PentaDegree = "R" | "b3" | "4" | "b5" | "5" | "b7" | "2" | "3" | "6";
 
 export interface BoxNote {
   string: StringName;
@@ -18,8 +18,8 @@ export const STRING_NAMES: StringName[] = ["E", "A", "D", "G", "B", "e"];
 export const ROOT_FRET = 3; // G on low E string
 
 export const SEMI: Record<PentaScaleMode, Record<PentaDegree, number>> = {
-  minor: { R: 0, b3: 3, "4": 5, "5": 7, b7: 10, "2": -1, "3": -1, "6": -1 },
-  major: { R: 0, "2": 2, "3": 4, "5": 7, "6": 9, b3: -1, "4": -1, b7: -1 },
+  minor: { R: 0, b3: 3, "4": 5, "b5": 6, "5": 7, b7: 10, "2": -1, "3": -1, "6": -1 },
+  major: { R: 0, "2": 2, "3": 4, "b5": -1, "5": 7, "6": 9, b3: -1, "4": -1, b7: -1 },
 };
 
 export const TRIAD_DEGREES: Record<PentaScaleMode, Set<PentaDegree>> = {
@@ -123,6 +123,31 @@ export function buildBox(boxIdx: number, scale: PentaScaleMode): BoxNote[] {
 
 export function buildAllBoxes(scale: PentaScaleMode): BoxNote[][] {
   return Array.from({ length: 5 }, (_, i) => buildBox(i, scale));
+}
+
+// ─── Blues scale ──────────────────────────────────────────────────────────────
+// Returns the b5 "blue note" positions for a given pentatonic box.
+// Rule: strings with [b3, 4] get b5 after the 4th; strings with [4, 5] get b5
+// between them. Both cases place b5 exactly 1 fret above the 4th.
+export function bluesNotesForBox(boxNotes: BoxNote[]): BoxNote[] {
+  const byString = new Map<StringName, BoxNote[]>();
+  for (const n of boxNotes) {
+    const arr = byString.get(n.string) ?? [];
+    arr.push(n);
+    byString.set(n.string, arr);
+  }
+  const blues: BoxNote[] = [];
+  for (const notes of byString.values()) {
+    const degs = notes.map((n) => n.deg);
+    if (
+      (degs.includes("4") && degs.includes("5")) ||
+      (degs.includes("b3") && degs.includes("4"))
+    ) {
+      const note4 = notes.find((n) => n.deg === "4")!;
+      blues.push({ string: note4.string, fret: note4.fret + 1, deg: "b5" });
+    }
+  }
+  return blues;
 }
 
 // ─── Adjacent fret adjustment ─────────────────────────────────────────────────

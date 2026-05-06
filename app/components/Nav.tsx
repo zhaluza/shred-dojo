@@ -12,6 +12,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/shape-explorer", label: "Shape Explorer" },
       { to: "/scale-positions", label: "Systems" },
       { to: "/wylde-scales", label: "Wylde" },
+      { to: "/scale-builder", label: "Scale Builder" },
     ],
   },
   {
@@ -41,6 +42,7 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { to: "/note-recognition", label: "Note Recognition" },
       { to: "/staff-notes", label: "Staff Notes" },
+      { to: "/chord-tones", label: "Chord Tones" },
     ],
   },
 ];

@@ -13,6 +13,8 @@ export default [
   route("arpeggio-maps", "routes/arpeggio-maps.tsx"),
   route("circle-of-fifths", "routes/circle-of-fifths.tsx"),
   route("wylde-scales", "routes/wylde-scales.tsx"),
+  route("scale-builder", "routes/scale-builder.tsx"),
+  route("chord-tones", "routes/chord-tones.tsx"),
   route("note-recognition", "routes/note-recognition.tsx"),
   route("staff-notes", "routes/staff-notes.tsx"),
 ] satisfies RouteConfig;

@@ -4,6 +4,7 @@ import { Nav } from "./Nav";
 import type { StringName } from "./scalePositions.types";
 import {
   buildAllBoxes,
+  bluesNotesForBox,
   adjustAdjacentFrets,
   TRIAD_DEGREES,
   THIRD_DEG,
@@ -29,6 +30,8 @@ function triadColors(
     return isDark ? { bg: "#5a9a5a", fg: "#fff" } : { bg: "#3a6a3a", fg: "#fff" };
   if (deg === "5")
     return isDark ? { bg: "#5a7aaa", fg: "#fff" } : { bg: "#3a5a8a", fg: "#fff" };
+  if (deg === "b5")
+    return isDark ? { bg: "#7a6ad8", fg: "#fff" } : { bg: "#4a3aa8", fg: "#fff" };
   return null;
 }
 
@@ -409,7 +412,8 @@ function CombinedFretboard({
                 }
 
                 const isTriadNote = triad.has(note.deg);
-                if (showMode === "triad" && !isTriadNote) {
+                const isBluesNote = note.deg === "b5";
+                if (showMode === "triad" && !isTriadNote && !isBluesNote) {
                   return (
                     <div key={idx} className="flex-1 h-[29px] flex items-center justify-center relative z-[1]" />
                   );
@@ -418,7 +422,8 @@ function CombinedFretboard({
                 // Determine presentation
                 let dimmed = false;
                 let variant: DotVariant = "solid";
-                const isScale = !isTriadNote;
+                // b5 gets its own color (isScale=false), not the generic text-color treatment
+                const isScale = !isTriadNote && !isBluesNote;
 
                 if (mainNote) {
                   // Current shape: full opacity, solid
@@ -469,13 +474,16 @@ function Legend({
   thirdDeg,
   thirdLabel,
   isDark,
+  bluesMode,
 }: {
   thirdDeg: PentaDegree;
   thirdLabel: string;
   isDark: boolean;
+  bluesMode: boolean;
 }) {
   const cols3rd = triadColors(thirdDeg, thirdDeg, isDark)!;
   const cols5th = triadColors("5", thirdDeg, isDark)!;
+  const colsB5 = triadColors("b5", thirdDeg, isDark)!;
 
   const items: Array<{
     style: React.CSSProperties;
@@ -501,6 +509,16 @@ function Legend({
       label: "Perfect 5th",
       deg: "5",
     },
+    ...(bluesMode
+      ? [
+          {
+            style: { background: colsB5.bg } as React.CSSProperties,
+            textStyle: { color: "#fff" } as React.CSSProperties,
+            label: "Flat 5th (blue note)",
+            deg: "b5",
+          },
+        ]
+      : []),
     {
       style: { background: "var(--text)" },
       textStyle: { color: "var(--bg)" },
@@ -580,8 +598,11 @@ function buildRenderNotes(
 
   for (const n of mainNotes) {
     const isTriad = triad.has(n.deg);
-    if (showMode === "triad" && !isTriad) continue;
-    out.push({ ...n, variant: "solid", isScale: !isTriad });
+    const isBlues = n.deg === "b5";
+    // b5 always shows when present (blues mode added it); other non-triad notes filtered in triad mode
+    if (showMode === "triad" && !isTriad && !isBlues) continue;
+    // b5 gets its own color (isScale=false), not the generic text-color treatment
+    out.push({ ...n, variant: "solid", isScale: !isTriad && !isBlues });
   }
   for (const n of leftCross) {
     out.push({ ...n, variant: "cross", isScale: false });
@@ -740,6 +761,7 @@ function ShapeCard({
 export function PentatonicTriads() {
   const [scale, setScale] = useState<PentaScaleMode>("minor");
   const [showMode, setShowMode] = useState<"all" | "triad">("all");
+  const [bluesMode, setBluesMode] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [expandedShapes, setExpandedShapes] = useState<Set<number>>(new Set());
 
@@ -758,11 +780,18 @@ export function PentatonicTriads() {
   const thirdLabel = THIRD_LABEL[scale];
   const triad = TRIAD_DEGREES[scale];
 
-  const boxes = useMemo(() => buildAllBoxes(scale), [scale]);
+  const boxes = useMemo(() => {
+    const raw = buildAllBoxes(scale);
+    if (bluesMode && scale === "minor") {
+      return raw.map((box) => [...box, ...bluesNotesForBox(box)]);
+    }
+    return raw;
+  }, [scale, bluesMode]);
 
   const handleScaleChange = (s: PentaScaleMode) => {
     setScale(s);
     setExpandedShapes(new Set());
+    if (s === "major") setBluesMode(false);
   };
 
   const toggleExpand = (idx: number) => {
@@ -822,6 +851,23 @@ export function PentatonicTriads() {
           <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">Scale</span>
           <CtrlBtn label="Minor" active={scale === "minor"} onClick={() => handleScaleChange("minor")} />
           <CtrlBtn label="Major" active={scale === "major"} onClick={() => handleScaleChange("major")} />
+          {scale === "minor" && (
+            <>
+              <div className="w-px h-4 bg-[var(--border)]" />
+              <button
+                onClick={() => setBluesMode((v) => !v)}
+                className={[
+                  "font-display text-[0.75rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] border transition-all duration-100 cursor-pointer uppercase",
+                  bluesMode
+                    ? "border-transparent text-[#fff]"
+                    : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
+                ].join(" ")}
+                style={bluesMode ? { background: isDark ? "#7a6ad8" : "#4a3aa8" } : {}}
+              >
+                Blues Scale
+              </button>
+            </>
+          )}
           <div className="flex-1" />
           <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">Show</span>
           <CtrlBtn label="All notes" active={showMode === "all"} onClick={() => setShowMode("all")} />
@@ -834,7 +880,7 @@ export function PentatonicTriads() {
         </p>
 
         {/* Legend */}
-        <Legend thirdDeg={thirdDeg} thirdLabel={thirdLabel} isDark={isDark} />
+        <Legend thirdDeg={thirdDeg} thirdLabel={thirdLabel} isDark={isDark} bluesMode={bluesMode} />
 
         {/* Shape cards */}
         {shapeData.map((data, i) => (

@@ -21,6 +21,7 @@ export const LIGHT_THEME: CSSProperties = {
   "--str-Be": "#c8bfaa",
   "--fifth-col": "#4a6a8a",
   "--seventh-col": "#6a4a7a",
+  "--blues-col": "#4a3aa8",
 };
 
 export const DARK_THEME: CSSProperties = {
@@ -43,6 +44,7 @@ export const DARK_THEME: CSSProperties = {
   "--str-Be": "#6a6258",
   "--fifth-col": "#6a9abf",
   "--seventh-col": "#9a6abf",
+  "--blues-col": "#7a6ad8",
 };
 
 export const STRING_LINE: Record<StringName, { height: string; colorVar: string }> = {

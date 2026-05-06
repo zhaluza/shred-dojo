@@ -21,7 +21,7 @@ export const FRET_DOUBLE = new Set([12, 24]);
 export const SCALES: Record<ScaleMode, ScaleConfig> = {
   minor: {
     scale: ["R", "2", "b3", "4", "5", "6", "b7"],
-    semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "5": 7, b6: 8, "6": 8, b7: 10, "7": 11 },
+    semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "b5": 6, "5": 7, b6: 8, "6": 8, b7: 10, "7": 11 },
     penta: new Set<Degree>(["R", "b3", "4", "5", "b7"]),
     chordTones: new Set<Degree>(["R", "b3", "5"]),
     diaLabel: "Diatonic only (2, 6)",
@@ -29,7 +29,7 @@ export const SCALES: Record<ScaleMode, ScaleConfig> = {
   },
   major: {
     scale: ["R", "2", "3", "4", "5", "6", "7"],
-    semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "5": 7, b6: 8, "6": 9, b7: 10, "7": 11 },
+    semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "b5": 6, "5": 7, b6: 8, "6": 9, b7: 10, "7": 11 },
     penta: new Set<Degree>(["R", "2", "3", "5", "6"]),
     chordTones: new Set<Degree>(["R", "3", "5"]),
     diaLabel: "Diatonic only (4, 7)",
