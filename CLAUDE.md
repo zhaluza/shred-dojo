@@ -689,6 +689,72 @@ Uses the **VexFlow 5 low-level API** (not EasyScore) for full control over note 
 - **Formula row** — displays step labels (W / H / WH) with `—` separators; legend: "W = whole step · H = half step · WH = whole + half"
 - **View** — [Names] [Staff] toggle
 
+## Chord Tones feature
+
+The Chord Tones page (`/chord-tones`) is an interactive quiz where the full scale shape is shown on a fretboard and the user must identify the interval/degree of one highlighted note at a time. Unlike the Fretboard Notes quiz (one isolated dot), the entire shape stays visible throughout — answered notes reveal their degree color, idle notes remain dimly visible, giving positional context.
+
+### Files
+
+- `app/components/ChordTones.tsx` — all component + logic (self-contained, no sibling files)
+- `app/routes/chord-tones.tsx` — route wrapper
+
+### Settings
+
+- **Scale** — Minor Penta / Major Penta / Blues / Minor / Major
+- **System** — 3nps / CAGED (diatonic scales only)
+- **Shape** — Box 1–5 (penta/blues), Pos 1–7 (3nps), E D C A G (CAGED); resets on scale/system change
+- **Filter** — All Notes / Chord Tones (chord tones = R + 3/b3 + 5 only; applies to all scale types)
+- **Key** — 12 chromatic keys E–Eb; shifts fret number labels only (not dot positions); persisted to `"shred-dojo-key"`
+
+### Data model
+
+- `ScaleType` — `"minor_penta" | "major_penta" | "blues" | "minor" | "major"`
+- `QuizNote` — `{ string: StringName, fret: number, deg: string, key: string }` where `fret` is relative (0-based within position) and `key = "${string}-${fret}"`
+- `NoteState` — `"idle" | "current" | "correct" | "wrong" | "answered"`
+
+**Pool building:**
+- Pentatonic: `buildBox(boxIdx, "minor"/"major")` from `pentatonicTriads.utils.ts`; normalize absolute frets to relative by subtracting `minFret`; `startFret = minFret % 12`
+- Blues: minor penta pool + one `"b5"` note at `fret + 1` for every `"4"` note on the same string
+- Diatonic 3nps: `buildAllPositions(cfg)` filtered to `system === "3nps"`, indexed by `shapeIdx`
+- Diatonic CAGED: `buildCagedPositions(cfg)` indexed by `shapeIdx`
+- Chord-tones filter removes all degrees not in `{ R, 3/b3, 5 }`
+
+**Key transposition:** `keyOffset = (KEY_FRETS[keyIdx] - ROOT_FRET + 12) % 12`; `displayStartFret = startFret + keyOffset`. Fret number labels render as `f + displayStartFret`; dot positions stay relative.
+
+### Answer degrees per mode
+
+| Scale | All Notes | Chord Tones |
+|---|---|---|
+| Minor Penta | R b3 4 5 b7 | R b3 5 |
+| Major Penta | R 2 3 5 6 | R 3 5 |
+| Blues | R b3 4 b5 5 b7 | R b3 5 |
+| Minor | R 2 b3 4 5 b6 b7 | R b3 5 |
+| Major | R 2 3 4 5 6 7 | R 3 5 |
+
+### Note states and dot display
+
+| State | Color | Label |
+|---|---|---|
+| `idle` | `var(--muted)` fill | none |
+| `current` | `var(--text)` fill, pulsing | `?` |
+| `correct` | `#2d8a40` green (550ms flash) | degree |
+| `wrong` | `#b03020` red (650ms flash) | `?` |
+| `answered` | `FULL_DEG_COLOR[deg]` (persists) | degree |
+
+`FULL_DEG_COLOR` is `DEG_COLOR` from `intervalShapes.utils.ts` extended with `b6: "#7a5030"` and `"7": "#c07040"`.
+
+### Round / scoring
+
+Questions are picked randomly from the pool, excluding the immediately previous note. When all notes in the pool have been answered once (`answeredKeys.size >= pool.length`), `answeredKeys` is cleared and the round restarts — streak continues unbroken. Score bar shows correct/total, accuracy%, streak, best streak. High scores persisted to localStorage under `"ct-hs-${scale}-${system}-${shapeIdx}-${filter}"`. Audio: triangle oscillator (A4) on correct answers.
+
+### `ShapeQuizFretboard` component
+
+Inline component in `ChordTones.tsx`. Props: `notes: NoteDisplay[], fretCount, displayStartFret`.
+- 6 string rows (e at top), `44px` tall; fret cells `52px` wide; dots `26px`
+- Fret bars (1.5px `var(--fret-bar)`), inlay dots from `FRET_INLAYS` + `FRET_DOUBLE` (imported from `scalePositions.utils.ts`)
+- Thick left border (nut) when `displayStartFret <= 1`
+- Fret number labels below at `f + displayStartFret`
+
 ## React Router v7 conventions
 
 - Routes are explicitly registered in `app/routes.ts` (not auto-discovered). Add every new route there with `route("path", "routes/file.tsx")`.
