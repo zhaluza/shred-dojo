@@ -83,7 +83,7 @@ export function Nav({
   }
 
   return (
-    <header className="px-5 md:px-8 pt-5 md:pt-6 pb-4 md:pb-5 flex items-center justify-between border-b border-[var(--border)]">
+    <header className="px-5 md:px-8 pt-5 md:pt-6 pb-4 md:pb-5 [@media(max-height:500px)]:py-2 [@media(max-height:500px)]:px-4 flex items-center justify-between border-b border-[var(--border)]">
       <div className="flex items-center gap-7 md:gap-9">
         {/* Logo */}
         <Link
@@ -99,7 +99,7 @@ export function Nav({
         </Link>
 
         {/* Desktop nav groups — hidden below 700px */}
-        <nav className="hidden min-[700px]:flex items-end gap-5 md:gap-7 flex-wrap" aria-label="Main navigation">
+        <nav className="hidden min-[700px]:flex items-end gap-5 md:gap-7 [@media(max-height:500px)]:gap-3 flex-wrap" aria-label="Main navigation">
           {NAV_GROUPS.map((group, gi) => (
             <Fragment key={group.label}>
               {gi > 0 && (
@@ -110,7 +110,7 @@ export function Nav({
               )}
               <div className="flex flex-col gap-[6px]">
                 <span
-                  className="text-[0.52rem] md:text-[0.58rem] tracking-[0.18em] uppercase leading-none"
+                  className="text-[0.52rem] md:text-[0.58rem] tracking-[0.18em] uppercase leading-none [@media(max-height:500px)]:hidden"
                   style={{ color: "var(--muted)" }}
                 >
                   {group.label}

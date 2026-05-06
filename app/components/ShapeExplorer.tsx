@@ -727,7 +727,7 @@ export function ShapeExplorer() {
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       {/* ── Controls ── */}
-      <div className="max-w-[1000px] mx-auto w-full px-6 pt-8 pb-2">
+      <div className="max-w-[1000px] mx-auto w-full px-6 pt-8 [@media(max-height:500px)]:pt-3 pb-2">
         {/* Page heading */}
         <div className="mb-7">
           <p className="text-[0.5rem] tracking-[0.2em] uppercase text-[var(--muted)] mb-1">

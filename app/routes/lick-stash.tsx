@@ -40,7 +40,7 @@ export default function LickStash() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
-      <main className="flex-1 max-w-[760px] mx-auto w-full px-8 pt-12 pb-16">
+      <main className="flex-1 max-w-[760px] mx-auto w-full px-8 pt-12 pb-16 [@media(max-height:500px)]:pt-4 [@media(max-height:500px)]:pb-6">
         {/* Page title */}
         <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none mb-2">
           Lick Stash

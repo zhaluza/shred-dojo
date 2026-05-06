@@ -1156,7 +1156,7 @@ export function ScalePositions() {
       className="bg-[var(--bg)] text-[var(--text)] font-mono pb-20 transition-[background,color] duration-200 min-h-screen"
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
-      <div className="pt-8 px-6">
+      <div className="pt-8 [@media(max-height:500px)]:pt-3 px-6">
       {/* Header */}
       <header className="max-w-[980px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
         <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none">

@@ -67,6 +67,9 @@ export function MetronomeWidget() {
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1024
   );
+  const [windowHeight, setWindowHeight] = useState(
+    typeof window !== "undefined" ? window.innerHeight : 768
+  );
 
   // Refs — stable across renders, used by scheduler
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -87,7 +90,10 @@ export function MetronomeWidget() {
 
   // Track window width for responsive panel sizing
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      setWindowHeight(window.innerHeight);
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -310,9 +316,12 @@ export function MetronomeWidget() {
 
   const C = getColors(isDark);
   const isMobile = windowWidth < 700;
+  const isShortViewport = windowHeight < 500;
   const panelWidth = isMobile ? Math.min(windowWidth - 32, 280) : 216;
-  const droneGridCols = isMobile ? 4 : 6;
+  const droneGridCols = isMobile || isShortViewport ? 4 : 6;
   const safeBottom = `calc(env(safe-area-inset-bottom, 0px) + ${isMobile ? 16 : 24}px)`;
+  // In landscape / short viewports, cap panel height so it doesn't overflow screen
+  const panelMaxHeight = isShortViewport ? windowHeight - 60 : undefined;
 
   return (
     <div
@@ -335,6 +344,8 @@ export function MetronomeWidget() {
             border: `1px solid ${C.border}`,
             borderTop: `3px solid ${C.accent}`,
             width: panelWidth,
+            maxHeight: panelMaxHeight,
+            overflowY: panelMaxHeight ? "auto" : undefined,
           }}
         >
           {/* Header */}

@@ -427,7 +427,7 @@ export function StaffNotes() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
-      <main className="flex-1 px-5 md:px-8 py-8 max-w-[640px] mx-auto w-full">
+      <main className="flex-1 px-5 md:px-8 py-8 [@media(max-height:500px)]:py-3 max-w-[640px] mx-auto w-full">
         {/* Header */}
         <div className="mb-7">
           <h1 className="font-display font-semibold text-[clamp(1.7rem,5vw,2.6rem)] tracking-[0.04em] uppercase leading-none">

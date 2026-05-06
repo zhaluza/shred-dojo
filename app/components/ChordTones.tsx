@@ -581,7 +581,7 @@ export function ChordTones() {
         try { localStorage.setItem("shred-dojo-dark", String(next)); } catch {}
       }} />
 
-      <main className="flex-1 flex flex-col items-center px-4 py-8 max-w-2xl mx-auto w-full">
+      <main className="flex-1 flex flex-col items-center px-4 py-8 [@media(max-height:500px)]:py-3 max-w-2xl mx-auto w-full">
         <div className="w-full mb-6">
           <h1 className="font-display font-semibold text-[clamp(1.8rem,5vw,2.6rem)] tracking-[0.04em] uppercase leading-none text-[var(--text)]">
             Chord Tones

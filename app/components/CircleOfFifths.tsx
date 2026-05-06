@@ -444,7 +444,7 @@ export function CircleOfFifths() {
       style={theme}
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
-      <div className="px-6 md:px-8 py-8 md:py-10 max-w-3xl mx-auto">
+      <div className="px-6 md:px-8 py-8 md:py-10 [@media(max-height:500px)]:py-3 max-w-3xl mx-auto">
         <header className="mb-8 md:mb-10">
           <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none text-[var(--text)]">
             Circle of Fifths

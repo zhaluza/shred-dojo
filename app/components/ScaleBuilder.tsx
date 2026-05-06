@@ -399,7 +399,7 @@ export function ScaleBuilder() {
       style={isDark ? DARK_THEME : LIGHT_THEME}
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
-      <main className="flex-1 px-5 md:px-8 py-8 max-w-[760px] mx-auto w-full">
+      <main className="flex-1 px-5 md:px-8 py-8 [@media(max-height:500px)]:py-3 max-w-[760px] mx-auto w-full">
         <h1 className="font-display font-semibold text-[clamp(1.8rem,5vw,2.8rem)] tracking-[0.04em] uppercase leading-none mb-8">
           Scale <span style={{ color: "var(--accent)" }}>Builder</span>
         </h1>

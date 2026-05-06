@@ -206,7 +206,7 @@ export default function LickStashPack() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
-      <main className="flex-1 max-w-[840px] mx-auto w-full px-8 pt-10 pb-16">
+      <main className="flex-1 max-w-[840px] mx-auto w-full px-8 pt-10 pb-16 [@media(max-height:500px)]:pt-4 [@media(max-height:500px)]:pb-6">
         {/* Breadcrumb */}
         <Link
           to="/lick-stash"

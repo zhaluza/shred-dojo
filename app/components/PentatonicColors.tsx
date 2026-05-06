@@ -315,7 +315,7 @@ export function PentatonicColors() {
       style={theme}
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
-      <div className="max-w-[900px] mx-auto px-5 pt-8 pb-20">
+      <div className="max-w-[900px] mx-auto px-5 pt-8 [@media(max-height:500px)]:pt-3 pb-20">
         {/* Header */}
         <header className="mb-6 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-5">
           <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none">

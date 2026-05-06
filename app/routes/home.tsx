@@ -223,40 +223,40 @@ function HomePage({
         </div>
 
         {/* Hero content */}
-        <div className="relative z-[1] max-w-[900px] mx-auto w-full px-5 md:px-8 pt-12 pb-16 md:pt-20 md:pb-24">
+        <div className="relative z-[1] max-w-[900px] mx-auto w-full px-5 md:px-8 pt-12 pb-16 md:pt-20 md:pb-24 [@media(max-height:500px)]:pt-4 [@media(max-height:500px)]:pb-6">
           <p
-            className="text-[0.58rem] tracking-[0.24em] uppercase mb-7"
+            className="text-[0.58rem] tracking-[0.24em] uppercase mb-7 [@media(max-height:500px)]:mb-3"
             style={{ color: AMBER }}
           >
             Guitar Learning Platform
           </p>
 
-          <h1 className="font-display font-semibold uppercase leading-[0.9] mb-10">
+          <h1 className="font-display font-semibold uppercase leading-[0.9] mb-10 [@media(max-height:500px)]:mb-4">
             <span
-              className="block text-[clamp(4rem,11vw,8.5rem)] tracking-[0.02em]"
+              className="block text-[clamp(4rem,11vw,8.5rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.5rem)] tracking-[0.02em]"
             >
               Know
             </span>
             <span
-              className="block text-[clamp(4rem,11vw,8.5rem)] tracking-[0.02em]"
+              className="block text-[clamp(4rem,11vw,8.5rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.5rem)] tracking-[0.02em]"
               style={{ color: "var(--accent)" }}
             >
               Every
             </span>
             <span
-              className="block text-[clamp(4rem,11vw,8.5rem)] tracking-[0.02em]"
+              className="block text-[clamp(4rem,11vw,8.5rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.5rem)] tracking-[0.02em]"
             >
               Note.
             </span>
           </h1>
 
           {/* Rule */}
-          <div className="flex items-center mb-8 max-w-[460px]">
+          <div className="flex items-center mb-8 [@media(max-height:500px)]:mb-3 max-w-[460px]">
             <div className="h-[2px] w-10 bg-[var(--accent)]" />
             <div className="h-[2px] flex-1 bg-[var(--border)] ml-2" />
           </div>
 
-          <p className="text-[0.8rem] leading-[1.95] text-[var(--muted)] mb-10 max-w-[480px]">
+          <p className="text-[0.8rem] leading-[1.95] text-[var(--muted)] mb-10 [@media(max-height:500px)]:hidden max-w-[480px]">
             A focused platform for guitarists who want real fretboard command —
             not just shapes to memorize, but a complete understanding of how scales,
             positions, and vocabulary connect across the entire neck.

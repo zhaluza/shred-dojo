@@ -461,7 +461,7 @@ export function WyldeScales() {
     <div className="min-h-screen" style={theme}>
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
-      <main className="px-4 md:px-8 py-8 max-w-[1400px] mx-auto">
+      <main className="px-4 md:px-8 py-8 [@media(max-height:500px)]:py-3 max-w-[1400px] mx-auto">
         {/* Page title */}
         <div className="mb-8">
           <h1
