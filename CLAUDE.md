@@ -676,7 +676,7 @@ The Scale Builder page (`/scale-builder`) lets users explore the note content of
 Uses the **VexFlow 5 low-level API** (not EasyScore) for full control over note count and spacing.
 
 - **Dynamic import** inside `useEffect` to avoid SSR (`import("vexflow").then(...)`)
-- **`ResizeObserver`** tracks `containerWidth` state; a separate effect re-renders VexFlow whenever its deps change
+- **`ResizeObserver`** tracks `containerWidth` state; a separate effect re-renders VexFlow whenever `[scaleNotes, isDark, containerWidth]` changes. The observer wraps every measurement in `requestAnimationFrame` and reads `el.getBoundingClientRect().width` (actual rendered width) rather than `contentRect.width` (which can be stale during orientation change before layout settles). A `window.addEventListener('resize', measure)` fallback fires after orientation change is complete, guaranteeing at least one correct measurement even if ResizeObserver misfires. This prevents the stem-detachment bug where stems and note heads land at different X positions because VexFlow formatted to a stale intermediate width.
 - **Cancellation flag** — each effect sets `let cancelled = false` and returns `() => { cancelled = true }`. The `.then()` callback checks `cancelled` before rendering, preventing stale async renders from appending duplicate SVGs
 - **`el.innerHTML = ""`** cleared inside the `.then()` (after the cancelled check), not before the import — ensures only the winning render clears the container
 - **`Voice.Mode.SOFT`** — suppresses beat-count validation so 5, 6, or 7 quarter notes all work without a time signature

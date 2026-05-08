@@ -217,11 +217,24 @@ function StaffView({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      setContainerWidth(entries[0].contentRect.width);
-    });
+
+    let rafId: number;
+    const measure = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        if (el.isConnected) setContainerWidth(el.getBoundingClientRect().width);
+      });
+    };
+
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener("resize", measure);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   useEffect(() => {
