@@ -4,6 +4,7 @@ import {
   LIGHT_THEME,
   STRING_LINE,
 } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import type {
   NoteFilter,
@@ -43,47 +44,6 @@ const MODE_ROMAN: Record<ScaleMode, string[]> = {
   minor: ["i", "ii°", "bIII", "iv", "v", "bVI", "bVII"],
 };
 
-// ─── ControlButton ────────────────────────────────────────────────────────────
-
-function ControlButton({
-  label,
-  active,
-  onClick,
-  small,
-  disabled,
-  title,
-  normalCase,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-  disabled?: boolean;
-  title?: string;
-  normalCase?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={[
-        "font-display border transition-all duration-100",
-        small
-          ? "text-[0.65rem] px-[0.7rem] py-[0.3rem] tracking-[0.1em] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
-          : "text-[0.75rem] px-[0.85rem] py-[0.35rem] tracking-[0.08em] max-[700px]:py-[0.6rem]",
-        normalCase ? "" : "uppercase",
-        disabled
-          ? "bg-transparent text-[var(--muted)] border-[var(--border)] opacity-40 cursor-not-allowed"
-          : active
-            ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)] cursor-pointer"
-            : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] cursor-pointer",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
 
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
@@ -1178,12 +1138,12 @@ export function ScalePositions() {
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Scale
         </span>
-        <ControlButton
+        <CtrlButton
           label="Major"
           active={scaleMode === "major"}
           onClick={() => handleScaleChange("major")}
         />
-        <ControlButton
+        <CtrlButton
           label="Minor"
           active={scaleMode === "minor"}
           onClick={() => handleScaleChange("minor")}
@@ -1192,7 +1152,7 @@ export function ScalePositions() {
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Labels
         </span>
-        <ControlButton
+        <CtrlButton
           label="Modes"
           active={showModes}
           onClick={() => setShowModes((v) => !v)}
@@ -1205,17 +1165,17 @@ export function ScalePositions() {
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Show
         </span>
-        <ControlButton
+        <CtrlButton
           label="All"
           active={noteFilter === "all"}
           onClick={() => setNoteFilter("all")}
         />
-        <ControlButton
+        <CtrlButton
           label="Pentatonic"
           active={noteFilter === "penta"}
           onClick={() => setNoteFilter("penta")}
         />
-        <ControlButton
+        <CtrlButton
           label="Chord tones"
           active={noteFilter === "chord"}
           onClick={() => setNoteFilter("chord")}
@@ -1231,7 +1191,7 @@ export function ScalePositions() {
           const isActive = selectedSystems.includes(sys);
           const isDisabled = !isActive && selectedSystems.length >= 2;
           return (
-            <ControlButton
+            <CtrlButton
               key={sys}
               label={SYSTEM_LABELS[sys]}
               active={isActive}
@@ -1249,7 +1209,7 @@ export function ScalePositions() {
           Key
         </span>
         {KEYS.map((key, i) => (
-          <ControlButton
+          <CtrlButton
             key={key.name}
             label={key.name}
             active={keyIdx === i}

@@ -171,8 +171,8 @@ function StaffDisplay({
 }) {
   const idleColor = noteStyle === "color" ? "var(--accent)" : "var(--text)";
   const strokeColor =
-    feedback === "correct" ? "#2d8a40" :
-    feedback === "wrong"   ? "#b03020" :
+    feedback === "correct" ? "var(--feedback-correct)" :
+    feedback === "wrong"   ? "var(--feedback-wrong)" :
     idleColor;
 
   const cy = entry ? staffNoteY(entry.staffStep) : STAFF_BOT_Y - (6 - 2) * 6; // default B4
@@ -301,11 +301,11 @@ function AnswerBtn({
           "transparent",
         borderColor:
           state === "correct" ? "var(--accent)" :
-          state === "wrong"   ? "#b03020" :
+          state === "wrong"   ? "var(--feedback-wrong)" :
           "var(--border)",
         color:
           state === "correct" ? "var(--bg)" :
-          state === "wrong"   ? "#b03020" :
+          state === "wrong"   ? "var(--feedback-wrong)" :
           "var(--text)",
       }}
     >

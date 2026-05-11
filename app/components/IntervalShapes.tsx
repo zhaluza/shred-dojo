@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import type { StringName } from "./scalePositions.types";
 import {
@@ -12,36 +13,6 @@ import {
   type PentaScaleMode,
 } from "./intervalShapes.utils";
 
-// ─── CtrlBtn ──────────────────────────────────────────────────────────────────
-
-function CtrlBtn({
-  label,
-  active,
-  onClick,
-  small,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "font-display border transition-all duration-100 cursor-pointer uppercase",
-        small
-          ? "text-[0.65rem] tracking-[0.1em] px-[0.7rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
-          : "text-[0.75rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] max-[700px]:py-[0.6rem]",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
 
 // ─── IntervalDot ──────────────────────────────────────────────────────────────
 
@@ -337,7 +308,7 @@ function FlashcardPanel({ scale }: { scale: PentaScaleMode }) {
                 height: 7,
                 backgroundColor:
                   i < safeIdx
-                    ? "#c8a060"
+                    ? "var(--sys-caged)"
                     : i === safeIdx
                       ? "var(--text)"
                       : "var(--border)",
@@ -374,7 +345,7 @@ function FlashcardPanel({ scale }: { scale: PentaScaleMode }) {
 
         <div
           className="px-5 py-[0.65rem] border-t border-[var(--border)] text-[0.52rem] tracking-[0.18em] uppercase text-center transition-colors duration-150"
-          style={{ color: revealed ? "#c8a060" : "var(--muted)" }}
+          style={{ color: revealed ? "var(--sys-caged)" : "var(--muted)" }}
         >
           {revealed ? "Tap to reset" : "Tap to reveal"}
         </div>
@@ -382,8 +353,8 @@ function FlashcardPanel({ scale }: { scale: PentaScaleMode }) {
 
       {/* Navigation */}
       <div className="max-w-[480px] mx-auto mt-3 flex gap-3">
-        <CtrlBtn label="← Prev" active={false} onClick={prev} />
-        <CtrlBtn label="Next →" active={false} onClick={next} />
+        <CtrlButton label="← Prev" active={false} onClick={prev} />
+        <CtrlButton label="Next →" active={false} onClick={next} />
       </div>
 
       {/* Description (shown when revealed) */}
@@ -473,12 +444,12 @@ export function IntervalShapes() {
           <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">
             Scale
           </span>
-          <CtrlBtn
+          <CtrlButton
             label="Minor"
             active={scale === "minor"}
             onClick={() => handleScaleChange("minor")}
           />
-          <CtrlBtn
+          <CtrlButton
             label="Major"
             active={scale === "major"}
             onClick={() => handleScaleChange("major")}
@@ -487,12 +458,12 @@ export function IntervalShapes() {
           <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">
             Mode
           </span>
-          <CtrlBtn
+          <CtrlButton
             label="Diagram"
             active={mode === "diagram"}
             onClick={() => setMode("diagram")}
           />
-          <CtrlBtn
+          <CtrlButton
             label="Flashcard"
             active={mode === "flashcard"}
             onClick={() => setMode("flashcard")}

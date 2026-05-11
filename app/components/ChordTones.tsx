@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import type { StringName } from "./scalePositions.types";
 import {
@@ -222,26 +223,7 @@ function playCorrect(ctx: AudioContext) {
   osc.stop(now + 0.9);
 }
 
-// ─── Chip button ───────────────────────────────────────────────────────────────
 
-function Chip({ label, active, onClick, disabled }: {
-  label: string; active: boolean; onClick: () => void; disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={[
-        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
 
 // ─── Shape fretboard ───────────────────────────────────────────────────────────
 
@@ -320,11 +302,11 @@ function ShapeQuizFretboard({
                     dotLabel = "?";
                     isPulsing = true;
                   } else if (state === "correct") {
-                    dotBg = "#2d8a40";
+                    dotBg = "var(--feedback-correct)";
                     dotShadow = "0 0 10px rgba(50,200,80,0.5)";
                     dotLabel = noteHere?.deg ?? "";
                   } else if (state === "wrong") {
-                    dotBg = "#b03020";
+                    dotBg = "var(--feedback-wrong)";
                     dotShadow = "0 0 10px rgba(200,60,30,0.5)";
                     dotLabel = "?";
                   } else if (state === "answered") {
@@ -407,16 +389,16 @@ function AnswerBtn({ deg, onClick, state }: {
       className="font-display text-[0.85rem] tracking-[0.06em] uppercase border transition-all duration-150 cursor-pointer min-w-[52px] py-[0.48rem] px-3 hover:border-[var(--text)]"
       style={{
         background:
-          state === "correct" ? "#2d8a40" :
+          state === "correct" ? "var(--feedback-correct)" :
           state === "wrong"   ? "rgba(180,50,30,0.18)" :
           "transparent",
         borderColor:
-          state === "correct" ? "#2d8a40" :
-          state === "wrong"   ? "#b03020" :
+          state === "correct" ? "var(--feedback-correct)" :
+          state === "wrong"   ? "var(--feedback-wrong)" :
           "var(--border)",
         color:
           state === "correct" ? "#fff" :
-          state === "wrong"   ? "#b03020" :
+          state === "wrong"   ? "var(--feedback-wrong)" :
           "var(--text)",
       }}
     >
@@ -600,7 +582,7 @@ export function ChordTones() {
               <div className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mb-2 font-display">Scale</div>
               <div className="flex flex-wrap gap-2">
                 {(["minor_penta", "major_penta", "blues", "minor", "major"] as ScaleType[]).map((s) => (
-                  <Chip
+                  <CtrlButton
                     key={s}
                     label={s === "minor_penta" ? "Minor Penta" : s === "major_penta" ? "Major Penta" : s === "blues" ? "Blues" : s === "minor" ? "Minor" : "Major"}
                     active={settings.scale === s}
@@ -615,8 +597,8 @@ export function ChordTones() {
               <div>
                 <div className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mb-2 font-display">System</div>
                 <div className="flex flex-wrap gap-2">
-                  <Chip label="3nps" active={settings.system === "3nps"} onClick={() => updateSettings({ system: "3nps" })} />
-                  <Chip label="CAGED" active={settings.system === "caged"} onClick={() => updateSettings({ system: "caged" })} />
+                  <CtrlButton label="3nps" active={settings.system === "3nps"} onClick={() => updateSettings({ system: "3nps" })} />
+                  <CtrlButton label="CAGED" active={settings.system === "caged"} onClick={() => updateSettings({ system: "caged" })} />
                 </div>
               </div>
             )}
@@ -635,7 +617,7 @@ export function ChordTones() {
                     label = `Box ${i + 1}`;
                   }
                   return (
-                    <Chip
+                    <CtrlButton
                       key={i}
                       label={label}
                       active={settings.shapeIdx === i}
@@ -650,8 +632,8 @@ export function ChordTones() {
             <div>
               <div className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mb-2 font-display">Notes</div>
               <div className="flex flex-wrap gap-2">
-                <Chip label="All Notes" active={settings.filter === "all"} onClick={() => updateSettings({ filter: "all" })} />
-                <Chip label="Chord Tones" active={settings.filter === "chord_tones"} onClick={() => updateSettings({ filter: "chord_tones" })} />
+                <CtrlButton label="All Notes" active={settings.filter === "all"} onClick={() => updateSettings({ filter: "all" })} />
+                <CtrlButton label="Chord Tones" active={settings.filter === "chord_tones"} onClick={() => updateSettings({ filter: "chord_tones" })} />
               </div>
             </div>
 
@@ -660,7 +642,7 @@ export function ChordTones() {
               <div className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mb-2 font-display">Key</div>
               <div className="flex flex-wrap gap-2">
                 {KEY_NAMES.map((k, i) => (
-                  <Chip key={k} label={k} active={keyIdx === i} onClick={() => updateKey(i)} />
+                  <CtrlButton key={k} label={k} active={keyIdx === i} onClick={() => updateKey(i)} />
                 ))}
               </div>
             </div>
@@ -710,7 +692,7 @@ export function ChordTones() {
               <div
                 className="font-mono text-[0.72rem] text-center"
                 style={{
-                  color: feedback === "correct" ? "#2d8a40" : feedback === "wrong" ? "#b03020" : "var(--muted)",
+                  color: feedback === "correct" ? "var(--feedback-correct)" : feedback === "wrong" ? "var(--feedback-wrong)" : "var(--muted)",
                   minHeight: "1.1em",
                 }}
               >

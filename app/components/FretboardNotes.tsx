@@ -156,8 +156,8 @@ function QuizFretboard({
   const frets = Array.from({ length: maxFret }, (_, i) => i + 1);
 
   const dotBg =
-    feedback === "correct" ? "#2d8a40" :
-    feedback === "wrong"   ? "#b03020" :
+    feedback === "correct" ? "var(--feedback-correct)" :
+    feedback === "wrong"   ? "var(--feedback-wrong)" :
     "var(--accent)";
 
   const dotShadow =
@@ -274,11 +274,11 @@ function AnswerBtn({
           "transparent",
         borderColor:
           state === "correct" ? "var(--accent)" :
-          state === "wrong"   ? "#b03020" :
+          state === "wrong"   ? "var(--feedback-wrong)" :
           "var(--border)",
         color:
           state === "correct" ? "var(--bg)" :
-          state === "wrong"   ? "#b03020" :
+          state === "wrong"   ? "var(--feedback-wrong)" :
           "var(--text)",
       }}
     >

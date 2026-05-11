@@ -135,8 +135,9 @@ export function Nav({
                         to={to}
                         className={[
                           "font-display text-[0.7rem] md:text-[0.75rem] tracking-[0.09em] uppercase no-underline transition-colors whitespace-nowrap",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]",
                           isActive(to)
-                            ? "text-[var(--accent)] border-b border-[var(--accent)] pb-px"
+                            ? "text-[var(--accent)] border-b-2 border-[var(--accent)] pb-px"
                             : "text-[var(--muted)] hover:text-[var(--text)]",
                         ].join(" ")}
                       >
@@ -155,7 +156,7 @@ export function Nav({
         {/* Dark mode toggle — desktop */}
         <button
           onClick={toggleDark}
-          className="hidden min-[700px]:block font-display text-[0.65rem] md:text-[0.7rem] tracking-[0.1em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-3 py-[0.35rem] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer shrink-0"
+          className="hidden min-[700px]:block font-display text-[0.65rem] md:text-[0.7rem] tracking-[0.1em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-3 py-[0.35rem] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]"
         >
           {isDark ? "Light" : "Dark"}
         </button>
@@ -165,7 +166,7 @@ export function Nav({
           onClick={() => setIsOpen(true)}
           aria-label="Open menu"
           aria-expanded={isOpen}
-          className="min-[700px]:hidden flex items-center justify-center w-10 h-10 text-[var(--text)] border border-[var(--border)] bg-transparent cursor-pointer hover:border-[var(--text)] transition-colors"
+          className="min-[700px]:hidden flex items-center justify-center w-10 h-10 text-[var(--text)] border border-[var(--border)] bg-transparent cursor-pointer hover:border-[var(--text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]"
         >
           <span className="text-[1.2rem] leading-none">☰</span>
         </button>
@@ -208,7 +209,7 @@ export function Nav({
               <button
                 onClick={() => setIsOpen(false)}
                 aria-label="Close menu"
-                className="flex items-center justify-center w-10 h-10 text-[var(--muted)] hover:text-[var(--text)] bg-transparent border-none cursor-pointer transition-colors"
+                className="flex items-center justify-center w-10 h-10 text-[var(--muted)] hover:text-[var(--text)] bg-transparent border-none cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]"
               >
                 <span className="text-[1.1rem] leading-none">✕</span>
               </button>
@@ -247,6 +248,7 @@ export function Nav({
                         onClick={() => setIsOpen(false)}
                         className={[
                           "flex items-center px-5 min-h-[48px] font-display text-[0.82rem] tracking-[0.07em] uppercase no-underline transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]",
                           active
                             ? "text-[var(--accent)]"
                             : "text-[var(--text)] hover:text-[var(--accent)]",
@@ -271,7 +273,7 @@ export function Nav({
               </span>
               <button
                 onClick={toggleDark}
-                className="font-display text-[0.72rem] tracking-[0.1em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-4 py-2 min-h-[40px] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer"
+                className="font-display text-[0.72rem] tracking-[0.1em] uppercase border border-[var(--border)] text-[var(--muted)] bg-transparent px-4 py-2 min-h-[40px] hover:border-[var(--text)] hover:text-[var(--text)] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]"
               >
                 {isDark ? "Light Mode" : "Dark Mode"}
               </button>

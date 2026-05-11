@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import type {
   Degree,
   NoteFilter,
@@ -491,45 +492,6 @@ function CombinedFretboard({
   );
 }
 
-// ─── ControlBtn ───────────────────────────────────────────────────────────────
-
-function ControlBtn({
-  label,
-  active,
-  onClick,
-  small,
-  disabled,
-  normalCase,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-  disabled?: boolean;
-  normalCase?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={[
-        "font-display border transition-all duration-100",
-        normalCase ? "" : "uppercase",
-        small
-          ? "text-[0.6rem] tracking-[0.1em] px-[0.65rem] py-[0.25rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
-          : "text-[0.72rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] max-[700px]:py-[0.6rem]",
-        disabled
-          ? "opacity-40 cursor-not-allowed border-[var(--border)] text-[var(--muted)] bg-transparent"
-          : active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)] cursor-pointer"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)] cursor-pointer",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
-
 // ─── OverviewGrid ─────────────────────────────────────────────────────────────
 
 function OverviewGrid({
@@ -748,13 +710,13 @@ export function ShapeExplorer() {
               Scale
             </p>
             <div className="flex gap-1">
-              <ControlBtn
+              <CtrlButton
                 label="Minor"
                 active={scaleMode === "minor"}
                 onClick={() => changeMode("minor")}
                 small
               />
-              <ControlBtn
+              <CtrlButton
                 label="Major"
                 active={scaleMode === "major"}
                 onClick={() => changeMode("major")}
@@ -791,19 +753,19 @@ export function ShapeExplorer() {
               System
             </p>
             <div className="flex gap-1">
-              <ControlBtn
+              <CtrlButton
                 label="3nps"
                 active={system === "3nps"}
                 onClick={() => changeSystem("3nps")}
                 small
               />
-              <ControlBtn
+              <CtrlButton
                 label="CAGED"
                 active={system === "caged"}
                 onClick={() => changeSystem("caged")}
                 small
               />
-              <ControlBtn
+              <CtrlButton
                 label="Penta"
                 active={system === "penta"}
                 onClick={() => changeSystem("penta")}
@@ -819,19 +781,19 @@ export function ShapeExplorer() {
                 Show
               </p>
               <div className="flex gap-1">
-                <ControlBtn
+                <CtrlButton
                   label="All"
                   active={noteFilter === "all"}
                   onClick={() => setNoteFilter("all")}
                   small
                 />
-                <ControlBtn
+                <CtrlButton
                   label="Penta"
                   active={noteFilter === "penta"}
                   onClick={() => setNoteFilter("penta")}
                   small
                 />
-                <ControlBtn
+                <CtrlButton
                   label="Chord"
                   active={noteFilter === "chord"}
                   onClick={() => setNoteFilter("chord")}
@@ -847,19 +809,19 @@ export function ShapeExplorer() {
               View
             </p>
             <div className="flex gap-1">
-              <ControlBtn
+              <CtrlButton
                 label="Focus"
                 active={viewMode === "focus"}
                 onClick={() => setViewMode("focus")}
                 small
               />
-              <ControlBtn
+              <CtrlButton
                 label="Pair"
                 active={viewMode === "pair"}
                 onClick={() => setViewMode("pair")}
                 small
               />
-              <ControlBtn
+              <CtrlButton
                 label="Overview"
                 active={viewMode === "overview"}
                 onClick={() => setViewMode("overview")}
@@ -876,7 +838,7 @@ export function ShapeExplorer() {
           </p>
           <div className="flex flex-wrap gap-1">
             {KEYS.map((key, i) => (
-              <ControlBtn
+              <CtrlButton
                 key={key.name}
                 label={key.name}
                 active={keyIdx === i}

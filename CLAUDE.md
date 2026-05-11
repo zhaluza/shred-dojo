@@ -15,6 +15,7 @@
 ```
 app/
   components/    # Shared components (co-locate .types.ts, .utils.ts, .theme.ts siblings)
+    CtrlButton.tsx  # Shared button component — import this, never define local CtrlBtn/Chip
   routes/        # File-based routes (React Router v7 conventions)
   root.tsx       # Root layout, global error boundary
   app.css        # Tailwind entry point — keep minimal
@@ -58,6 +59,9 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 | `--fifth-col` | `#4a6a8a` | `#6a9abf` | 5th degree dots (chord/arpeggio pages) |
 | `--seventh-col` | `#6a4a7a` | `#9a6abf` | 7th degree dots (chord/arpeggio pages) |
 | `--blues-col` | `#4a3aa8` | `#7a6ad8` | b5 "blue note" dots (blues scale mode) |
+| `--third-col` | `#3a6a3a` | `#5a9a5a` | 3rd degree dots (pentatonic triads, interval shapes) |
+| `--feedback-correct` | `#2d8a40` | `#2d8a40` | Correct-answer feedback state in all quiz components |
+| `--feedback-wrong` | `#b03020` | `#b03020` | Wrong-answer feedback state in all quiz components |
 
 **Typography scale** (Tailwind arbitrary values):
 - H1: `font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none`
@@ -66,9 +70,13 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 - Cell labels: `font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]`
 - Detail titles: `font-display text-[0.95rem] tracking-[0.1em] uppercase`
 
+**Shared button component** — `app/components/CtrlButton.tsx` exports `CtrlButton`, the single shared implementation used across all page components. Props: `label`, `active`, `onClick`, `small?`, `disabled?`, `title?`, `normalCase?`, `className?`. Do not define local `CtrlBtn` / `ControlButton` / `Chip` variants in page components — import `CtrlButton` instead.
+
 **Button states:**
 - Default: `bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]`
 - Active: `bg-[var(--text)] text-[var(--bg)] border-[var(--text)]`
+- Focus: `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]` (built into `CtrlButton`; apply manually to standalone buttons and links)
+- Blues-mode active exception: blues toggle buttons use `bg-[var(--blues-col)] border-[var(--blues-col)] text-white` when active — keep these as standalone `<button>` elements with the focus classes applied directly.
 
 **Mobile touch targets** — All interactive buttons add `max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]` (small) or `max-[700px]:py-[0.6rem]` (normal) to meet the ~40px minimum height on mobile. Icon-only and narrow buttons also add `max-[700px]:min-h-[44px]`.
 
@@ -132,13 +140,15 @@ The Pentatonic Triads page (`/pentatonic-triads`) visualizes the triad intervals
 
 ### Triad dot colors
 
-| Role | Light | Dark |
-|---|---|---|
-| Root | `#c0392b` | `#c0392b` |
-| 3rd | `#3a6a3a` | `#5a9a5a` |
-| 5th | `#3a5a8a` | `#5a7aaa` |
-| Scale tone | `var(--text)` / `var(--bg)` | same |
-| b5 (blue note) | `#4a3aa8` | `#7a6ad8` |
+Triad colors use CSS custom properties (theme-aware):
+
+| Role | CSS var | Light value | Dark value |
+|---|---|---|---|
+| Root | `var(--root-col)` | `#c0392b` | `#c0392b` |
+| 3rd | `var(--third-col)` | `#3a6a3a` | `#5a9a5a` |
+| 5th | `var(--fifth-col)` | `#3a5a8a` | `#5a7aaa` |
+| Scale tone | `var(--text)` / `var(--bg)` | — | — |
+| b5 (blue note) | `var(--blues-col)` | `#4a3aa8` | `#7a6ad8` |
 
 ### Dot variants
 
@@ -246,8 +256,8 @@ The `displayMin` / `displayMax` passed in are `boxMinFret - 1` / `boxMaxFret + 1
 
 ### Dot colors
 
-- **Pentatonic dots** (`PentaDot`) — same root/3rd/5th colors as the Pentatonic Triads feature; other scale tones use `var(--text)` fill
-- **Color dots** (`ColorDot`) — amber: `#c8a060` (dark) / `#9a7830` (light); white text; interval label inside
+- **Pentatonic dots** (`PentaDot`) — uses `var(--root-col)`, `var(--third-col)`, `var(--fifth-col)` CSS vars (same as Pentatonic Triads); other scale tones use `var(--text)` fill. No `isDark` prop needed.
+- **Color dots** (`ColorDot`) — amber: `var(--sys-caged)` (matches the CAGED system color, same hex); white text; interval label inside
 
 ### Controls
 
@@ -646,7 +656,7 @@ The Scale Builder page (`/scale-builder`) lets users explore the note content of
 ### Files
 
 - `app/components/scaleBuilder.utils.ts` — constants and pure functions (no React deps)
-- `app/components/ScaleBuilder.tsx` — all component code (`ScaleBuilder`, `NamesView`, `ExerciseProgress`, `NotePalette`, `StaffView`, `Chip`)
+- `app/components/ScaleBuilder.tsx` — all component code (`ScaleBuilder`, `NamesView`, `ExerciseProgress`, `NotePalette`, `StaffView`)
 - `app/routes/scale-builder.tsx` — route wrapper
 
 ### Data model

@@ -22,6 +22,9 @@ export const LIGHT_THEME: CSSProperties = {
   "--fifth-col": "#4a6a8a",
   "--seventh-col": "#6a4a7a",
   "--blues-col": "#4a3aa8",
+  "--third-col": "#3a6a3a",
+  "--feedback-correct": "#2d8a40",
+  "--feedback-wrong": "#b03020",
 };
 
 export const DARK_THEME: CSSProperties = {
@@ -45,6 +48,9 @@ export const DARK_THEME: CSSProperties = {
   "--fifth-col": "#6a9abf",
   "--seventh-col": "#9a6abf",
   "--blues-col": "#7a6ad8",
+  "--third-col": "#5a9a5a",
+  "--feedback-correct": "#2d8a40",
+  "--feedback-wrong": "#b03020",
 };
 
 export const STRING_LINE: Record<StringName, { height: string; colorVar: string }> = {

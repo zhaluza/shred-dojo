@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import type { Degree, ScaleMode, ScaleNote, ScaleString } from "./scalePositions.types";
 import { FRET_DOUBLE, FRET_INLAYS, ROOT_FRET, SNAME } from "./scalePositions.utils";
 import { buildAllWyldePositions, type WyldePosition } from "./wyldeScales.utils";
@@ -395,34 +396,7 @@ function PositionCard({
   );
 }
 
-// ─── ControlBtn ───────────────────────────────────────────────────────────────
 
-function ControlBtn({
-  label,
-  active,
-  onClick,
-  small,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        small ? "px-2 py-[0.2rem] text-[0.62rem] max-[700px]:py-[0.55rem] max-[700px]:px-3" : "px-3 py-[0.3rem] text-[0.7rem] max-[700px]:py-[0.55rem] max-[700px]:px-4",
-        "font-display tracking-[0.08em] uppercase border cursor-pointer transition-colors whitespace-nowrap",
-        active
-          ? "border-[var(--text)] bg-[var(--text)] text-[var(--bg)]"
-          : "border-[var(--border)] bg-transparent text-[var(--text)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
 
 // ─── WyldeScales ──────────────────────────────────────────────────────────────
 
@@ -490,8 +464,8 @@ export function WyldeScales() {
               Scale
             </span>
             <div className="flex gap-1">
-              <ControlBtn label="Minor" active={scale === "minor"} onClick={() => setScale("minor")} />
-              <ControlBtn label="Major" active={scale === "major"} onClick={() => setScale("major")} />
+              <CtrlButton label="Minor" active={scale === "minor"} onClick={() => setScale("minor")} />
+              <CtrlButton label="Major" active={scale === "major"} onClick={() => setScale("major")} />
             </div>
           </div>
 
@@ -505,7 +479,7 @@ export function WyldeScales() {
             </span>
             <div className="flex flex-wrap gap-[3px]">
               {KEYS.map(({ name, fret }) => (
-                <ControlBtn
+                <CtrlButton
                   key={fret}
                   label={name}
                   active={keyIdx === fret}

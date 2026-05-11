@@ -21,12 +21,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 // ---------------------------------------------------------------------------
-// Shared constants
-// ---------------------------------------------------------------------------
-
-const AMBER = "#c8a060";
-
-// ---------------------------------------------------------------------------
 // Home page
 // ---------------------------------------------------------------------------
 
@@ -52,7 +46,7 @@ const HERO_DECO_ROWS: Array<{
   },
   {
     stringHeight: "1.5px",
-    stringColor: AMBER,
+    stringColor: "var(--sys-caged)",
     dots: [{ left: "3%" }, { left: "19%" }, { left: "35%" }, { left: "52%", root: true }, { left: "68%" }, { left: "85%" }],
   },
   {
@@ -182,16 +176,22 @@ function HomePage({
   return (
     <div
       className="min-h-screen flex flex-col font-mono bg-[var(--bg)] text-[var(--text)]"
-      style={{ ...theme, "--amber": AMBER } as React.CSSProperties}
+      style={theme}
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden">
+        {/* Gradient fade at bottom of hero — blends decorative fretboard into content */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-24 pointer-events-none z-[1]"
+          style={{ backgroundImage: "linear-gradient(to bottom, transparent, var(--bg))" }}
+          aria-hidden="true"
+        />
         {/* Decorative fretboard — full width background */}
         <div
           className="absolute inset-x-0 bottom-0 pointer-events-none select-none max-[600px]:hidden"
-          style={{ opacity: isDark ? 0.12 : 0.08 }}
+          style={{ opacity: isDark ? 0.18 : 0.12 }}
           aria-hidden="true"
         >
           {HERO_DECO_ROWS.map((row, i) => (
@@ -226,7 +226,7 @@ function HomePage({
         <div className="relative z-[1] max-w-[900px] mx-auto w-full px-5 md:px-8 pt-12 pb-16 md:pt-20 md:pb-24 [@media(max-height:500px)]:pt-4 [@media(max-height:500px)]:pb-6">
           <p
             className="text-[0.58rem] tracking-[0.24em] uppercase mb-7 [@media(max-height:500px)]:mb-3"
-            style={{ color: AMBER }}
+            style={{ color: "var(--sys-caged)" }}
           >
             Guitar Learning Platform
           </p>
@@ -332,7 +332,9 @@ function HomePage({
                     key={tool.to}
                     to={tool.to}
                     className={[
-                      "no-underline text-[var(--text)] hover:bg-[var(--surface)] transition-colors group",
+                      "no-underline text-[var(--text)] hover:bg-[var(--surface)] transition-all duration-200 group",
+                      "border-l-2 border-l-transparent hover:border-l-[var(--accent)]",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]",
                       sharedClass,
                     ].join(" ")}
                   >
@@ -343,7 +345,7 @@ function HomePage({
                       >
                         Live
                       </span>
-                      <span className="text-[0.9rem] text-[var(--faint)] group-hover:text-[var(--muted)] transition-colors leading-none">
+                      <span className="text-[0.9rem] text-[var(--faint)] group-hover:text-[var(--text)] group-hover:translate-x-1 transition-all duration-200 leading-none">
                         →
                       </span>
                     </div>
@@ -370,7 +372,7 @@ function HomePage({
           >
             <p
               className="text-[0.48rem] tracking-[0.16em] uppercase"
-              style={{ color: AMBER }}
+              style={{ color: "var(--sys-caged)" }}
             >
               In Development
             </p>

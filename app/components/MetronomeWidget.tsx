@@ -64,6 +64,7 @@ export function MetronomeWidget() {
   const [editingBpm, setEditingBpm] = useState(false);
   const [bpmInputVal, setBpmInputVal] = useState("");
   const [droneKey, setDroneKey] = useState<number | null>(null);
+  const [hoveredEl, setHoveredEl] = useState<string | null>(null);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1024
   );
@@ -478,33 +479,42 @@ export function MetronomeWidget() {
 
           {/* Fine adjustment */}
           <div style={{ display: "flex", gap: 4, padding: "0 12px 10px" }}>
-            {([-5, -1, 1, 5] as const).map((d) => (
-              <button
-                key={d}
-                onClick={() => setBpm((b) => Math.min(MAX_BPM, Math.max(MIN_BPM, b + d)))}
-                style={{
-                  flex: 1,
-                  fontFamily: "'Oswald', sans-serif",
-                  fontSize: "0.58rem",
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  padding: isMobile ? "8px 0" : "4px 0",
-                  background: "transparent",
-                  border: `1px solid ${C.border}`,
-                  color: C.text,
-                  cursor: "pointer",
-                  minHeight: isMobile ? 40 : undefined,
-                }}
-              >
-                {d > 0 ? `+${d}` : d}
-              </button>
-            ))}
+            {([-5, -1, 1, 5] as const).map((d) => {
+              const hk = `adj${d}`;
+              const isHovered = hoveredEl === hk;
+              return (
+                <button
+                  key={d}
+                  onClick={() => setBpm((b) => Math.min(MAX_BPM, Math.max(MIN_BPM, b + d)))}
+                  onMouseEnter={() => setHoveredEl(hk)}
+                  onMouseLeave={() => setHoveredEl(null)}
+                  style={{
+                    flex: 1,
+                    fontFamily: "'Oswald', sans-serif",
+                    fontSize: "0.58rem",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    padding: isMobile ? "8px 0" : "4px 0",
+                    background: "transparent",
+                    border: `1px solid ${isHovered ? C.text : C.border}`,
+                    color: C.text,
+                    cursor: "pointer",
+                    minHeight: isMobile ? 40 : undefined,
+                    transition: "border-color 80ms",
+                  }}
+                >
+                  {d > 0 ? `+${d}` : d}
+                </button>
+              );
+            })}
           </div>
 
           {/* Tap + Start/Stop */}
           <div style={{ display: "flex", gap: 6, padding: "0 12px 12px" }}>
             <button
               onClick={handleTap}
+              onMouseEnter={() => setHoveredEl("tap")}
+              onMouseLeave={() => setHoveredEl(null)}
               style={{
                 flex: 1,
                 fontFamily: "'Oswald', sans-serif",
@@ -513,10 +523,11 @@ export function MetronomeWidget() {
                 textTransform: "uppercase",
                 padding: isMobile ? "11px 0" : "7px 0",
                 background: "transparent",
-                border: `1px solid ${C.border}`,
+                border: `1px solid ${hoveredEl === "tap" ? C.text : C.border}`,
                 color: C.text,
                 cursor: "pointer",
                 minHeight: isMobile ? 44 : undefined,
+                transition: "border-color 80ms",
               }}
             >
               Tap
@@ -561,10 +572,14 @@ export function MetronomeWidget() {
             }}>
               {NOTE_NAMES.map((name, i) => {
                 const active = droneKey === i;
+                const hk = `drone${i}`;
+                const isHovered = !active && hoveredEl === hk;
                 return (
                   <button
                     key={name}
                     onClick={() => handleDroneKey(i)}
+                    onMouseEnter={() => setHoveredEl(hk)}
+                    onMouseLeave={() => setHoveredEl(null)}
                     style={{
                       fontFamily: "'Oswald', sans-serif",
                       fontSize: "0.6rem",
@@ -572,7 +587,7 @@ export function MetronomeWidget() {
                       textTransform: "uppercase",
                       padding: isMobile ? "8px 0" : "5px 0",
                       background: active ? C.accent : "transparent",
-                      border: `1px solid ${active ? C.accent : C.border}`,
+                      border: `1px solid ${active ? C.accent : isHovered ? C.text : C.border}`,
                       color: active ? (isDark ? C.bg : "#fff") : C.text,
                       cursor: "pointer",
                       transition: "background 80ms, color 80ms, border-color 80ms",

@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState, useEffect, useRef } from "react";
 import { DARK_THEME, LIGHT_THEME } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import {
   KEY_NAMES,
@@ -18,30 +19,6 @@ type Feedback = "correct" | "wrong" | null;
 const NATURAL_NOTES = ["E", "F", "G", "A", "B", "C", "D"] as const;
 const ACCIDENTAL_NOTES = ["F#", "Ab", "Bb", "Db", "Eb"] as const;
 
-// ── Chip ────────────────────────────────────────────────────────────────────
-function Chip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem] cursor-pointer transition-all",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
 
 // ── NamesView (reference) ───────────────────────────────────────────────────
 function NamesView({ notes, steps }: { notes: ScaleNote[]; steps: string[] }) {
@@ -103,7 +80,7 @@ function ExerciseProgress({
             if (i === 0)
               return "bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]";
             if (justCorrect)
-              return "border-[#2d8a40] bg-[#2d8a40] text-white";
+              return "border-[var(--feedback-correct)] bg-[var(--feedback-correct)] text-white";
             if (filled !== null)
               return "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]";
             if (isCurrent && feedback === "wrong")
@@ -272,12 +249,12 @@ function StaffView({
             const justCorrect = feedback === "correct" && i === currentSlot;
 
             if (filled !== null) {
-              const color = justCorrect ? "#2d8a40" : textColor;
+              const color = justCorrect ? "var(--feedback-correct)" : textColor;
               note.setStyle({ fillStyle: color, strokeStyle: color });
             } else if (isCurrent) {
               const color =
                 feedback === "wrong"
-                  ? "#b03020"
+                  ? "var(--feedback-wrong)"
                   : isDark
                   ? "rgba(232,224,208,0.42)"
                   : "rgba(26,22,18,0.38)";
@@ -428,7 +405,7 @@ export function ScaleBuilder() {
             </span>
             <div className="flex flex-wrap gap-1.5">
               {KEY_NAMES.map((name, i) => (
-                <Chip
+                <CtrlButton
                   key={name}
                   label={name}
                   active={keyIdx === i}
@@ -448,7 +425,7 @@ export function ScaleBuilder() {
             </span>
             <div className="flex flex-wrap gap-1.5">
               {SCALE_TYPE_KEYS.map((k) => (
-                <Chip
+                <CtrlButton
                   key={k}
                   label={SCALE_TYPES[k].label}
                   active={scaleType === k}
@@ -497,12 +474,12 @@ export function ScaleBuilder() {
                 Mode
               </span>
               <div className="flex gap-1.5">
-                <Chip
+                <CtrlButton
                   label="Reference"
                   active={pageMode === "reference"}
                   onClick={() => setPageMode("reference")}
                 />
-                <Chip
+                <CtrlButton
                   label="Exercise"
                   active={pageMode === "exercise"}
                   onClick={() => setPageMode("exercise")}
@@ -517,12 +494,12 @@ export function ScaleBuilder() {
                 View
               </span>
               <div className="flex gap-1.5">
-                <Chip
+                <CtrlButton
                   label="Names"
                   active={viewMode === "names"}
                   onClick={() => setViewMode("names")}
                 />
-                <Chip
+                <CtrlButton
                   label="Staff"
                   active={viewMode === "staff"}
                   onClick={() => setViewMode("staff")}
@@ -581,7 +558,7 @@ export function ScaleBuilder() {
                 >
                   <span
                     className="font-display text-[0.85rem] tracking-[0.08em] uppercase"
-                    style={{ color: "#2d8a40" }}
+                    style={{ color: "var(--feedback-correct)" }}
                   >
                     Scale complete
                   </span>

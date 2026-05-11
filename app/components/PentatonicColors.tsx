@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import type { StringName } from "./scalePositions.types";
 import {
@@ -17,59 +18,19 @@ import {
   type ColorModeConfig,
 } from "./pentatonicColors.utils";
 
-// ─── CtrlBtn ──────────────────────────────────────────────────────────────────
-
-function CtrlBtn({
-  label,
-  active,
-  onClick,
-  small,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "font-display border transition-all duration-100 cursor-pointer uppercase",
-        small
-          ? "text-[0.65rem] tracking-[0.1em] px-[0.7rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
-          : "text-[0.75rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] max-[700px]:py-[0.6rem]",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
-
 // ─── Dot helpers ──────────────────────────────────────────────────────────────
 
-function pentaDotColors(
-  deg: PentaDegree,
-  isDark: boolean
-): { bg: string; fg: string } {
-  if (deg === "R") return { bg: "#c0392b", fg: "#fff" };
-  if (deg === "b3" || deg === "3")
-    return isDark ? { bg: "#5a9a5a", fg: "#fff" } : { bg: "#3a6a3a", fg: "#fff" };
-  if (deg === "5")
-    return isDark ? { bg: "#5a7aaa", fg: "#fff" } : { bg: "#3a5a8a", fg: "#fff" };
+function pentaDotColors(deg: PentaDegree): { bg: string; fg: string } {
+  if (deg === "R") return { bg: "var(--root-col)", fg: "#fff" };
+  if (deg === "b3" || deg === "3") return { bg: "var(--third-col)", fg: "#fff" };
+  if (deg === "5") return { bg: "var(--fifth-col)", fg: "#fff" };
   return { bg: "var(--text)", fg: "var(--bg)" };
-}
-
-function colorNoteAmber(isDark: boolean): string {
-  return isDark ? "#c8a060" : "#9a7830";
 }
 
 // ─── PentaDot ─────────────────────────────────────────────────────────────────
 
-function PentaDot({ deg, isDark }: { deg: PentaDegree; isDark: boolean }) {
-  const { bg, fg } = pentaDotColors(deg, isDark);
+function PentaDot({ deg }: { deg: PentaDegree }) {
+  const { bg, fg } = pentaDotColors(deg);
   return (
     <div
       className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[0.46rem] font-display tracking-[0.02em] relative z-[2] shrink-0"
@@ -82,17 +43,11 @@ function PentaDot({ deg, isDark }: { deg: PentaDegree; isDark: boolean }) {
 
 // ─── ColorDot ─────────────────────────────────────────────────────────────────
 
-function ColorDot({
-  label,
-  isDark,
-}: {
-  label: ColorDegreeLabel;
-  isDark: boolean;
-}) {
+function ColorDot({ label }: { label: ColorDegreeLabel }) {
   return (
     <div
       className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[0.42rem] font-display tracking-[0.02em] relative z-[2] shrink-0 text-white"
-      style={{ background: colorNoteAmber(isDark) }}
+      style={{ background: "var(--sys-caged)" }}
     >
       {label}
     </div>
@@ -108,13 +63,11 @@ function ColorFretboard({
   colorNotes,
   displayMin,
   displayMax,
-  isDark,
 }: {
   boxNotes: BoxNote[];
   colorNotes: ColorNote[];
   displayMin: number;
   displayMax: number;
-  isDark: boolean;
 }) {
   const fretCount = displayMax - displayMin + 1;
 
@@ -170,9 +123,9 @@ function ColorFretboard({
                     className="flex-1 h-[34px] flex items-center justify-center relative z-[1]"
                   >
                     {pentaNote ? (
-                      <PentaDot deg={pentaNote.deg} isDark={isDark} />
+                      <PentaDot deg={pentaNote.deg} />
                     ) : colorNote ? (
-                      <ColorDot label={colorNote.degLabel} isDark={isDark} />
+                      <ColorDot label={colorNote.degLabel} />
                     ) : null}
                   </div>
                 );
@@ -188,18 +141,12 @@ function ColorFretboard({
 // ─── ColorsLegend ─────────────────────────────────────────────────────────────
 
 function ColorsLegend({
-  isDark,
   scale,
   colorConfig,
 }: {
-  isDark: boolean;
   scale: PentaScaleMode;
   colorConfig: ColorModeConfig;
 }) {
-  const thirdColor =
-    isDark ? { bg: "#5a9a5a", fg: "#fff" } : { bg: "#3a6a3a", fg: "#fff" };
-  const fifthColor =
-    isDark ? { bg: "#5a7aaa", fg: "#fff" } : { bg: "#3a5a8a", fg: "#fff" };
   const thirdLabel = scale === "minor" ? "Minor 3rd" : "Major 3rd";
   const thirdDeg = scale === "minor" ? "b3" : "3";
   const exampleLabel = colorConfig.addedSemis[0]?.degLabel ?? "b5";
@@ -211,20 +158,20 @@ function ColorsLegend({
     deg: string;
   }> = [
     {
-      dotStyle: { background: "#c0392b" },
+      dotStyle: { background: "var(--root-col)" },
       textStyle: { color: "#fff" },
       label: "Root",
       deg: "R",
     },
     {
-      dotStyle: { background: thirdColor.bg },
-      textStyle: { color: thirdColor.fg },
+      dotStyle: { background: "var(--third-col)" },
+      textStyle: { color: "#fff" },
       label: thirdLabel,
       deg: thirdDeg,
     },
     {
-      dotStyle: { background: fifthColor.bg },
-      textStyle: { color: fifthColor.fg },
+      dotStyle: { background: "var(--fifth-col)" },
+      textStyle: { color: "#fff" },
       label: "Perfect 5th",
       deg: "5",
     },
@@ -235,7 +182,7 @@ function ColorsLegend({
       deg: "·",
     },
     {
-      dotStyle: { background: colorNoteAmber(isDark) },
+      dotStyle: { background: "var(--sys-caged)" },
       textStyle: { color: "#fff" },
       label: "Color note",
       deg: exampleLabel,
@@ -333,12 +280,12 @@ export function PentatonicColors() {
           <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">
             Scale
           </span>
-          <CtrlBtn
+          <CtrlButton
             label="Minor"
             active={scale === "minor"}
             onClick={() => handleScaleChange("minor")}
           />
-          <CtrlBtn
+          <CtrlButton
             label="Major"
             active={scale === "major"}
             onClick={() => handleScaleChange("major")}
@@ -351,7 +298,7 @@ export function PentatonicColors() {
             Color
           </span>
           {activeModes.map((m) => (
-            <CtrlBtn
+            <CtrlButton
               key={m.id}
               label={m.label}
               active={modeId === m.id}
@@ -361,7 +308,7 @@ export function PentatonicColors() {
         </div>
 
         {/* Legend */}
-        <ColorsLegend isDark={isDark} scale={scale} colorConfig={colorConfig} />
+        <ColorsLegend scale={scale} colorConfig={colorConfig} />
 
         {/* Fretboard card */}
         <div
@@ -378,11 +325,7 @@ export function PentatonicColors() {
             </div>
             <div className="flex gap-2 flex-wrap items-center">
               <span
-                className="font-display text-[0.5rem] px-[0.5rem] py-[0.15rem] border tracking-[0.08em] uppercase"
-                style={{
-                  borderColor: colorNoteAmber(isDark),
-                  color: colorNoteAmber(isDark),
-                }}
+                className="font-display text-[0.5rem] px-[0.5rem] py-[0.15rem] border tracking-[0.08em] uppercase border-[var(--sys-caged)] text-[var(--sys-caged)]"
               >
                 + {colorConfig.label}
               </span>
@@ -399,7 +342,6 @@ export function PentatonicColors() {
               colorNotes={colorNotes}
               displayMin={displayMin}
               displayMax={displayMax}
-              isDark={isDark}
             />
           </div>
         </div>

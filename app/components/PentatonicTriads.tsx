@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import type { StringName } from "./scalePositions.types";
 import {
@@ -23,47 +24,12 @@ type DotColors = { bg: string; fg: string };
 function triadColors(
   deg: PentaDegree,
   thirdDeg: PentaDegree,
-  isDark: boolean
 ): DotColors | null {
-  if (deg === "R") return { bg: "#c0392b", fg: "#fff" };
-  if (deg === thirdDeg)
-    return isDark ? { bg: "#5a9a5a", fg: "#fff" } : { bg: "#3a6a3a", fg: "#fff" };
-  if (deg === "5")
-    return isDark ? { bg: "#5a7aaa", fg: "#fff" } : { bg: "#3a5a8a", fg: "#fff" };
-  if (deg === "b5")
-    return isDark ? { bg: "#7a6ad8", fg: "#fff" } : { bg: "#4a3aa8", fg: "#fff" };
+  if (deg === "R") return { bg: "var(--root-col)", fg: "#fff" };
+  if (deg === thirdDeg) return { bg: "var(--third-col)", fg: "#fff" };
+  if (deg === "5") return { bg: "var(--fifth-col)", fg: "#fff" };
+  if (deg === "b5") return { bg: "var(--blues-col)", fg: "#fff" };
   return null;
-}
-
-// ─── CtrlBtn ──────────────────────────────────────────────────────────────────
-
-function CtrlBtn({
-  label,
-  active,
-  onClick,
-  small,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  small?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "font-display border transition-all duration-100 cursor-pointer uppercase",
-        small
-          ? "text-[0.65rem] tracking-[0.1em] px-[0.7rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
-          : "text-[0.75rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] max-[700px]:py-[0.6rem]",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
 }
 
 // ─── TriadDot ─────────────────────────────────────────────────────────────────
@@ -83,7 +49,7 @@ function TriadDot({
   variant: DotVariant;
   isScale: boolean;
 }) {
-  const cols = triadColors(deg, thirdDeg, isDark);
+  const cols = triadColors(deg, thirdDeg);
 
   let style: React.CSSProperties;
   let textColor: string;
@@ -481,9 +447,9 @@ function Legend({
   isDark: boolean;
   bluesMode: boolean;
 }) {
-  const cols3rd = triadColors(thirdDeg, thirdDeg, isDark)!;
-  const cols5th = triadColors("5", thirdDeg, isDark)!;
-  const colsB5 = triadColors("b5", thirdDeg, isDark)!;
+  const cols3rd = triadColors(thirdDeg, thirdDeg)!;
+  const cols5th = triadColors("5", thirdDeg)!;
+  const colsB5 = triadColors("b5", thirdDeg)!;
 
   const items: Array<{
     style: React.CSSProperties;
@@ -492,7 +458,7 @@ function Legend({
     deg: string;
   }> = [
     {
-      style: { background: "#c0392b" },
+      style: { background: "var(--root-col)" },
       textStyle: { color: "#fff" },
       label: "Root",
       deg: "R",
@@ -528,10 +494,10 @@ function Legend({
     {
       style: {
         background: "transparent",
-        border: "2px dashed #c0392b",
+        border: "2px dashed var(--root-col)",
         opacity: 0.7,
       },
-      textStyle: { color: "#c0392b" },
+      textStyle: { color: "var(--root-col)" },
       label: "Triad from adjacent shape",
       deg: "R",
     },
@@ -673,11 +639,7 @@ function ShapeCard({
             frets {mainMinF}–{mainMaxF}
           </span>
           <span
-            className="text-[0.5rem] px-[0.5rem] py-[0.15rem] border tracking-[0.08em] uppercase"
-            style={{
-              borderColor: isDark ? "#5a9a5a" : "#3a6a3a",
-              color: isDark ? "#5a9a5a" : "#3a6a3a",
-            }}
+            className="text-[0.5rem] px-[0.5rem] py-[0.15rem] border tracking-[0.08em] uppercase border-[var(--third-col)] text-[var(--third-col)]"
           >
             {inShapeTriadCount} triad tones
           </span>
@@ -849,8 +811,8 @@ export function PentatonicTriads() {
         {/* Controls */}
         <div className="mb-5 flex gap-3 flex-wrap items-center border-b border-[var(--border)] pb-4">
           <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">Scale</span>
-          <CtrlBtn label="Minor" active={scale === "minor"} onClick={() => handleScaleChange("minor")} />
-          <CtrlBtn label="Major" active={scale === "major"} onClick={() => handleScaleChange("major")} />
+          <CtrlButton label="Minor" active={scale === "minor"} onClick={() => handleScaleChange("minor")} />
+          <CtrlButton label="Major" active={scale === "major"} onClick={() => handleScaleChange("major")} />
           {scale === "minor" && (
             <>
               <div className="w-px h-4 bg-[var(--border)]" />
@@ -858,11 +820,11 @@ export function PentatonicTriads() {
                 onClick={() => setBluesMode((v) => !v)}
                 className={[
                   "font-display text-[0.75rem] tracking-[0.08em] px-[0.85rem] py-[0.35rem] border transition-all duration-100 cursor-pointer uppercase",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]",
                   bluesMode
-                    ? "border-transparent text-[#fff]"
+                    ? "bg-[var(--blues-col)] border-[var(--blues-col)] text-white"
                     : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
                 ].join(" ")}
-                style={bluesMode ? { background: isDark ? "#7a6ad8" : "#4a3aa8" } : {}}
               >
                 Blues Scale
               </button>
@@ -870,8 +832,8 @@ export function PentatonicTriads() {
           )}
           <div className="flex-1" />
           <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)]">Show</span>
-          <CtrlBtn label="All notes" active={showMode === "all"} onClick={() => setShowMode("all")} />
-          <CtrlBtn label="Triad only" active={showMode === "triad"} onClick={() => setShowMode("triad")} />
+          <CtrlButton label="All notes" active={showMode === "all"} onClick={() => setShowMode("all")} />
+          <CtrlButton label="Triad only" active={showMode === "triad"} onClick={() => setShowMode("triad")} />
         </div>
 
         {/* Intro */}
