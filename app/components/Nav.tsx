@@ -12,6 +12,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/shape-explorer", label: "Shape Explorer" },
       { to: "/scale-positions", label: "Systems" },
       { to: "/wylde-scales", label: "Wylde" },
+      { to: "/yngwie-scales", label: "Yngwie" },
       { to: "/scale-builder", label: "Scale Builder" },
     ],
   },
