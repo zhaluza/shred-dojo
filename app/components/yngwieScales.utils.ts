@@ -6,12 +6,12 @@ export const KEY_NAMES = [
 ] as const;
 
 // Harmonic minor: same as natural minor but with raised 7th (leading tone = 11 semitones)
-const HARMONIC_MINOR_CFG: ScaleConfig = {
+export const HARMONIC_MINOR_CFG: ScaleConfig = {
   scale: ["R", "2", "b3", "4", "5", "b6", "7"],
   semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "b5": 6, "5": 7, b6: 8, "6": 9, b7: 10, "7": 11 },
   penta: new Set<Degree>(["R", "b3", "4", "5", "b7"]),
   chordTones: new Set<Degree>(["R", "b3", "5"]),
-  diaLabel: "Non-chord tones",
+  diaLabel: "Diatonic only (2, b6, 7)",
   title: "Harmonic Minor",
 };
 

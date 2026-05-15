@@ -25,6 +25,7 @@ import {
   ROOT_FRET,
   SCALES,
 } from "./scalePositions.utils";
+import { HARMONIC_MINOR_CFG } from "./yngwieScales.utils";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"] as const;
 
@@ -943,6 +944,7 @@ export function ScalePositions() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [modalIdx, setModalIdx] = useState<number | null>(null);
   const [showModes, setShowModes] = useState(false);
+  const [isHarmonicMinor, setIsHarmonicMinor] = useState(false);
   const [unifiedScaletones, setUnifiedScaletones] = useState<Set<number>>(
     new Set(),
   );
@@ -964,7 +966,7 @@ export function ScalePositions() {
     });
   }
 
-  const cfg = SCALES[scaleMode];
+  const cfg = isHarmonicMinor && scaleMode === "minor" ? HARMONIC_MINOR_CFG : SCALES[scaleMode];
   const chordTones = cfg.chordTones;
 
   const selectedKey = KEYS[keyIdx];
@@ -1059,6 +1061,7 @@ export function ScalePositions() {
     setSelectedIdx(null);
     setModalIdx(null);
     setUnifiedScaletones(new Set());
+    if (mode === "major") setIsHarmonicMinor(false);
   }
 
   function handleSystemToggle(sys: System) {
@@ -1148,6 +1151,24 @@ export function ScalePositions() {
           active={scaleMode === "minor"}
           onClick={() => handleScaleChange("minor")}
         />
+        {scaleMode === "minor" && (
+          <button
+            onClick={() => {
+              setIsHarmonicMinor((v) => !v);
+              setSelectedIdx(null);
+              setModalIdx(null);
+              setUnifiedScaletones(new Set());
+            }}
+            className="font-display text-[0.75rem] tracking-[0.08em] uppercase border px-2 py-[0.3rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
+            style={
+              isHarmonicMinor
+                ? { backgroundColor: "var(--seventh-col)", borderColor: "var(--seventh-col)", color: "white" }
+                : { backgroundColor: "transparent", borderColor: "var(--border)", color: "var(--text)" }
+            }
+          >
+            Harmonic
+          </button>
+        )}
         <div className="flex-1" />
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Labels
