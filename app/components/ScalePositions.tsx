@@ -1152,22 +1152,25 @@ export function ScalePositions() {
           onClick={() => handleScaleChange("minor")}
         />
         {scaleMode === "minor" && (
-          <button
-            onClick={() => {
-              setIsHarmonicMinor((v) => !v);
-              setSelectedIdx(null);
-              setModalIdx(null);
-              setUnifiedScaletones(new Set());
-            }}
-            className="font-display text-[0.75rem] tracking-[0.08em] uppercase border px-2 py-[0.3rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
-            style={
-              isHarmonicMinor
-                ? { backgroundColor: "var(--seventh-col)", borderColor: "var(--seventh-col)", color: "white" }
-                : { backgroundColor: "transparent", borderColor: "var(--border)", color: "var(--text)" }
-            }
-          >
-            Harmonic
-          </button>
+          <>
+            <div className="h-4 w-px mx-1" style={{ backgroundColor: "var(--border)" }} />
+            <button
+              onClick={() => {
+                setIsHarmonicMinor((v) => !v);
+                setSelectedIdx(null);
+                setModalIdx(null);
+                setUnifiedScaletones(new Set());
+              }}
+              className="font-display text-[0.75rem] tracking-[0.08em] uppercase border px-2 py-[0.3rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]"
+              style={
+                isHarmonicMinor
+                  ? { backgroundColor: "var(--seventh-col)", borderColor: "var(--seventh-col)", color: "white" }
+                  : { backgroundColor: "transparent", borderColor: "var(--border)", color: "var(--text)" }
+              }
+            >
+              Harm. Minor
+            </button>
+          </>
         )}
         <div className="flex-1" />
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">

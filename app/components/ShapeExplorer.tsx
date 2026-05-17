@@ -27,6 +27,7 @@ import {
   type PentaScaleMode,
   type BoxNote,
 } from "./pentatonicTriads.utils";
+import { HARMONIC_MINOR_CFG } from "./yngwieScales.utils";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -564,6 +565,7 @@ export function ShapeExplorer() {
   const [keyIdx, setKeyIdx] = useState(3); // Default: G (fret 3)
   const [isDark, setIsDark] = useState(false);
   const [bluesMode, setBluesMode] = useState(false);
+  const [isHarmonicMinor, setIsHarmonicMinor] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("shred-dojo-dark");
@@ -577,7 +579,7 @@ export function ShapeExplorer() {
     });
 
   const theme = isDark ? DARK_THEME : LIGHT_THEME;
-  const cfg = SCALES[scaleMode];
+  const cfg = isHarmonicMinor && scaleMode === "minor" ? HARMONIC_MINOR_CFG : SCALES[scaleMode];
   const selectedKey = KEYS[keyIdx];
 
   // Build positions for the current scale config
@@ -666,12 +668,16 @@ export function ShapeExplorer() {
     setPairIdx(1);
     setViewMode("focus");
     if (sys !== "penta") setBluesMode(false);
+    if (sys === "penta") setIsHarmonicMinor(false);
   }
 
   function changeMode(mode: ScaleMode) {
     setScaleMode(mode);
     setShapeIdx(0);
-    if (mode === "major") setBluesMode(false);
+    if (mode === "major") {
+      setBluesMode(false);
+      setIsHarmonicMinor(false);
+    }
   }
 
   // Short label for shape nav pills
@@ -698,7 +704,11 @@ export function ShapeExplorer() {
           <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none">
             <span className="normal-case">{selectedKey.name}</span>{" "}
             <span style={{ color: "var(--accent)" }}>
-              {scaleMode === "minor" ? "Minor" : "Major"}
+              {scaleMode === "minor"
+              ? isHarmonicMinor
+                ? "Harmonic Minor"
+                : "Minor"
+              : "Major"}
             </span>
           </h1>
         </div>
@@ -724,6 +734,28 @@ export function ShapeExplorer() {
               />
             </div>
           </div>
+
+          {/* Harmonic minor variant — diatonic systems only */}
+          {scaleMode === "minor" && system !== "penta" && (
+            <div className="flex flex-col gap-[0.4rem]">
+              <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
+                Variant
+              </p>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setIsHarmonicMinor((v) => !v)}
+                  className="font-display text-[0.6rem] tracking-[0.1em] uppercase border transition-all duration-100 cursor-pointer px-[0.65rem] py-[0.25rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]"
+                  style={
+                    isHarmonicMinor
+                      ? { backgroundColor: "var(--seventh-col)", borderColor: "var(--seventh-col)", color: "#fff" }
+                      : { backgroundColor: "transparent", borderColor: "var(--border)", color: "var(--text)" }
+                  }
+                >
+                  Harmonic
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Blues toggle — penta + minor only */}
           {system === "penta" && scaleMode === "minor" && (
