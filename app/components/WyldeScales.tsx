@@ -303,9 +303,11 @@ function PositionCard({
 }) {
   const diaAbsStart = pos.startFret + keyOffset;
   // Penta uses the same normalization as diatonic: (raw_fret - rawMin) + (rawMin%12) + keyOffset.
-  // Without this, penta boxes whose rawMin crosses the 12-fret boundary (e.g. rawMin=12→startFret=0)
-  // land a full octave away from their diatonic counterpart.
-  const pentaAbsStart = (pos.pentaRawMin % 12) + keyOffset;
+  // Guard against the fret-12 boundary: pentaRawMin=12 → 12%12=0 → pentaAbsStart lands a full
+  // octave below the diatonic. If the gap exceeds 6 frets, shift by 12 to stay in the same region.
+  let pentaAbsStart = (pos.pentaRawMin % 12) + keyOffset;
+  if (diaAbsStart - pentaAbsStart > 6) pentaAbsStart += 12;
+  if (pentaAbsStart - diaAbsStart > 6) pentaAbsStart -= 12;
 
   const diaAbsFrets = pos.strings.flatMap((s) =>
     s.notes.map((n) => n.fret + diaAbsStart)
