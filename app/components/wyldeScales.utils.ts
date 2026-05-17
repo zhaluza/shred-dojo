@@ -62,11 +62,23 @@ export function buildAllWyldePositions(scale: ScaleMode): WyldePosition[] {
 
     let bestBox = 0;
     let bestDist = Infinity;
+    // Prefer boxes whose E string start is >= diatonic shape start so the
+    // penta box sits within the diatonic shape rather than starting before it.
     for (let i = 0; i < 5; i++) {
-      const d = Math.abs(eStart - boxEStarts[i]);
-      if (d < bestDist) {
+      const d = boxEStarts[i] - eStart;
+      if (d >= 0 && d < bestDist) {
         bestDist = d;
         bestBox = i;
+      }
+    }
+    // Fall back to absolute proximity when no box starts at or after eStart.
+    if (bestDist === Infinity) {
+      for (let i = 0; i < 5; i++) {
+        const d = Math.abs(eStart - boxEStarts[i]);
+        if (d < bestDist) {
+          bestDist = d;
+          bestBox = i;
+        }
       }
     }
 
