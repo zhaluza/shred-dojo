@@ -513,7 +513,7 @@ function OverviewGrid({
   return (
     <div
       className="grid gap-3"
-      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
+      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
     >
       {shapes.map((shape, i) => {
         const displayStartFret = shape.startFret + keyOffset;
@@ -695,7 +695,7 @@ export function ShapeExplorer() {
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       {/* ── Controls ── */}
-      <div className="max-w-[1000px] mx-auto w-full px-6 pt-8 [@media(max-height:500px)]:pt-3 pb-2">
+      <div className="max-w-[1300px] mx-auto w-full px-6 pt-8 [@media(max-height:500px)]:pt-3 pb-2">
         {/* Page heading */}
         <div className="mb-7">
           <p className="text-[0.5rem] tracking-[0.2em] uppercase text-[var(--muted)] mb-1">
@@ -884,7 +884,7 @@ export function ShapeExplorer() {
       </div>
 
       {/* ── Main content ── */}
-      <main className="flex-1 max-w-[1000px] mx-auto w-full px-6 pb-12">
+      <main className="flex-1 max-w-[1300px] mx-auto w-full px-6 pb-12">
         {viewMode === "overview" ? (
           <OverviewGrid
             shapes={shapes}

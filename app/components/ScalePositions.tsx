@@ -54,7 +54,7 @@ function Legend({
   diaLabel: string;
 }) {
   return (
-    <div className="max-w-[980px] mx-auto mb-6 flex flex-wrap gap-6 items-center">
+    <div className="max-w-[1200px] mx-auto mb-6 flex flex-wrap gap-6 items-center">
       <div className="flex items-center gap-[0.45rem] text-[0.58rem] text-[var(--muted)] tracking-[0.08em] uppercase">
         <div className="w-[14px] h-[14px] rounded-full shrink-0 bg-[var(--root-col)]" />
         Root
@@ -1121,7 +1121,7 @@ export function ScalePositions() {
       <Nav isDark={isDark} toggleDark={toggleDark} />
       <div className="pt-8 [@media(max-height:500px)]:pt-3 px-6">
       {/* Header */}
-      <header className="max-w-[980px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
+      <header className="max-w-[1200px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
         <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none">
           <span className="normal-case">{selectedKey.name}</span>{" "}
           <em className="text-[var(--accent)] not-italic">
@@ -1137,7 +1137,7 @@ export function ScalePositions() {
       </header>
 
       {/* Scale control row */}
-      <div className="max-w-[980px] mx-auto flex gap-3 flex-wrap items-center pb-3 mb-3">
+      <div className="max-w-[1200px] mx-auto flex gap-3 flex-wrap items-center pb-3 mb-3">
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Scale
         </span>
@@ -1185,7 +1185,7 @@ export function ScalePositions() {
       </div>
 
       {/* Show + System control row */}
-      <div className="max-w-[980px] mx-auto flex gap-3 flex-wrap items-center border-b border-[var(--border)] pb-5 mb-6">
+      <div className="max-w-[1200px] mx-auto flex gap-3 flex-wrap items-center border-b border-[var(--border)] pb-5 mb-6">
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Show
         </span>
@@ -1228,7 +1228,7 @@ export function ScalePositions() {
       </div>
 
       {/* Key selector row */}
-      <div className="max-w-[980px] mx-auto flex gap-2 flex-wrap items-center border-b border-[var(--border)] pb-5 mb-6">
+      <div className="max-w-[1200px] mx-auto flex gap-2 flex-wrap items-center border-b border-[var(--border)] pb-5 mb-6">
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Key
         </span>
@@ -1248,7 +1248,7 @@ export function ScalePositions() {
       <Legend diaLabel={cfg.diaLabel} />
 
       {/* Grid */}
-      <div className="max-w-[980px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
         {gridItems.map(({ pos, key, fretOffset, fretCount, scaletone }, i) => {
           const isTwoSystems = orderedSystems.length === 2;
           const showSeparator = isTwoSystems && i % 2 === 0;
@@ -1367,7 +1367,7 @@ export function ScalePositions() {
           showModes={showModes}
         />
       )}
-      <footer className="max-w-[980px] mx-auto mt-16 pt-5 border-t border-[var(--border)] text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] text-center">
+      <footer className="max-w-[1200px] mx-auto mt-16 pt-5 border-t border-[var(--border)] text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] text-center">
         Incorporates concepts taught by{" "}
         <a
           href="https://www.youtube.com/@PebberBrown"
