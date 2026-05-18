@@ -86,6 +86,15 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 - **Nav**: header adds `[@media(max-height:500px)]:py-2` (shrinks from ~80px to ~40px); desktop nav gaps shrink to `gap-3`; category label spans (`Scales`, `Pentatonic`, etc.) add `[@media(max-height:500px)]:hidden` so only the link row shows
 - **Page content**: every page's main content wrapper adds `[@media(max-height:500px)]:pt-3` (or `py-3`) to reduce the standard 32px top padding to 12px. The home hero also shrinks the H1 with `[@media(max-height:500px)]:text-[clamp(2rem,7vh,3.5rem)]` and hides the body copy paragraph.
 
+**Large-screen containers** — Page content wrappers use `max-w-[NNNpx] mx-auto` to constrain layout width. Established limits by page type:
+- `max-w-[1400px]` — WyldeScales (dual-column layout benefits from extra width)
+- `max-w-[1300px]` — ShapeExplorer (wide Focus/Pair fretboards)
+- `max-w-[1200px]` — ScalePositions, PentatonicTriads, ArpeggioMaps (multi-shape grids)
+- `max-w-[1100px]` — PentatonicColors, IntervalShapes, ChordVoicings (single-fretboard or diagram pages)
+- `max-w-[740px]` / `max-w-2xl` — quiz pages (FretboardNotes, ChordTones) — intentionally narrow for focused UX
+
+Fretboard cells use `flex-1`, so they scale proportionally with the container — wider containers produce wider fret spacing, mirroring the natural feel of a guitar neck. Do not add explicit fret-cell widths; let flex handle it.
+
 **Grid / cells** — `grid grid-cols-2 max-[560px]:grid-cols-1 gap-0` with cells using `-mt-px -ml-px` for collapsed borders. Selected cell adds `relative z-[2]`.
 
 **Modal overlay pattern** — `fixed inset-0 z-50` backdrop with `rgba(10,8,6,0.82)` + `backdropFilter: blur(4px)`. Modal panel uses `--surface` bg, `border: 1px solid var(--border)`, `borderTop: 3px solid var(--accent)`. Lock body scroll with `document.body.style.overflow = 'hidden'` on mount, restore on unmount.

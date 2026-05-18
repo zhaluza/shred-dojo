@@ -2,6 +2,22 @@ import type { ScaleConfig, ScaleMode, ScaleNote, ScaleString } from "./scalePosi
 import { findFret, ROOT_FRET, SNAME, SCALES, toRelative } from "./scalePositions.utils";
 import { buildBox, type PentaScaleMode, type BoxNote } from "./pentatonicTriads.utils";
 
+/**
+ * Compute the penta box's absolute display-start fret, keeping it within 6
+ * frets of the diatonic display start. Guards against the fret-12 boundary
+ * where `pentaRawMin % 12` can land a full octave below the diatonic region.
+ */
+export function pentaAbsoluteStart(
+  pentaRawMin: number,
+  diaAbsStart: number,
+  keyOffset: number
+): number {
+  let start = (pentaRawMin % 12) + keyOffset;
+  if (diaAbsStart - start > 6) start += 12;
+  if (start - diaAbsStart > 6) start -= 12;
+  return start;
+}
+
 export const WYLDE_MODE_NAMES: Record<ScaleMode, string[]> = {
   minor: ["Aeolian", "Locrian", "Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian"],
   major: ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"],
