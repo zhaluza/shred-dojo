@@ -22,7 +22,7 @@ function Dot({ deg }: { deg: string }) {
     // Leading tone — the defining note of harmonic minor
     bg = "var(--seventh-col)"; fg = "#fff";
   } else {
-    bg = "var(--surface)"; fg = "var(--text)"; border = "1.5px solid var(--border)";
+    bg = "var(--surface)"; fg = "var(--text)"; border = "1.5px solid var(--text)";
   }
   return (
     <div
@@ -187,7 +187,7 @@ export function YngwieScales() {
   const shapes = useMemo(() => buildYngwieShapes(), []);
 
   return (
-    <div className="min-h-screen" style={theme}>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]" style={theme}>
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       <main className="px-4 md:px-8 py-8 [@media(max-height:500px)]:py-3 max-w-[1400px] mx-auto">

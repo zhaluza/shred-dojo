@@ -93,8 +93,8 @@ function CircleDiagram({
                   : isHovered
                     ? "var(--border)"
                     : "var(--surface)",
-                stroke: "var(--bg)",
-                strokeWidth: 2.5,
+                stroke: "var(--border)",
+                strokeWidth: 2,
                 transition: "fill 0.12s",
               }}
             />
@@ -133,9 +133,9 @@ function CircleDiagram({
             <path
               d={arcSegmentPath(CX, CY, 178, 140, start, end)}
               style={{
-                fill: isSelected ? "var(--accent)" : "var(--bg)",
+                fill: isSelected ? "var(--accent)" : "var(--border)",
                 stroke: "var(--bg)",
-                strokeWidth: 2.5,
+                strokeWidth: 2,
                 opacity: isSelected ? 0.55 : 1,
                 transition: "fill 0.12s",
               }}
@@ -146,7 +146,7 @@ function CircleDiagram({
               textAnchor="middle"
               dominantBaseline="central"
               style={{
-                fill: isSelected ? "var(--bg)" : "var(--muted)",
+                fill: isSelected ? "var(--bg)" : "var(--text)",
                 fontFamily: "var(--font-mono)",
                 fontSize: "9.5px",
                 pointerEvents: "none",
@@ -179,10 +179,10 @@ function CircleDiagram({
                 fill: isSelected
                   ? "var(--accent)"
                   : isHovered
-                    ? "var(--border)"
+                    ? "var(--muted)"
                     : "var(--surface)",
-                stroke: "var(--bg)",
-                strokeWidth: 2.5,
+                stroke: "var(--border)",
+                strokeWidth: 2,
                 opacity: isSelected ? 0.65 : 1,
                 transition: "fill 0.12s",
               }}
@@ -193,7 +193,7 @@ function CircleDiagram({
               textAnchor="middle"
               dominantBaseline="central"
               style={{
-                fill: isSelected ? "var(--bg)" : "var(--muted)",
+                fill: isSelected ? "var(--bg)" : "var(--text)",
                 fontFamily: "var(--font-mono)",
                 fontSize: "8px",
                 pointerEvents: "none",

@@ -556,7 +556,7 @@ export function ChordTones() {
   const progressTotal = pool.length;
 
   return (
-    <div className="min-h-screen flex flex-col" style={isDark ? DARK_THEME : LIGHT_THEME}>
+    <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)]" style={isDark ? DARK_THEME : LIGHT_THEME}>
       <Nav isDark={isDark} toggleDark={() => {
         const next = !isDark;
         setIsDark(next);
