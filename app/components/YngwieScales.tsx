@@ -2,15 +2,34 @@ import { useState, useEffect, useMemo } from "react";
 import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
 import { CtrlButton } from "./CtrlButton";
-import type { ScaleString } from "./scalePositions.types";
+import type { Degree, ScaleString, StringName } from "./scalePositions.types";
 import { FRET_DOUBLE, FRET_INLAYS, ROOT_FRET } from "./scalePositions.utils";
 import { buildYngwieShapes, KEY_NAMES, type YngwieShape } from "./yngwieScales.utils";
+import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const KEYS = KEY_NAMES.map((name, fret) => ({ name, fret }));
 // Both shapes span 6 relative frets; 8 columns gives one column of breathing room
 const FRET_COUNT = 8;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function computeDisplayFret(startFret: number, keyOffset: number, octaveShift: number): number {
+  const raw = startFret + keyOffset;
+  const base = raw > 12 ? raw - 12 : raw;
+  return base + octaveShift;
+}
+
+function shapeToAbsNotes(shape: YngwieShape, dsf: number): FullNeckNote[] {
+  return shape.strings.flatMap((str) =>
+    str.notes.map((n) => ({
+      string: str.name as StringName,
+      absoluteFret: n.fret + dsf,
+      deg: n.deg as Degree,
+    }))
+  ).filter((n) => n.absoluteFret >= 0 && n.absoluteFret <= 24);
+}
 
 // ─── Dot ──────────────────────────────────────────────────────────────────────
 
@@ -78,53 +97,45 @@ function FretHeader({ displayStartFret }: { displayStartFret: number }) {
 function StringRow({ str }: { str: ScaleString }) {
   const line = STRING_LINE[str.name as keyof typeof STRING_LINE];
   return (
-    <div className="flex items-center h-[44px]">
+    <div className="relative flex pl-[2.2rem]">
       <div
-        className="w-[2.2rem] text-right pr-[0.45rem] shrink-0 font-display tracking-[0.08em] uppercase text-[0.52rem]"
-        style={{ color: "var(--muted)" }}
-      >
-        {str.name}
-      </div>
-      <div
-        className="flex-1 flex relative items-center h-full"
-        style={{
-          backgroundImage: `repeating-linear-gradient(
-            to right,
-            transparent 0%,
-            transparent calc(100% / ${FRET_COUNT} - 1px),
-            var(--fret-bar) calc(100% / ${FRET_COUNT} - 1px),
-            var(--fret-bar) calc(100% / ${FRET_COUNT})
-          )`,
-        }}
-      >
-        <div
-          className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none"
-          style={{ height: line.height, backgroundColor: line.colorVar }}
-        />
-        {Array.from({ length: FRET_COUNT }, (_, f) => {
-          const note = str.notes.find((n) => n.fret === f);
-          return (
-            <div
-              key={f}
-              className="flex-1 h-[44px] flex items-center justify-center relative z-[1]"
-            >
-              {note && <Dot deg={note.deg} />}
-            </div>
-          );
-        })}
-      </div>
+        className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none"
+        style={{ height: line.height, backgroundColor: line.colorVar }}
+      />
+      {Array.from({ length: FRET_COUNT }, (_, f) => {
+        const note = str.notes.find((n) => n.fret === f);
+        return (
+          <div
+            key={f}
+            className="flex-1 h-[44px] flex items-center justify-center relative z-[1]"
+          >
+            {note && <Dot deg={note.deg} />}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 // ─── ShapeCard ────────────────────────────────────────────────────────────────
 
-function ShapeCard({ shape, keyOffset }: { shape: YngwieShape; keyOffset: number }) {
-  // Mod 12 ensures the shape appears in the correct octave for every key.
-  // Without it, shapes built in G can land 12 frets too high for keys below G
-  // (e.g. Little Savage in E would show at fret 17 instead of 5).
-  const displayStartFret = (shape.startFret + keyOffset) % 12;
-
+function ShapeCard({
+  shape,
+  displayStartFret,
+  isNeckOpen,
+  showAllShapes,
+  neckLayers,
+  onToggleNeck,
+  onToggleShowAll,
+}: {
+  shape: YngwieShape;
+  displayStartFret: number;
+  isNeckOpen: boolean;
+  showAllShapes: boolean;
+  neckLayers: FullNeckLayer[];
+  onToggleNeck: () => void;
+  onToggleShowAll: () => void;
+}) {
   return (
     <div
       className="rounded-sm border flex flex-col"
@@ -153,6 +164,36 @@ function ShapeCard({ shape, keyOffset }: { shape: YngwieShape; keyOffset: number
           <StringRow key={str.name} str={str} />
         ))}
       </div>
+
+      {/* Full Neck toggle */}
+      <div style={{ borderTop: "1px solid var(--border)" }}>
+        <button
+          onClick={onToggleNeck}
+          className="w-full px-4 py-[0.5rem] flex items-center gap-2 text-[0.5rem] tracking-[0.12em] uppercase cursor-pointer transition-colors duration-100 hover:bg-[var(--surface)]"
+          style={{ color: "var(--muted)", backgroundColor: "transparent" }}
+        >
+          <span>{isNeckOpen ? "▲" : "▼"}</span>
+          Full Neck
+        </button>
+
+        {isNeckOpen && (
+          <div className="px-4 pb-4">
+            {/* Show all shapes toggle */}
+            <label className="flex items-center gap-2 mb-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showAllShapes}
+                onChange={onToggleShowAll}
+                className="accent-[var(--accent)]"
+              />
+              <span className="text-[0.48rem] tracking-[0.1em] uppercase" style={{ color: "var(--muted)" }}>
+                Show other shapes (dimmed)
+              </span>
+            </label>
+            <FullNeckFretboard layers={neckLayers} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -162,6 +203,9 @@ function ShapeCard({ shape, keyOffset }: { shape: YngwieShape; keyOffset: number
 export function YngwieScales() {
   const [isDark, setIsDark] = useState(false);
   const [keyIdx, setKeyIdx] = useState(0);
+  const [octaveShift, setOctaveShift] = useState<0 | 12>(0);
+  const [neckOpenIdx, setNeckOpenIdx] = useState<number | null>(null);
+  const [showAllShapes, setShowAllShapes] = useState(false);
 
   useEffect(() => {
     const dark = localStorage.getItem("shred-dojo-dark") === "true";
@@ -185,6 +229,33 @@ export function YngwieScales() {
   const theme = isDark ? DARK_THEME : LIGHT_THEME;
   const keyOffset = (keyIdx - ROOT_FRET + 12) % 12;
   const shapes = useMemo(() => buildYngwieShapes(), []);
+
+  // Precompute display start fret and absolute notes for each shape
+  const shapeData = useMemo(() =>
+    shapes.map((shape) => ({
+      dsf: computeDisplayFret(shape.startFret, keyOffset, octaveShift),
+    })),
+    [shapes, keyOffset, octaveShift]
+  );
+
+  // Main layer: normalized + octaveShift (matches card display)
+  const absNotesByShape = useMemo(() =>
+    shapes.map((shape, i) => shapeToAbsNotes(shape, shapeData[i].dsf)),
+    [shapes, shapeData]
+  );
+
+  // Dimmed layers: raw positions so other shapes appear at their natural neck location
+  const rawAbsNotesByShape = useMemo(() =>
+    shapes.map((shape) => shapeToAbsNotes(shape, shape.startFret + keyOffset)),
+    [shapes, keyOffset]
+  );
+
+  function buildNeckLayers(cardIdx: number): FullNeckLayer[] {
+    return absNotesByShape.map((notes, i) => ({
+      notes: i === cardIdx ? notes : rawAbsNotesByShape[i],
+      isMain: i === cardIdx,
+    }));
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]" style={theme}>
@@ -211,32 +282,76 @@ export function YngwieScales() {
           </p>
         </div>
 
-        {/* Key selector */}
-        <div className="flex flex-col gap-[5px] mb-8">
-          <span
-            className="text-[0.52rem] tracking-[0.16em] uppercase font-display"
-            style={{ color: "var(--muted)" }}
-          >
-            Key
-          </span>
-          <div className="flex flex-wrap gap-[3px]">
-            {KEYS.map(({ name, fret }) => (
+        {/* Controls */}
+        <div className="flex flex-wrap items-start gap-6 mb-8">
+          {/* Key selector */}
+          <div className="flex flex-col gap-[5px]">
+            <span
+              className="text-[0.52rem] tracking-[0.16em] uppercase font-display"
+              style={{ color: "var(--muted)" }}
+            >
+              Key
+            </span>
+            <div className="flex flex-wrap gap-[3px]">
+              {KEYS.map(({ name, fret }) => (
+                <CtrlButton
+                  key={fret}
+                  label={name}
+                  active={keyIdx === fret}
+                  onClick={() => setKey(fret)}
+                  small
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Register toggle */}
+          <div className="flex flex-col gap-[5px]">
+            <span
+              className="text-[0.52rem] tracking-[0.16em] uppercase font-display"
+              style={{ color: "var(--muted)" }}
+            >
+              Register
+            </span>
+            <div className="flex gap-1">
               <CtrlButton
-                key={fret}
-                label={name}
-                active={keyIdx === fret}
-                onClick={() => setKey(fret)}
+                label="Lower 12"
+                active={octaveShift === 0}
+                onClick={() => setOctaveShift(0)}
                 small
               />
-            ))}
+              <CtrlButton
+                label="Upper 12"
+                active={octaveShift === 12}
+                onClick={() => setOctaveShift(12)}
+                small
+              />
+            </div>
           </div>
         </div>
 
         {/* Shape cards */}
         <div className="grid grid-cols-1 min-[700px]:grid-cols-2 gap-4">
-          {shapes.map((shape) => (
-            <ShapeCard key={shape.name} shape={shape} keyOffset={keyOffset} />
-          ))}
+          {shapes.map((shape, idx) => {
+            const allLayers = buildNeckLayers(idx);
+            const activeLayers = showAllShapes
+              ? allLayers
+              : allLayers.filter((l) => l.isMain);
+            return (
+              <ShapeCard
+                key={shape.name}
+                shape={shape}
+                displayStartFret={shapeData[idx].dsf}
+                isNeckOpen={neckOpenIdx === idx}
+                showAllShapes={showAllShapes}
+                neckLayers={activeLayers}
+                onToggleNeck={() =>
+                  setNeckOpenIdx((prev) => (prev === idx ? null : idx))
+                }
+                onToggleShowAll={() => setShowAllShapes((v) => !v)}
+              />
+            );
+          })}
         </div>
       </main>
     </div>

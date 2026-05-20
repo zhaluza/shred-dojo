@@ -6,6 +6,7 @@ import {
 } from "./scalePositions.theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
+import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 import type {
   NoteFilter,
   ScaleMode,
@@ -476,6 +477,7 @@ function UnifiedCell({
   showModes,
   scaleMode,
   keyOffset,
+  octaveOffset,
 }: {
   posA: ScalePosition;
   posB: ScalePosition;
@@ -487,6 +489,7 @@ function UnifiedCell({
   showModes?: boolean;
   scaleMode?: ScaleMode;
   keyOffset?: number;
+  octaveOffset?: number; // normShift + octaveShift
 }) {
   const mergedStrings = useMemo(
     () => mergePositions(posA, posB, fretOffsetA, fretOffsetB),
@@ -571,7 +574,7 @@ function UnifiedCell({
           orderedSystems={orderedSystems}
           displayStartFret={
             keyOffset !== undefined
-              ? Math.min(posA.startFret, posB.startFret) + keyOffset
+              ? Math.min(posA.startFret, posB.startFret) + keyOffset + (octaveOffset ?? 0)
               : undefined
           }
         />
@@ -708,6 +711,9 @@ function ShapeModal({
   chordTones,
   scaleMode,
   showModes,
+  keyOffset,
+  octaveShift,
+  allSystemPositions,
 }: {
   pos: ScalePosition;
   systemIdx: number;
@@ -719,8 +725,13 @@ function ShapeModal({
   chordTones: Set<string>;
   scaleMode: ScaleMode;
   showModes: boolean;
+  keyOffset: number;
+  octaveShift: 0 | 12;
+  allSystemPositions: ScalePosition[];
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const [neckOpen, setNeckOpen] = useState(false);
+  const [showAllShapes, setShowAllShapes] = useState(false);
 
   // Keyboard navigation
   useEffect(() => {
@@ -891,6 +902,68 @@ function ShapeModal({
         <div className="px-5 pb-3 text-[0.48rem] tracking-[0.1em] uppercase text-[var(--muted)] max-[560px]:hidden">
           ← → arrow keys to navigate · esc to close
         </div>
+
+        {/* Full Neck panel */}
+        <div style={{ borderTop: "1px solid var(--border)" }}>
+          <button
+            onClick={() => setNeckOpen((v) => !v)}
+            className="w-full px-5 py-[0.5rem] flex items-center gap-2 text-[0.5rem] tracking-[0.12em] uppercase cursor-pointer transition-colors duration-100"
+            style={{ color: "var(--muted)", backgroundColor: "transparent", border: "none" }}
+          >
+            <span>{neckOpen ? "▲" : "▼"}</span>
+            Full Neck
+          </button>
+
+          {neckOpen && (
+            <div className="px-5 pb-4">
+              <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showAllShapes}
+                  onChange={() => setShowAllShapes((v) => !v)}
+                  className="accent-[var(--accent)]"
+                />
+                <span className="text-[0.48rem] tracking-[0.1em] uppercase" style={{ color: "var(--muted)" }}>
+                  Show other shapes (dimmed)
+                </span>
+              </label>
+              {(() => {
+                const raw = pos.startFret + keyOffset;
+                const base = raw > 12 ? raw - 12 : raw;
+                const mainDsf = base + octaveShift;
+                const mainNotes: FullNeckNote[] = pos.strings.flatMap((str) =>
+                  str.notes.map((n) => ({
+                    string: str.name,
+                    absoluteFret: n.fret + mainDsf,
+                    deg: n.deg,
+                    penta: n.penta,
+                  }))
+                ).filter((n) => n.absoluteFret >= 0 && n.absoluteFret <= 24);
+
+                const layers: FullNeckLayer[] = [{ notes: mainNotes, isMain: true }];
+
+                if (showAllShapes) {
+                  for (const otherPos of allSystemPositions) {
+                    if (otherPos === pos) continue;
+                    // Raw (unnormalized) so dimmed shapes appear at their natural neck positions
+                    const oDsf = otherPos.startFret + keyOffset;
+                    const otherNotes: FullNeckNote[] = otherPos.strings.flatMap((str) =>
+                      str.notes.map((n) => ({
+                        string: str.name,
+                        absoluteFret: n.fret + oDsf,
+                        deg: n.deg,
+                        penta: n.penta,
+                      }))
+                    ).filter((n) => n.absoluteFret >= 0 && n.absoluteFret <= 24);
+                    layers.push({ notes: otherNotes, isMain: false });
+                  }
+                }
+
+                return <FullNeckFretboard layers={layers} />;
+              })()}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -948,6 +1021,7 @@ export function ScalePositions() {
   const [unifiedScaletones, setUnifiedScaletones] = useState<Set<number>>(
     new Set(),
   );
+  const [octaveShift, setOctaveShift] = useState<0 | 12>(0);
 
   useEffect(() => {
     const stored = localStorage.getItem("shred-dojo-dark");
@@ -1005,14 +1079,19 @@ export function ScalePositions() {
   // Build grid rows: paired by scaletone when 2 systems selected
   const gridItems = useMemo(() => {
     if (orderedSystems.length === 1) {
-      // Single system — flat list
-      return (positionsBySystem.get(orderedSystems[0]) ?? []).map((pos) => ({
-        pos,
-        key: `${pos.scaletone}-${pos.system}`,
-        fretOffset: 0,
-        fretCount: undefined as number | undefined,
-        scaletone: pos.scaletone,
-      }));
+      // Single system — flat list; normalize each position independently
+      return (positionsBySystem.get(orderedSystems[0]) ?? []).map((pos) => {
+        const raw = pos.startFret + keyOffset;
+        const normShift = raw > 12 ? -12 : 0;
+        return {
+          pos,
+          key: `${pos.scaletone}-${pos.system}`,
+          fretOffset: 0,
+          fretCount: undefined as number | undefined,
+          scaletone: pos.scaletone,
+          normShift,
+        };
+      });
     }
 
     // Two systems — pair by scaletone (1-7)
@@ -1025,6 +1104,7 @@ export function ScalePositions() {
       fretOffset: number;
       fretCount?: number;
       scaletone: number;
+      normShift: number;
     }[] = [];
 
     for (let st = 1; st <= 7; st++) {
@@ -1041,6 +1121,11 @@ export function ScalePositions() {
         }
       }
 
+      // Determine normalization shift using the reference position (fretOffset=0 = lower startFret)
+      const refPos = fretOffsetA === 0 ? a : b;
+      const refRaw = refPos ? refPos.startFret + keyOffset : 0;
+      const normShift = refRaw > 12 ? -12 : 0;
+
       let fretCountB: number | undefined = undefined;
       if (a && b && sysA === "3nps" && sysB === "caged") {
         const maxFretA = Math.max(...a.strings.flatMap((s) => s.notes.map((n) => n.fret)));
@@ -1050,11 +1135,11 @@ export function ScalePositions() {
         fretCountB = Math.max(naturalB, naturalA);
       }
 
-      items.push({ pos: a, key: `${st}-${sysA}`, fretOffset: fretOffsetA, scaletone: st });
-      items.push({ pos: b, key: `${st}-${sysB}`, fretOffset: fretOffsetB, fretCount: fretCountB, scaletone: st });
+      items.push({ pos: a, key: `${st}-${sysA}`, fretOffset: fretOffsetA, scaletone: st, normShift });
+      items.push({ pos: b, key: `${st}-${sysB}`, fretOffset: fretOffsetB, fretCount: fretCountB, scaletone: st, normShift });
     }
     return items;
-  }, [orderedSystems, positionsBySystem]);
+  }, [orderedSystems, positionsBySystem, keyOffset]);
 
   function handleScaleChange(mode: ScaleMode) {
     setScaleMode(mode);
@@ -1228,7 +1313,7 @@ export function ScalePositions() {
       </div>
 
       {/* Key selector row */}
-      <div className="max-w-[1200px] mx-auto flex gap-2 flex-wrap items-center border-b border-[var(--border)] pb-5 mb-6">
+      <div className="max-w-[1200px] mx-auto flex gap-2 flex-wrap items-center pb-3 mb-3">
         <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
           Key
         </span>
@@ -1244,12 +1329,31 @@ export function ScalePositions() {
         ))}
       </div>
 
+      {/* Register toggle row */}
+      <div className="max-w-[1200px] mx-auto flex gap-2 flex-wrap items-center border-b border-[var(--border)] pb-5 mb-6">
+        <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
+          Register
+        </span>
+        <CtrlButton
+          label="Lower 12"
+          active={octaveShift === 0}
+          onClick={() => setOctaveShift(0)}
+          small
+        />
+        <CtrlButton
+          label="Upper 12"
+          active={octaveShift === 12}
+          onClick={() => setOctaveShift(12)}
+          small
+        />
+      </div>
+
       {/* Legend */}
       <Legend diaLabel={cfg.diaLabel} />
 
       {/* Grid */}
       <div className="max-w-[1200px] mx-auto grid grid-cols-2 max-[560px]:grid-cols-1">
-        {gridItems.map(({ pos, key, fretOffset, fretCount, scaletone }, i) => {
+        {gridItems.map(({ pos, key, fretOffset, fretCount, scaletone, normShift }, i) => {
           const isTwoSystems = orderedSystems.length === 2;
           const showSeparator = isTwoSystems && i % 2 === 0;
           const isUnified = isTwoSystems && unifiedScaletones.has(scaletone);
@@ -1289,6 +1393,7 @@ export function ScalePositions() {
                   showModes={showModes}
                   scaleMode={scaleMode}
                   keyOffset={keyOffset}
+                  octaveOffset={normShift + octaveShift}
                 />
               </Fragment>
             );
@@ -1324,7 +1429,7 @@ export function ScalePositions() {
               fretCount={fretCount}
               showModes={showModes}
               scaleMode={scaleMode}
-              displayStartFret={pos.startFret + keyOffset - fretOffset}
+              displayStartFret={pos.startFret + keyOffset + normShift + octaveShift - fretOffset}
             />
           );
           return (
@@ -1365,6 +1470,9 @@ export function ScalePositions() {
           chordTones={chordTones as Set<string>}
           scaleMode={scaleMode}
           showModes={showModes}
+          keyOffset={keyOffset}
+          octaveShift={octaveShift}
+          allSystemPositions={modalSystemPositions}
         />
       )}
       <footer className="max-w-[1200px] mx-auto mt-16 pt-5 border-t border-[var(--border)] text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] text-center">

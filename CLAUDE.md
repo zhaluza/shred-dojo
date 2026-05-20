@@ -41,7 +41,7 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 - `font-display` → Oswald (headings, labels, buttons)
 - `font-mono` → Source Code Pro (body text, monospace)
 
-**Theming approach** — CSS custom properties injected as inline `style` on the page root `<div>`, cascading to all children. Use Tailwind arbitrary value utilities to reference them: `bg-[var(--bg)]`, `text-[var(--text)]`, etc. Dark mode is React state (not `dark:` Tailwind variant), toggled by swapping `LIGHT_THEME` / `DARK_THEME` objects.
+**Theming approach** — CSS custom properties injected as inline `style` on the page root `<div>`, cascading to all children. The root div must also carry `bg-[var(--bg)] text-[var(--text)]` Tailwind classes — `style={theme}` injects variable definitions but does not apply background or color to the element itself; without the classes the page background falls through to the browser default (white) in dark mode. Dark mode is React state (not `dark:` Tailwind variant), toggled by swapping `LIGHT_THEME` / `DARK_THEME` objects.
 
 **Color tokens** (defined in `scalePositions.theme.ts`):
 
@@ -120,7 +120,13 @@ The main component (`app/components/ScalePositions.tsx`) owns all state:
 
 **Cross-system fret alignment** — every `ScalePosition` has a `startFret: number` field equal to `rawMinFret % 12` (the absolute minimum fret before `toRelative()` normalization, mod 12). When two systems are paired in the grid, `gridItems` computes a `fretOffset` for each cell by comparing their `startFret` values: the position with the higher `startFret` gets `fretOffset = diff`, shifting its dots to the right so both fretboards show the same physical neck region. The offset is threaded as a prop through `PositionCell` → `Fretboard` → `StringRow`; `StringRow` uses `n.fret === f - fretOffset` for note lookup, and `Fretboard` expands `fretCount` by `fretOffset`. `ShapeModal` always uses `fretOffset=0` (single position, no alignment needed). For minor scale, CAGED shapes E, C, and G extend one fret lower than their paired 3nps/sym positions (offset=1); D and A are naturally aligned (offset=0). **CAGED fret-count matching** — when 3nps + CAGED are paired, `gridItems` also computes a `fretCount` override for each CAGED cell: `Math.max(naturalCAGED, natural3nps)`, ensuring both fretboards display the same number of frets. This is passed as an optional `fretCount` prop through `PositionCell` → `Fretboard`, where it overrides the locally-computed value.
 
-**Key selection** — a 12-key selector (E through Eb) shifts all fretboard fret numbers to reflect the real guitar neck position for the chosen key. `keyIdx` state is persisted to `localStorage` under `"shred-dojo-key"` (lazy initializer, same pattern as `"shred-dojo-dark"`). `keyOffset = (keyFret - ROOT_FRET + 12) % 12`. For each `PositionCell`, `displayStartFret = pos.startFret + keyOffset - fretOffset` (subtracting `fretOffset` keeps column 0 aligned when positions are shifted for comparison). For `UnifiedCell`, `displayStartFret = Math.min(posA.startFret, posB.startFret) + keyOffset`. Both `Fretboard` and `UnifiedFretboard` accept a `displayStartFret?: number` prop; when provided, fret numbers render as `f + displayStartFret` and fret inlay dot markers are drawn above the fret number row. `FRET_INLAYS` and `FRET_DOUBLE` sets are exported from `scalePositions.utils.ts` and shared with `ShapeExplorer.tsx`.
+**Key selection** — a 12-key selector (E through Eb) shifts all fretboard fret numbers to reflect the real guitar neck position for the chosen key. `keyIdx` state is persisted to `localStorage` under `"shred-dojo-key"` (lazy initializer, same pattern as `"shred-dojo-dark"`). `keyOffset = (keyFret - ROOT_FRET + 12) % 12`. For each `PositionCell`, `displayStartFret = pos.startFret + keyOffset + normShift + octaveShift - fretOffset`. For `UnifiedCell`, `displayStartFret = Math.min(posA.startFret, posB.startFret) + keyOffset + normShift + octaveShift`. Both `Fretboard` and `UnifiedFretboard` accept a `displayStartFret?: number` prop; when provided, fret numbers render as `f + displayStartFret` and fret inlay dot markers are drawn above the fret number row. `FRET_INLAYS` and `FRET_DOUBLE` sets are exported from `scalePositions.utils.ts` and shared with `ShapeExplorer.tsx`.
+
+**Register toggle** — `octaveShift: 0 | 12` state (not persisted). Lower 12 = `octaveShift = 0`; Upper 12 = `octaveShift = 12`. Applied on top of key+normShift, so the same shape dots appear 12 frets higher on the neck.
+
+**Lower-octave normalization (`normShift`)** — `gridItems` computes a `normShift: -12 | 0` per row (or per pair when 2 systems are selected). For a single system: `normShift = (pos.startFret + keyOffset) > 12 ? -12 : 0`. For a cross-system pair: both cells share the same `normShift`, computed from the reference position (the one with `fretOffset = 0`, i.e. the lower `startFret`). This keeps pair cells aligned while still preferring the lower octave. `normShift` is stored in each `gridItem` and threaded through `PositionCell` display and `UnifiedCell`.
+
+**ShapeModal Full Neck panel** — at the bottom of `ShapeModal`, a **"▼ Full Neck"** toggle expands a `FullNeckFretboard` showing the selected position at its absolute neck location. A **"Show other shapes (dimmed)"** checkbox overlays all positions from the same system(s). Main position uses normalized + `octaveShift` display fret; dimmed positions use raw `pos.startFret + keyOffset` (no normalization) so each shape appears at its natural location across the full 24-fret neck.
 
 **Fretboard size variants** — `Fretboard`, `StringRow`, and `Dot` accept a `large` boolean prop. When `large={true}`: string rows are `h-[42px]` (vs `29px`), dots are `w-7 h-7` (vs `w-5 h-5`), and text sizes scale up proportionally. Used by `ShapeModal` for the enlarged view.
 
@@ -291,6 +297,7 @@ Unlike the Scale Patterns page (which emphasizes side-by-side system comparison)
 - **Scale** — Minor / Major.
 - **Blues** — `[Blues Scale]` toggle, visible only when System = Penta AND Scale = Minor. Adds b5 "blue note" dots (indigo, `var(--blues-col)`) to all penta boxes. Resets automatically when switching System away from Penta or Scale to Major.
 - **Show filter** — All / Penta / Chord (hidden when System = Penta, which is implicitly penta-only).
+- **Register** — Lower 12 / Upper 12; `octaveShift: 0 | 12` shifts all display frets by 12. `computeDisplayFret(startFret, keyOffset, octaveShift)` normalizes to lower octave first (`raw > 12 ? raw - 12 : raw`) then adds `octaveShift`. Used for card fretboards and the main layer in the neck panel; dimmed layers always use raw positions.
 - **View** — Focus (single shape with navigator/pills/notes panel), Pair (two shapes overlaid on one fretboard), or Overview (compact grid of all shapes). Switching system always resets to Focus. Clicking a cell in Overview jumps to Focus for that shape.
 - **Shape navigator** — (Focus and Pair modes) Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
 
@@ -304,10 +311,18 @@ All shapes are built in G (ROOT_FRET = 3 on low E). For a chosen key K:
 
 ```
 keyOffset = (keyFret - ROOT_FRET + 12) % 12
-displayStartFret = shape.startFret + keyOffset
+displayStartFret = computeDisplayFret(shape.startFret, keyOffset, octaveShift)
+// where: raw = startFret + keyOffset; base = raw > 12 ? raw - 12 : raw; return base + octaveShift
 ```
 
 Fret labels on the fretboard are rendered as `f + displayStartFret` (absolute guitar frets), so the shape dots stay at relative positions 0..N while the numbers reflect the real neck position. Fret inlay dots (single at 3, 5, 7, 9; double at 12, 24) are drawn based on the absolute fret value.
+
+### Full Neck panel
+
+In **Focus view**, a **"▼ Full Neck"** toggle appears below the Notes panel. It expands a `FullNeckFretboard` showing the current shape's notes at their absolute positions on the 24-fret neck. A **"Show other shapes (dimmed)"** checkbox overlays all other shapes as faint dots. The panel closes automatically when switching away from Focus view.
+
+**Main shape layer**: uses `computeDisplayFret` (normalized + `octaveShift`), matching the card display.
+**Dimmed layers**: use raw `shape.startFret + keyOffset` (no normalization, no `octaveShift`), so each shape appears at its natural position on the neck — shapes at lower frets appear to the left, higher-fret shapes to the right. Root notes in dimmed layers render at `var(--root-col)` (40% opacity) to keep roots identifiable across all positions.
 
 ### Pentatonic boxes
 
@@ -578,6 +593,59 @@ This mirrors `toRelative()` for the penta box and keeps diatonic and pentatonic 
 
 - **Scale** — Minor / Major (rebuilds all 7 positions)
 - **Key** — 12 chromatic keys E through Eb (persisted to `"shred-dojo-key"` localStorage)
+- **Register** — Lower 12 / Upper 12; `octaveShift: 0 | 12` applied via `computeWyldeAbsStarts()` after key transposition and lower-octave normalization
+
+### Full Neck view
+
+Each position card has a **"▼ Full Neck"** toggle that expands a `FullNeckFretboard`. The active position's notes are shown in full degree colors (`isMain: true`). **"Show other shapes (dimmed)"** overlays all 7 positions.
+
+**Layer positions**: the main (active) position uses `computeWyldeAbsStarts(pos, keyOffset, octaveShift)` — normalized + `octaveShift`. Dimmed positions use raw `pos.startFret + keyOffset` (no normalization, no `octaveShift`) so each of the 7 positions appears at its true location on the neck — positions before the active shape appear to the left, positions after appear to the right. Root notes in dimmed positions render at `var(--root-col)` (40% opacity).
+
+`rawNotesByPos` and `absNotesByPos` are separate `useMemo` arrays. `buildNeckLayers(cardIdx)` selects `absNotesByPos[i]` for the main card and `rawNotesByPos[i]` for all other cards.
+
+## FullNeckFretboard component
+
+`app/components/FullNeckFretboard.tsx` — shared fretboard component that renders the full guitar neck (frets 0–24) with layered note overlays. Used by Shape Explorer, Scale Positions (ShapeModal), Wylde Scales, and Yngwie Scales.
+
+- **`FullNeckNote`** — `{ string, absoluteFret, deg, penta? }` — note at an absolute fret (0 = open, 1–24)
+- **`FullNeckLayer`** — `{ notes: FullNeckNote[], isMain: boolean }` — `isMain: true` = full degree colors; `isMain: false` = dimmed overlay
+- **`FullNeckFretboard`** — accepts `layers: FullNeckLayer[]`; builds a `Map<"string:fret", {note, isMain}>` lookup across all layers (main layer overrides dimmed at the same position). Renders: inlay marker row, open string column (36px), nut (8px), 24 fret cells (36px each), string name labels, fret numbers. String rows are 28px tall (compact). Main-layer dots use the same color logic as `NeckDot` (root = `var(--root-col)`, b5+penta = `var(--blues-col)`, penta = `var(--text)` fill, diatonic = outlined).
+- **Dimmed dot rendering** — non-main notes: root (`deg === "R"`) → `var(--root-col)` at 40% opacity; all others → `var(--border)` at 40% opacity. This keeps root note locations identifiable even in ghosted positions.
+- **Raw vs. normalized positions** — callers pass dimmed layers using raw `startFret + keyOffset` (no lower-octave normalization, no `octaveShift`) so each shape appears at its natural location on the full 24-fret neck. Only the main (highlighted) layer uses the normalized + `octaveShift` position that matches the card display.
+- The component is `overflow-x-auto` with a fixed min-width (`24 × 36 + open + nut + padding`), scrollable horizontally on narrow screens
+
+## Yngwie Scales feature
+
+The Yngwie Scales page (`/yngwie-scales`) visualizes two harmonic minor shapes favored by Yngwie Malmsteen, highlighting the raised 7th degree (leading tone) that creates the augmented 2nd with b6 defining the classical shred sound.
+
+### Files
+
+- `app/components/yngwieScales.utils.ts` — `HARMONIC_MINOR_CFG`, `buildYngwieShapes()`, shape definitions
+- `app/components/YngwieScales.tsx` — all component code (self-contained)
+- `app/routes/yngwie-scales.tsx` — route wrapper
+
+### Data model
+
+- `HARMONIC_MINOR_CFG` — `ScaleConfig` with scale `["R", "2", "b3", "4", "5", "b6", "7"]` and raised 7th (`11` semitones). Same structure as configs in `scalePositions.utils.ts`.
+- `YngwieShape` — `{ name, tagline, strings: ScaleString[], startFret }`
+- `SHAPE_DEFS` — two shapes: **Steeler Shape** (starts on 7th degree, the canonical Yngwie entry point) and **Little Savage Shape** (starts on 4th degree, higher neck position)
+- `buildYngwieShapes()` — calls `build3nps(startDegIdx, HARMONIC_MINOR_CFG)` for each shape def, normalizes with `toRelative()`, records `startFret = rawMin % 12`
+
+### Dot rendering
+
+- Root (`R`): `var(--root-col)` fill, white text
+- Leading tone (`7`): `var(--seventh-col)` (purple) fill, white text
+- All others: `var(--surface)` fill, `var(--text)` text, `1.5px solid var(--text)` border (uses `--text` not `--border` so dots remain visible in dark mode)
+
+### Key transposition
+
+`keyOffset = (keyIdx - ROOT_FRET + 12) % 12`. `computeDisplayFret(startFret, keyOffset, octaveShift)` normalizes to lower octave (`raw > 12 ? raw - 12 : raw`) then adds `octaveShift`. Precomputed per shape into `shapeData[i].dsf` via `useMemo`.
+
+### Controls
+
+- **Key** — 12 chromatic keys E through Eb (persisted to `"shred-dojo-key"` localStorage)
+- **Register** — Lower 12 / Upper 12; `octaveShift: 0 | 12` shifts display fret by one octave
+- **Full Neck** — per-card toggle revealing `FullNeckFretboard`; **"Show other shapes (dimmed)"** checkbox overlays both shapes. Main shape uses `shapeData[i].dsf` (normalized + `octaveShift`); dimmed shape uses raw `shape.startFret + keyOffset` so it appears at its natural neck position. Root notes in dimmed shapes render at `var(--root-col)` (40% opacity).
 
 ## MetronomeWidget
 

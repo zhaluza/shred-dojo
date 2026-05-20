@@ -2,10 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
 import { CtrlButton } from "./CtrlButton";
-import type { Degree, ScaleMode, ScaleNote, ScaleString } from "./scalePositions.types";
+import type { Degree, ScaleMode, ScaleNote, ScaleString, StringName } from "./scalePositions.types";
 import { FRET_DOUBLE, FRET_INLAYS, ROOT_FRET, SNAME } from "./scalePositions.utils";
 import { buildAllWyldePositions, pentaAbsoluteStart, type WyldePosition } from "./wyldeScales.utils";
 import type { BoxNote } from "./pentatonicTriads.utils";
+import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -14,6 +15,46 @@ const NOTE_NAMES = [
 ] as const;
 
 const KEYS = NOTE_NAMES.map((name, fret) => ({ name, fret }));
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function computeWyldeAbsStarts(
+  pos: WyldePosition,
+  keyOffset: number,
+  octaveShift: number,
+): { diaAbsStart: number; pentaAbsStart: number } {
+  const rawDiaAbs = pos.startFret + keyOffset;
+  let diaAbsStart = rawDiaAbs > 12 ? rawDiaAbs - 12 : rawDiaAbs;
+  let pentaAbsStart = pentaAbsoluteStart(pos.pentaRawMin, diaAbsStart, keyOffset);
+  diaAbsStart += octaveShift;
+  pentaAbsStart += octaveShift;
+  return { diaAbsStart, pentaAbsStart };
+}
+
+function wyldePositionToAbsNotes(
+  pos: WyldePosition,
+  keyOffset: number,
+  octaveShift: number,
+): FullNeckNote[] {
+  const { diaAbsStart, pentaAbsStart } = computeWyldeAbsStarts(pos, keyOffset, octaveShift);
+  const diaNotes: FullNeckNote[] = pos.strings.flatMap((str) =>
+    str.notes.map((n) => ({
+      string: str.name as StringName,
+      absoluteFret: n.fret + diaAbsStart,
+      deg: n.deg,
+      penta: n.penta ?? false,
+    }))
+  );
+  const pentaNotes: FullNeckNote[] = pos.pentaBox.map((n) => ({
+    string: n.string as StringName,
+    absoluteFret: (n.fret - pos.pentaRawMin) + pentaAbsStart,
+    deg: n.deg as Degree,
+    penta: true,
+  }));
+  return [...diaNotes, ...pentaNotes].filter(
+    (n) => n.absoluteFret >= 0 && n.absoluteFret <= 24
+  );
+}
 
 // ─── Dot ──────────────────────────────────────────────────────────────────────
 
@@ -264,8 +305,6 @@ function PentaFretboard({
     const map = new Map<string, Array<{ relFret: number; deg: string }>>();
     for (const sn of SNAME) map.set(sn, []);
     for (const note of pentaBox) {
-      // Normalize penta absolute fret to its own relative space (same as toRelative for
-      // diatonic), then apply pentaOffset to land on the shared fretboard coordinate.
       const rel = (note.fret - pentaRawMin) + pentaOffset;
       if (rel >= 0 && rel < fretCount) {
         map.get(note.string)!.push({ relFret: rel, deg: note.deg });
@@ -295,19 +334,29 @@ function PentaFretboard({
 function PositionCard({
   pos,
   keyOffset,
+  octaveShift,
   size,
+  isNeckOpen,
+  showAllShapes,
+  neckLayers,
+  onToggleNeck,
+  onToggleShowAll,
 }: {
   pos: WyldePosition;
   keyOffset: number;
+  octaveShift: 0 | 12;
   size: "md" | "sm";
+  isNeckOpen: boolean;
+  showAllShapes: boolean;
+  neckLayers: FullNeckLayer[];
+  onToggleNeck: () => void;
+  onToggleShowAll: () => void;
 }) {
-  const diaAbsStart = pos.startFret + keyOffset;
-  const pentaAbsStart = pentaAbsoluteStart(pos.pentaRawMin, diaAbsStart, keyOffset);
+  const { diaAbsStart, pentaAbsStart } = computeWyldeAbsStarts(pos, keyOffset, octaveShift);
 
   const diaAbsFrets = pos.strings.flatMap((s) =>
     s.notes.map((n) => n.fret + diaAbsStart)
   );
-  // Penta display absolute = (penta.fret - pentaRawMin) + pentaAbsStart
   const pentaAbsFrets = pos.pentaBox.map(
     (n) => (n.fret - pos.pentaRawMin) + pentaAbsStart
   );
@@ -317,9 +366,7 @@ function PositionCard({
   const maxAbs = Math.max(...allAbs);
   const fretCount = maxAbs - displayStartFret + 3;
 
-  // offset: diatonic relative fret + diaOffset = display coordinate
   const diaOffset = diaAbsStart - displayStartFret;
-  // offset: (penta.fret - pentaRawMin) + pentaOffset = display coordinate
   const pentaOffset = pentaAbsStart - displayStartFret;
 
   return (
@@ -389,6 +436,35 @@ function PositionCard({
           />
         </div>
       </div>
+
+      {/* Full Neck toggle */}
+      <div style={{ borderTop: "1px solid var(--border)" }}>
+        <button
+          onClick={onToggleNeck}
+          className="w-full px-4 py-[0.5rem] flex items-center gap-2 text-[0.5rem] tracking-[0.12em] uppercase cursor-pointer transition-colors duration-100"
+          style={{ color: "var(--muted)", backgroundColor: "transparent" }}
+        >
+          <span>{isNeckOpen ? "▲" : "▼"}</span>
+          Full Neck
+        </button>
+
+        {isNeckOpen && (
+          <div className="px-4 pb-4">
+            <label className="flex items-center gap-2 mb-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showAllShapes}
+                onChange={onToggleShowAll}
+                className="accent-[var(--accent)]"
+              />
+              <span className="text-[0.48rem] tracking-[0.1em] uppercase" style={{ color: "var(--muted)" }}>
+                Show other shapes (dimmed)
+              </span>
+            </label>
+            <FullNeckFretboard layers={neckLayers} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -401,6 +477,9 @@ export function WyldeScales() {
   const [isDark, setIsDark] = useState(false);
   const [scale, setScale] = useState<ScaleMode>("minor");
   const [keyIdx, setKeyIdx] = useState(0);
+  const [octaveShift, setOctaveShift] = useState<0 | 12>(0);
+  const [neckOpenIdx, setNeckOpenIdx] = useState<number | null>(null);
+  const [showAllShapes, setShowAllShapes] = useState(false);
 
   useEffect(() => {
     const dark = localStorage.getItem("shred-dojo-dark") === "true";
@@ -425,6 +504,45 @@ export function WyldeScales() {
   const keyOffset = (keyIdx - ROOT_FRET + 12) % 12;
 
   const positions = useMemo(() => buildAllWyldePositions(scale), [scale]);
+
+  // Main layer: normalized + octaveShift (matches card display)
+  const absNotesByPos = useMemo(
+    () => positions.map((pos) => wyldePositionToAbsNotes(pos, keyOffset, octaveShift)),
+    [positions, keyOffset, octaveShift]
+  );
+
+  // Dimmed layers: raw positions so each shape appears at its natural neck location
+  const rawNotesByPos = useMemo(
+    () => positions.map((pos) => {
+      const diaAbsStart = pos.startFret + keyOffset;
+      const pentaAbsStart = pentaAbsoluteStart(pos.pentaRawMin, diaAbsStart, keyOffset);
+      const diaNotes: FullNeckNote[] = pos.strings.flatMap((str) =>
+        str.notes.map((n) => ({
+          string: str.name as StringName,
+          absoluteFret: n.fret + diaAbsStart,
+          deg: n.deg as Degree,
+          penta: n.penta ?? false,
+        }))
+      );
+      const pentaNotes: FullNeckNote[] = pos.pentaBox.map((n) => ({
+        string: n.string as StringName,
+        absoluteFret: (n.fret - pos.pentaRawMin) + pentaAbsStart,
+        deg: n.deg as Degree,
+        penta: true,
+      }));
+      return [...diaNotes, ...pentaNotes].filter(
+        (n) => n.absoluteFret >= 0 && n.absoluteFret <= 24
+      );
+    }),
+    [positions, keyOffset]
+  );
+
+  function buildNeckLayers(cardIdx: number): FullNeckLayer[] {
+    return absNotesByPos.map((notes, i) => ({
+      notes: i === cardIdx ? notes : rawNotesByPos[i],
+      isMain: i === cardIdx,
+    }));
+  }
 
   const size: "md" | "sm" = "md";
 
@@ -451,7 +569,7 @@ export function WyldeScales() {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-wrap items-center gap-4 mb-8">
+        <div className="flex flex-wrap items-start gap-6 mb-8">
           {/* Scale */}
           <div className="flex flex-col gap-[5px]">
             <span
@@ -486,13 +604,54 @@ export function WyldeScales() {
               ))}
             </div>
           </div>
+
+          {/* Register */}
+          <div className="flex flex-col gap-[5px]">
+            <span
+              className="text-[0.52rem] tracking-[0.16em] uppercase font-display"
+              style={{ color: "var(--muted)" }}
+            >
+              Register
+            </span>
+            <div className="flex gap-1">
+              <CtrlButton
+                label="Lower 12"
+                active={octaveShift === 0}
+                onClick={() => setOctaveShift(0)}
+              />
+              <CtrlButton
+                label="Upper 12"
+                active={octaveShift === 12}
+                onClick={() => setOctaveShift(12)}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Position cards */}
         <div className="flex flex-col gap-4">
-          {positions.map((pos) => (
-            <PositionCard key={pos.degIdx} pos={pos} keyOffset={keyOffset} size={size} />
-          ))}
+          {positions.map((pos, idx) => {
+            const allLayers = buildNeckLayers(idx);
+            const activeLayers = showAllShapes
+              ? allLayers
+              : allLayers.filter((l) => l.isMain);
+            return (
+              <PositionCard
+                key={pos.degIdx}
+                pos={pos}
+                keyOffset={keyOffset}
+                octaveShift={octaveShift}
+                size={size}
+                isNeckOpen={neckOpenIdx === idx}
+                showAllShapes={showAllShapes}
+                neckLayers={activeLayers}
+                onToggleNeck={() =>
+                  setNeckOpenIdx((prev) => (prev === idx ? null : idx))
+                }
+                onToggleShowAll={() => setShowAllShapes((v) => !v)}
+              />
+            );
+          })}
         </div>
       </main>
     </div>

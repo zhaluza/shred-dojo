@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
 import { CtrlButton } from "./CtrlButton";
+import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 import type {
   Degree,
   NoteFilter,
@@ -493,12 +494,21 @@ function CombinedFretboard({
   );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function computeDisplayFret(startFret: number, keyOffset: number, octaveShift: number): number {
+  const raw = startFret + keyOffset;
+  const base = raw > 12 ? raw - 12 : raw;
+  return base + octaveShift;
+}
+
 // ─── OverviewGrid ─────────────────────────────────────────────────────────────
 
 function OverviewGrid({
   shapes,
   selectedIdx,
   keyOffset,
+  octaveShift,
   effectiveFilter,
   chordTones,
   onSelect,
@@ -506,6 +516,7 @@ function OverviewGrid({
   shapes: ShapeData[];
   selectedIdx: number;
   keyOffset: number;
+  octaveShift: 0 | 12;
   effectiveFilter: NoteFilter;
   chordTones: Set<string>;
   onSelect: (idx: number) => void;
@@ -516,7 +527,7 @@ function OverviewGrid({
       style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
     >
       {shapes.map((shape, i) => {
-        const displayStartFret = shape.startFret + keyOffset;
+        const displayStartFret = computeDisplayFret(shape.startFret, keyOffset, octaveShift);
         const isActive = i === selectedIdx;
         return (
           <div
@@ -566,6 +577,9 @@ export function ShapeExplorer() {
   const [isDark, setIsDark] = useState(false);
   const [bluesMode, setBluesMode] = useState(false);
   const [isHarmonicMinor, setIsHarmonicMinor] = useState(false);
+  const [octaveShift, setOctaveShift] = useState<0 | 12>(0);
+  const [neckOpen, setNeckOpen] = useState(false);
+  const [showAllShapes, setShowAllShapes] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("shred-dojo-dark");
@@ -632,8 +646,8 @@ export function ShapeExplorer() {
   // Key offset: how far the selected key is from G (ROOT_FRET=3)
   const keyOffset = (selectedKey.fret - ROOT_FRET + 12) % 12;
   // Actual guitar fret where this shape starts for the selected key
-  const displayStartFret = shape.startFret + keyOffset;
-  const displayStartFretB = shapeB.startFret + keyOffset;
+  const displayStartFret = computeDisplayFret(shape.startFret, keyOffset, octaveShift);
+  const displayStartFretB = computeDisplayFret(shapeB.startFret, keyOffset, octaveShift);
 
   // Penta system always shows penta filter
   const effectiveFilter: NoteFilter = system === "penta" ? "penta" : noteFilter;
@@ -644,6 +658,36 @@ export function ShapeExplorer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [shape, shapeB, displayStartFret, displayStartFretB],
   );
+
+  // Close neck panel when switching away from Focus view
+  useEffect(() => {
+    if (viewMode !== "focus") setNeckOpen(false);
+  }, [viewMode]);
+
+  // Absolute note positions for each shape — used by the full neck panel.
+  // Main shape uses normalized + octaveShift position (matches the card display).
+  // Dimmed shapes use raw positions so they spread across the full neck naturally.
+  const neckLayers: FullNeckLayer[] = useMemo(() => {
+    return shapes.map((s, i) => {
+      const isMain = i === safeIdx;
+      const dsf = isMain
+        ? computeDisplayFret(s.startFret, keyOffset, octaveShift)
+        : s.startFret + keyOffset;
+      const notes: FullNeckNote[] = s.strings.flatMap((str) =>
+        str.notes.map((n) => ({
+          string: str.name,
+          absoluteFret: n.fret + dsf,
+          deg: n.deg,
+          penta: n.penta,
+        }))
+      ).filter((n) => n.absoluteFret >= 0 && n.absoluteFret <= 24);
+      return { notes, isMain };
+    });
+  }, [shapes, keyOffset, octaveShift, safeIdx]);
+
+  const activeFocusNeckLayers = showAllShapes
+    ? neckLayers
+    : neckLayers.filter((l) => l.isMain);
 
   // Unique degrees that appear in this shape, sorted by interval order
   const degreesInShape = useMemo(() => {
@@ -881,6 +925,27 @@ export function ShapeExplorer() {
             ))}
           </div>
         </div>
+
+        {/* Register toggle */}
+        <div className="flex flex-col gap-[0.4rem] mb-7">
+          <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
+            Register
+          </p>
+          <div className="flex gap-1">
+            <CtrlButton
+              label="Lower 12"
+              active={octaveShift === 0}
+              onClick={() => setOctaveShift(0)}
+              small
+            />
+            <CtrlButton
+              label="Upper 12"
+              active={octaveShift === 12}
+              onClick={() => setOctaveShift(12)}
+              small
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Main content ── */}
@@ -890,6 +955,7 @@ export function ShapeExplorer() {
             shapes={shapes}
             selectedIdx={safeIdx}
             keyOffset={keyOffset}
+            octaveShift={octaveShift}
             effectiveFilter={effectiveFilter}
             chordTones={cfg.chordTones}
             onSelect={(idx) => {
@@ -1226,6 +1292,35 @@ export function ShapeExplorer() {
               );
             })}
           </div>
+        </div>
+
+        {/* Full Neck panel */}
+        <div className="mt-6" style={{ borderTop: "1px solid var(--border)" }}>
+          <button
+            onClick={() => setNeckOpen((v) => !v)}
+            className="w-full px-0 py-[0.6rem] flex items-center gap-2 text-[0.5rem] tracking-[0.12em] uppercase cursor-pointer transition-colors duration-100"
+            style={{ color: "var(--muted)", backgroundColor: "transparent", border: "none" }}
+          >
+            <span>{neckOpen ? "▲" : "▼"}</span>
+            Full Neck
+          </button>
+
+          {neckOpen && (
+            <div className="pb-6">
+              <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showAllShapes}
+                  onChange={() => setShowAllShapes((v) => !v)}
+                  className="accent-[var(--accent)]"
+                />
+                <span className="text-[0.48rem] tracking-[0.1em] uppercase" style={{ color: "var(--muted)" }}>
+                  Show other shapes (dimmed)
+                </span>
+              </label>
+              <FullNeckFretboard layers={activeFocusNeckLayers} />
+            </div>
+          )}
         </div>
         </>
         )}
