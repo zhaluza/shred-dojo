@@ -12,6 +12,9 @@ import "./app.css";
 import { MetronomeWidget } from "./components/MetronomeWidget";
 
 export const links: Route.LinksFunction = () => [
+  { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+  { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -22,6 +25,12 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600&family=Source+Code+Pro:wght@300;400&display=swap",
   },
+];
+
+export const meta: Route.MetaFunction = () => [
+  { property: "og:site_name", content: "Shred Dojo" },
+  { property: "og:type", content: "website" },
+  { name: "twitter:card", content: "summary_large_image" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

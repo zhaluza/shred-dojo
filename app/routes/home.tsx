@@ -4,20 +4,30 @@ import { LIGHT_THEME, DARK_THEME } from "~/components/scalePositions.theme";
 import { Nav } from "~/components/Nav";
 import { useState, useEffect } from "react";
 
-export function meta({}: Route.MetaArgs) {
+const DESCRIPTION =
+  "Interactive fretboard tools for guitarists who want real scale command — scales, arpeggios, chord voicings, and note quizzes.";
+
+export function meta({ data }: Route.MetaArgs) {
+  const siteUrl = data?.siteUrl ?? "";
   return [
     { title: "Shred Dojo" },
-    {
-      name: "description",
-      content:
-        "A focused platform for guitarists who want real fretboard command.",
-    },
+    { name: "description", content: DESCRIPTION },
+    { property: "og:title", content: "Shred Dojo" },
+    { property: "og:description", content: DESCRIPTION },
+    { property: "og:url", content: siteUrl },
+    { property: "og:image", content: `${siteUrl}/og-image.png` },
+    { name: "twitter:title", content: "Shred Dojo" },
+    { name: "twitter:description", content: DESCRIPTION },
+    { name: "twitter:image", content: `${siteUrl}/og-image.png` },
   ];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
-  return { preview: url.searchParams.get("preview") === "true" };
+  return {
+    preview: url.searchParams.get("preview") === "true",
+    siteUrl: `${url.protocol}//${url.host}`,
+  };
 }
 
 // ---------------------------------------------------------------------------
