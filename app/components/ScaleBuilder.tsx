@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState, useEffect, useRef } from "react";
-import { DARK_THEME, LIGHT_THEME } from "./scalePositions.theme";
+import { DARK_THEME, LIGHT_THEME } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import {

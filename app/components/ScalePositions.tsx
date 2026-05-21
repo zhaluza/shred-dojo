@@ -3,7 +3,7 @@ import {
   DARK_THEME,
   LIGHT_THEME,
   STRING_LINE,
-} from "./scalePositions.theme";
+} from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";

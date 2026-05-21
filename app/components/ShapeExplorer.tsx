@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import { Nav } from "./Nav";
-import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 import type {

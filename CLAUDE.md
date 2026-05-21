@@ -35,7 +35,7 @@ Use **Tailwind utility classes exclusively** in JSX/TSX. Do not add custom CSS c
 
 ### Design system / style guide
 
-The app uses a warm parchment aesthetic established in `app/components/scalePositions.theme.ts`. All pages should follow these conventions.
+The app uses a warm aesthetic established in `app/components/theme.ts`. All pages should follow these conventions.
 
 **Fonts** (loaded in `root.tsx`, registered in `app.css` `@theme`):
 - `font-display` → Oswald (headings, labels, buttons)
@@ -43,19 +43,19 @@ The app uses a warm parchment aesthetic established in `app/components/scalePosi
 
 **Theming approach** — CSS custom properties injected as inline `style` on the page root `<div>`, cascading to all children. The root div must also carry `bg-[var(--bg)] text-[var(--text)]` Tailwind classes — `style={theme}` injects variable definitions but does not apply background or color to the element itself; without the classes the page background falls through to the browser default (white) in dark mode. Dark mode is React state (not `dark:` Tailwind variant), toggled by swapping `LIGHT_THEME` / `DARK_THEME` objects.
 
-**Color tokens** (defined in `scalePositions.theme.ts`):
+**Color tokens** (defined in `theme.ts`):
 
 | Token | Light | Dark | Usage |
 |---|---|---|---|
-| `--bg` | `#f5f0e8` | `#141210` | Page background |
-| `--surface` | `#ede8dc` | `#1e1a16` | Card / panel backgrounds |
-| `--border` | `#c8bfaa` | `#352e24` | Borders, dividers |
-| `--text` | `#1a1612` | `#e8e0d0` | Primary text |
-| `--muted` | `#8a8070` | `#6a6058` | Secondary / label text |
-| `--accent` | `#8b1a1a` | `#c8604a` | Highlights, active states |
+| `--bg` | `#fdf9f4` | `#141210` | Page background |
+| `--surface` | `#f5ede0` | `#1e1a16` | Card / panel backgrounds |
+| `--border` | `#ddd0bc` | `#352e24` | Borders, dividers |
+| `--text` | `#100e0c` | `#e8e0d0` | Primary text |
+| `--muted` | `#7a6e60` | `#6a6058` | Secondary / label text |
+| `--accent` | `#b84a1a` | `#c8604a` | Highlights, active states |
 | `--root-col` | `#c0392b` | `#c0392b` | Root note dots |
-| `--faint` | `#c8bfaa` | `#3a3228` | Fret numbers, ghost elements |
-| `--fret-bar` | `#d8cebb` | `#2a2418` | Fretboard bar lines |
+| `--faint` | `#cec0a8` | `#3a3228` | Fret numbers, ghost elements |
+| `--fret-bar` | `#dcd0bc` | `#2a2418` | Fretboard bar lines |
 | `--fifth-col` | `#4a6a8a` | `#6a9abf` | 5th degree dots (chord/arpeggio pages) |
 | `--seventh-col` | `#6a4a7a` | `#9a6abf` | 7th degree dots (chord/arpeggio pages) |
 | `--blues-col` | `#4a3aa8` | `#7a6ad8` | b5 "blue note" dots (blues scale mode) |
@@ -147,23 +147,9 @@ The Pentatonic Triads page (`/pentatonic-triads`) visualizes the triad intervals
 ### Data model
 
 - `BOX_DEGREES` — hardcoded degree assignments per string per box (low E → high e), two degrees per string, for both major and minor pentatonic. There are 5 boxes each.
-- `SEMI` — semitone offsets per degree per scale type, used to compute absolute fret numbers. Includes `"b5": 6` for minor (unused in major).
 - `buildBox(boxIdx, scale)` — builds one box as a flat array of `BoxNote` (`{ string, fret, deg }`). Uses `closestFret()` to anchor each note near a reference fret, keeping the shape in the correct neck region.
-- `buildAllBoxes(scale)` — returns all 5 boxes.
-- `bluesNotesForBox(boxNotes)` — given the notes for one box, returns the b5 "blue note" positions. Rule: strings with a `[b3, 4]` pair or a `[4, 5]` pair both receive a b5 note exactly 1 fret above the 4th. Called when blues mode is active; results merged into the box data before rendering.
+- `bluesNotesForBox(boxNotes)` — derives b5 "blue note" positions algorithmically: any string whose two degrees are `[b3, 4]` or `[4, 5]` receives a b5 exactly 1 fret above the 4th. No hardcoded per-box data.
 - `adjustAdjacentFrets(notes, currentMinF, currentMaxF, side)` — when boxes wrap around the neck (e.g. box 4 → box 0), shifts frets by ±12 so the adjacent box is physically adjacent in fret space. Filters out frets < 0 or > 24.
-
-### Triad dot colors
-
-Triad colors use CSS custom properties (theme-aware):
-
-| Role | CSS var | Light value | Dark value |
-|---|---|---|---|
-| Root | `var(--root-col)` | `#c0392b` | `#c0392b` |
-| 3rd | `var(--third-col)` | `#3a6a3a` | `#5a9a5a` |
-| 5th | `var(--fifth-col)` | `#3a5a8a` | `#5a7aaa` |
-| Scale tone | `var(--text)` / `var(--bg)` | — | — |
-| b5 (blue note) | `var(--blues-col)` | `#4a3aa8` | `#7a6ad8` |
 
 ### Dot variants
 
@@ -185,25 +171,13 @@ Each shape card has a **"▼ Neck context"** toggle. When expanded, it renders a
 
 - **Zone labels** — `← Shape N` / `Shape X` (accent color) / `Shape N →` — positioned above fret columns using flex proportions (`flex: numFretsInZone`) so they align precisely with the fretboard.
 - **Zone backgrounds** — a warm `var(--accent)` band at 10% opacity marks the current shape's fret range; outer zones have no background.
-- **Zone separators** — 1px `var(--accent)` lines at 35% opacity mark the zone boundaries.
-- **Fret numbers** — current zone numbers rendered in `var(--text)`; outer zone in `var(--faint)`.
 - **Dimming** — outer-zone notes (not cross notes) rendered at 32% opacity so the adjacent shape's structure is visible without competing for attention.
 - **Cross notes in the combined view** — `leftCross`/`rightCross` notes rendered at full opacity with `connector` variant (accent ring), even though they sit in the dimmed outer zones. These are the key information: triad tones reachable from both shapes without a full position shift.
 - **Priority** — when a fret+string appears in both the main shape and an adjacent shape, the main shape's note wins.
 
 ### Blues scale
 
-The blues scale = minor pentatonic + b5 (flat 5, the "blue note", 6 semitones above root). Blues mode is minor-only; the toggle is hidden and auto-cleared when Scale switches to Major.
-
-**b5 placement**: `bluesNotesForBox()` derives b5 positions algorithmically from the existing box notes — no hardcoded per-box data. Any string whose two degrees are `[b3, 4]` or `[4, 5]` receives a b5 exactly 1 fret above the 4th.
-
-**b5 filter behavior**: b5 notes bypass the "Triad only" show-mode filter — they remain visible even when non-triad scale tones are hidden, since seeing the blue note is the whole point of blues mode.
-
-### Controls
-
-- **Scale** — Minor / Major toggle (clears expanded state on change; clears bluesMode when switching to Major)
-- **Blues** — `[Blues Scale]` toggle, visible only when Scale = Minor. Active state uses `var(--blues-col)` background (indigo).
-- **Show** — All notes / Triad only (hides non-triad scale tones in all fretboard views; b5 remains visible regardless)
+Blues mode is minor-only; the toggle is hidden and auto-cleared when Scale switches to Major. b5 notes bypass the "Triad only" show-mode filter — they remain visible even when non-triad scale tones are hidden.
 
 ## Interval Shapes feature
 
@@ -215,18 +189,6 @@ The Interval Shapes page (`/interval-shapes`) teaches the recurring two-string i
 - `app/components/IntervalShapes.tsx` — all component code
 - `app/routes/interval-shapes.tsx` — route wrapper
 
-### Data model
-
-- `SHAPES` — `Record<PentaScaleMode, IntervalShape[]>` with entries for `"minor"` and `"major"`. Each `IntervalShape` describes a two-string pattern:
-  - `loDegs` / `hiDegs` — `[PentaDegree, PentaDegree]` for the lower / upper string
-  - `loOff` / `hiOff` — fret offset of the first note from the shape's leftmost position
-  - `loSpan` / `hiSpan` — fret distance between the two notes on that string
-  - `occurrences` — list of `{ box, pair }` (e.g. `{ box: 1, pair: "E–A" }`)
-  - `description` — prose explanation shown in diagram cards and flashcard reveal
-- `DEG_COLOR` — color per `PentaDegree` (roots red, 3rds blue/green, etc.)
-- `DEG_NAMES` — readable name per degree
-- `SCALE_DEGREES` — ordered degree arrays per scale mode
-
 ### Shapes breakdown
 
 - **Standard shapes** (P4-tuned pairs, id does not contain "GB") — 4 recurring shapes for minor, 4 for major, each appearing 4× across boxes
@@ -235,12 +197,7 @@ The Interval Shapes page (`/interval-shapes`) teaches the recurring two-string i
 ### Modes
 
 - **Diagram** — grid of `ShapeCard` components showing all shapes at once, split into P4 and G–B sections. Dots are always revealed.
-- **Flashcard** — one shape at a time; dots for non-root degrees are hidden (`?`) until the user taps to reveal. Navigation cycles through all shapes for the selected scale. Description appears below the card when revealed.
-
-### Controls
-
-- **Scale** — Minor / Major (re-renders both panels; `FlashcardPanel` is keyed on `scale` to reset index)
-- **Mode** — Diagram / Flashcard
+- **Flashcard** — one shape at a time; dots for non-root degrees are hidden (`?`) until the user taps to reveal. Navigation cycles through all shapes for the selected scale. Description appears below the card when revealed. `FlashcardPanel` is keyed on `scale` to reset index on scale change.
 
 ## Pentatonic Colors feature
 
@@ -252,32 +209,13 @@ The Pentatonic Colors page (`/pentatonic-colors`) shows Box 1 of the minor or ma
 - `app/components/PentatonicColors.tsx` — all component code
 - `app/routes/pentatonic-colors.tsx` — route wrapper
 
-### Data model
-
-- `ColorDegreeLabel` — union of all color-note interval names: `"b2" | "2" | "b5" | "b6" | "6" | "4" | "#4" | "b7" | "maj7"`
-- `ColorNote` — `{ string: StringName, fret: number, degLabel: ColorDegreeLabel }`
-- `ColorModeConfig` — `{ id, label, addedSemis: Array<{ semi, degLabel }>, description }`
-- `MINOR_COLOR_MODES` — 5 configs: Aeolian (`2`+`b6`), Blues (`b5`), Dorian (`6`), Phrygian (`b2`), Harmonic Minor (`2`+`b6`+`maj7`)
-- `MAJOR_COLOR_MODES` — 3 configs: Ionian (`4`+`maj7`), Lydian (`#4`+`maj7`), Mixolydian (`4`+`b7`)
-
 ### Color note computation
 
-`buildColorNotes(boxNotes, config, displayMin, displayMax) → ColorNote[]`:
-1. Computes `refFret = (displayMin + displayMax) / 2`
-2. For each string and each `{ semi, degLabel }` in the config, calls `_closestFret(semi, stringIdx, refFret)` — a local duplicate of the unexported `closestFret` from `pentatonicTriads.utils.ts`
-3. Includes the note only if its fret falls within `[displayMin, displayMax]` and doesn't collide with an existing pentatonic note
+`buildColorNotes(boxNotes, config, displayMin, displayMax) → ColorNote[]` — for each string and each `{ semi, degLabel }` in the config, calls `_closestFret()` (a local duplicate of the unexported `closestFret` from `pentatonicTriads.utils.ts`). Includes the note only if its fret falls within `[displayMin, displayMax]` and doesn't collide with an existing pentatonic note. The `displayMin` / `displayMax` passed in are `boxMinFret - 1` / `boxMaxFret + 1` (one fret of padding each side).
 
-The `displayMin` / `displayMax` passed in are `boxMinFret - 1` / `boxMaxFret + 1` (one fret of padding each side), so color notes at the edges of the box region are visible.
+**Color dots** (`ColorDot`) use amber: `var(--sys-caged)` (matches the CAGED system color, same hex); white text; interval label inside.
 
-### Dot colors
-
-- **Pentatonic dots** (`PentaDot`) — uses `var(--root-col)`, `var(--third-col)`, `var(--fifth-col)` CSS vars (same as Pentatonic Triads); other scale tones use `var(--text)` fill. No `isDark` prop needed.
-- **Color dots** (`ColorDot`) — amber: `var(--sys-caged)` (matches the CAGED system color, same hex); white text; interval label inside
-
-### Controls
-
-- **Scale** toggle — Minor / Major (resets mode to first option on change)
-- **Color** toggle — mode options change based on selected scale
+Mode configs: `MINOR_COLOR_MODES` has 5 entries (Aeolian, Blues, Dorian, Phrygian, Harmonic Minor); `MAJOR_COLOR_MODES` has 3 (Ionian, Lydian, Mixolydian). Scale toggle resets mode to first option on change.
 
 ## Shape Explorer feature
 
@@ -290,20 +228,15 @@ The Shape Explorer (`/shape-explorer`) is a scale shape visualizer with two comp
 
 ### What it does
 
-Unlike the Scale Patterns page (which emphasizes side-by-side system comparison), Shape Explorer can show either one shape in depth or all shapes at a glance:
-
-- **Key selector** — 12 chromatic keys (E through Eb). Fret numbers on the fretboard shift to show the real neck position for the chosen key.
 - **System** — 3nps (7 positions), CAGED (5 shapes), or Penta (5 pentatonic boxes built from `buildBox()` in `pentatonicTriads.utils.ts`).
-- **Scale** — Minor / Major.
-- **Blues** — `[Blues Scale]` toggle, visible only when System = Penta AND Scale = Minor. Adds b5 "blue note" dots (indigo, `var(--blues-col)`) to all penta boxes. Resets automatically when switching System away from Penta or Scale to Major.
-- **Show filter** — All / Penta / Chord (hidden when System = Penta, which is implicitly penta-only).
-- **Register** — Lower 12 / Upper 12; `octaveShift: 0 | 12` shifts all display frets by 12. `computeDisplayFret(startFret, keyOffset, octaveShift)` normalizes to lower octave first (`raw > 12 ? raw - 12 : raw`) then adds `octaveShift`. Used for card fretboards and the main layer in the neck panel; dimmed layers always use raw positions.
-- **View** — Focus (single shape with navigator/pills/notes panel), Pair (two shapes overlaid on one fretboard), or Overview (compact grid of all shapes). Switching system always resets to Focus. Clicking a cell in Overview jumps to Focus for that shape.
-- **Shape navigator** — (Focus and Pair modes) Prev/Next buttons plus labeled pills (1–7 for 3nps, E/D/C/A/G for CAGED, B1–B5 for pentatonic).
+- **Blues** — visible only when System = Penta AND Scale = Minor. Resets automatically when switching System away from Penta or Scale to Major.
+- **Show filter** — All / Penta / Chord (hidden when System = Penta).
+- **Register** — Lower 12 / Upper 12; `octaveShift: 0 | 12`. `computeDisplayFret(startFret, keyOffset, octaveShift)` normalizes to lower octave first (`raw > 12 ? raw - 12 : raw`) then adds `octaveShift`. Used for card fretboards and the main layer in the neck panel; dimmed layers always use raw positions.
+- **View** — Focus (single shape with navigator/pills/notes panel), Pair (two shapes overlaid on one fretboard), or Overview (compact grid of all shapes). Switching system always resets to Focus.
 
-**Overview grid** — rendered by `OverviewGrid` sub-component. Uses CSS grid `auto-fill minmax(220px, 1fr)`. Each cell shows a compact fretboard (`compact` prop on `ExplorerFretboard`, `StringRow`, and `Dot`) with correct `displayStartFret` for the selected key. The currently selected shape gets `border-[var(--text)]`. Compact sizing: dots `w-4 h-4` (vs `w-8 h-8`), string rows `h-[28px]` (vs `h-[50px]`).
+**Overview grid** — `OverviewGrid` sub-component. CSS grid `auto-fill minmax(220px, 1fr)`. Compact sizing: dots `w-4 h-4` (vs `w-8 h-8`), string rows `h-[28px]` (vs `h-[50px]`). Clicking a cell jumps to Focus.
 
-**Pair view** — shows two independently selectable shapes (A and B) merged onto a single fretboard spanning their combined fret range on the neck. Shape selectors for both A and B have their own prev/next buttons and labeled pills; B's active pill uses `--fifth-col` (blue) to distinguish from A's standard styling. Merging is done by `buildCombinedStrings()` (defined locally in `ShapeExplorer.tsx`), which converts both shapes to absolute frets (relative fret + `displayStartFret`), finds the overall min/max fret, and produces `CombinedString[]` / `CombinedNote[]` with a `which: "a" | "b" | "both"` field. The `CombinedDot` component renders: A-only = standard appearance; B-only = `--fifth-col` blue fill; both = standard appearance + blue ring (`boxShadow`); root in B or shared = `--root-col` + blue ring. All note filters (All / Penta / Chord) apply to both shapes. Switching system resets `pairIdx` to 1.
+**Pair view** — two independently selectable shapes (A and B) merged onto a single fretboard spanning their combined fret range. Merging is done by `buildCombinedStrings()` (defined locally), which converts both shapes to absolute frets, finds overall min/max, and produces `CombinedNote[]` with `which: "a" | "b" | "both"`. B's active pill uses `--fifth-col` (blue). `CombinedDot`: A-only = standard; B-only = `--fifth-col` fill; both = standard + blue ring (`boxShadow`).
 
 ### Key transposition
 
@@ -315,24 +248,13 @@ displayStartFret = computeDisplayFret(shape.startFret, keyOffset, octaveShift)
 // where: raw = startFret + keyOffset; base = raw > 12 ? raw - 12 : raw; return base + octaveShift
 ```
 
-Fret labels on the fretboard are rendered as `f + displayStartFret` (absolute guitar frets), so the shape dots stay at relative positions 0..N while the numbers reflect the real neck position. Fret inlay dots (single at 3, 5, 7, 9; double at 12, 24) are drawn based on the absolute fret value.
-
 ### Full Neck panel
 
-In **Focus view**, a **"▼ Full Neck"** toggle appears below the Notes panel. It expands a `FullNeckFretboard` showing the current shape's notes at their absolute positions on the 24-fret neck. A **"Show other shapes (dimmed)"** checkbox overlays all other shapes as faint dots. The panel closes automatically when switching away from Focus view.
-
-**Main shape layer**: uses `computeDisplayFret` (normalized + `octaveShift`), matching the card display.
-**Dimmed layers**: use raw `shape.startFret + keyOffset` (no normalization, no `octaveShift`), so each shape appears at its natural position on the neck — shapes at lower frets appear to the left, higher-fret shapes to the right. Root notes in dimmed layers render at `var(--root-col)` (40% opacity) to keep roots identifiable across all positions.
+In **Focus view**, a **"▼ Full Neck"** toggle expands a `FullNeckFretboard`. **Main shape layer**: uses `computeDisplayFret` (normalized + `octaveShift`). **Dimmed layers**: use raw `shape.startFret + keyOffset` (no normalization, no `octaveShift`) so each shape appears at its natural position. Root notes in dimmed layers render at `var(--root-col)` (40% opacity).
 
 ### Pentatonic boxes
 
-Pentatonic shapes use `buildBox(boxIdx, scale)` from `pentatonicTriads.utils.ts`, returning `BoxNote[]` (absolute frets in G). These are converted to `ScaleString[]` via `boxNotesToScaleStrings()` (defined locally in `ShapeExplorer.tsx`), which normalizes to relative frets with `toRelative()` and records `startFret = minFret % 12`. All pentatonic notes have `penta: true`; only the root gets the red dot treatment.
-
-When blues mode is active, `bluesNotesForBox()` is called on the raw `BoxNote[]` before conversion and its b5 results are merged in. b5 notes pass through `boxNotesToScaleStrings()` as regular `ScaleNote` objects with `deg: "b5"` and `penta: true`. The `Dot` component checks `note.deg === "b5"` before the generic penta check and applies `var(--blues-col)` (indigo) fill.
-
-### Notes panel
-
-Below the fretboard, each degree in the shape is shown as a color-coded chip with its interval label (e.g. `b3`) and the actual note name for the selected key (e.g. `C` for A minor). Chips dim when their degree is hidden by the active filter.
+`buildBox(boxIdx, scale)` returns `BoxNote[]` (absolute frets in G). Converted to `ScaleString[]` via `boxNotesToScaleStrings()` (local), which normalizes to relative frets with `toRelative()` and records `startFret = minFret % 12`. When blues mode is active, `bluesNotesForBox()` is called on the raw `BoxNote[]` before conversion and its b5 results merged in. The `Dot` component checks `note.deg === "b5"` before the generic penta check and applies `var(--blues-col)`.
 
 ## Home page
 
@@ -340,23 +262,17 @@ Below the fretboard, each degree in the shape is shown as a color-coded chip wit
 
 - **Loader** — returns `{ preview: boolean }` based on `?preview=true` in the URL. The component uses this to unlock Lick Stash entry points and writes `"shred-dojo-preview"` to localStorage when `preview=true`.
 - **Lick Stash gating** — the "Browse Lick Stash" hero CTA and footer link are hidden when `!preview`. The Lick Stash tool card renders as a non-clickable `<div>` at 40% opacity (labeled "Preview only") when `!preview`.
-- **Tool cards** — the `TOOL_CATEGORIES` array drives the tools grid. Cards render as `<Link>` by default; cards with `to === "/lick-stash"` render as a locked `<div>` when not in preview. Categories: Scales, Pentatonic, Harmony, Vocabulary, Practice. The Practice category contains Note Recognition and Staff Notes.
 
 ## Nav component
 
-`app/components/Nav.tsx` — persistent navigation bar rendered at the top of every page.
+`app/components/Nav.tsx` — persistent navigation bar rendered at the top of every page. Props: `isDark: boolean`, `toggleDark: () => void`. Each page owns its own dark-mode state and passes it in. Dark mode and preview state are persisted to localStorage. Preview-gated nav links render as a faint non-interactive `<span>` when not unlocked.
 
-- **Props**: `isDark: boolean`, `toggleDark: () => void` — each page owns its own dark-mode state and passes it in.
-- **Home link**: the logo links to `/`.
-- **Active link detection**: uses `useLocation()`. `/lick-stash` uses `pathname.startsWith("/lick-stash")` to match both the listing page and pack sub-pages; all other links match exactly on `pathname`.
-- **Dark mode persistence**: each page component reads `localStorage.getItem("shred-dojo-dark")` on mount and writes to it on toggle.
-- **Preview gating**: `NavLink` entries can carry `preview: true`. Nav reads `localStorage.getItem("shred-dojo-preview")` (and watches `useLocation().search` for `?preview=true` to set it). Preview-gated links render as a faint non-interactive `<span>` when not unlocked; as a normal `<Link>` when unlocked. Currently only Lick Stash is gated.
-- **Nav structure**: Links are organized into 5 category groups rendered with a small label above each group and `|` separators between groups (hidden at `max-[700px]`):
-  - **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`, Wylde → `/wylde-scales`
-  - **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
-  - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`, Circle of Fifths → `/circle-of-fifths`
-  - **Vocabulary**: Lick Stash → `/lick-stash` *(preview-gated)*
-  - **Practice**: Fretboard Notes → `/note-recognition`, Staff Notes → `/staff-notes`
+**Nav structure** (5 category groups with `|` separators):
+- **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`, Wylde → `/wylde-scales`
+- **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
+- **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`, Circle of Fifths → `/circle-of-fifths`
+- **Vocabulary**: Lick Stash → `/lick-stash` *(preview-gated)*
+- **Practice**: Fretboard Notes → `/note-recognition`, Staff Notes → `/staff-notes`
 
 ## Fretboard Notes feature
 
@@ -367,113 +283,43 @@ The Fretboard Notes page (`/fretboard-notes`) is an interactive quiz for buildin
 - `app/components/FretboardNotes.tsx` — all component code (self-contained)
 - `app/routes/fretboard-notes.tsx` — route wrapper
 
-### Data model
+### Question pool and scoring
 
-- `NOTES` — chromatic note names in order from E: `["E","F","F#","G","Ab","A","Bb","B","C","Db","D","Eb"]`
-- `OPEN_OFFSETS` — semitone offset from E for each open string: `{ E:0, A:5, D:10, G:3, B:7, e:0 }`
-- `noteAt(string, fret)` — returns the `NoteName` at a given position: `NOTES[(OPEN_OFFSETS[s] + fret) % 12]`
-- `NATURAL_IDXS` — `Set` of chromatic indices that are natural notes: `{0,1,3,5,7,8,10}` (E F G A B C D)
-- `NATURAL_NOTES` / `ACCIDENTAL_NOTES` — answer button arrays for each scope
-- `QuizSettings` — `{ strings: StringName[], scope: NoteScope, maxFret: number }`
-- `Question` — `{ string: StringName, fret: number, note: NoteName }`
-- `NoteScope` — `"naturals" | "accidentals" | "both"` (named `NoteScope` to avoid collision with `NoteFilter` from `scalePositions.types.ts`)
+`buildPool(cfg)` iterates every (string × fret 0..maxFret) combination, computes the note via `noteAt(string, fret)`, and filters by scope. `pickNext(pool, prev)` picks a random question, excluding the immediately previous one.
 
-### Question pool
-
-`buildPool(cfg)` iterates every (string × fret 0..maxFret) combination, computes the note, and filters by `scope`. `pickNext(pool, prev)` picks a random question, excluding the immediately previous one to avoid repetition (falls back to the full pool when `pool.length === 1`).
-
-### Scoring
-
-- `correct` / `total` — incremented on each button press (every press counts)
-- `streak` — resets to 0 on any wrong answer; increments on correct
-- `highScore` — longest streak for the current settings configuration, persisted to `localStorage` under key `fn-hs-{sortedStrings}-{scope}-{maxFret}`. Loaded from `localStorage` whenever settings change; updated in real time when a new streak high is set.
+`highScore` — longest streak for the current settings, persisted to `localStorage` under `fn-hs-{sortedStrings}-{scope}-{maxFret}`.
 
 ### Quiz UX
 
 - **Correct**: dot turns green, clicked button turns green, "Correct!" text → auto-advance after 550ms
-- **Wrong**: dot turns red, clicked button turns red (border + tint), "Try again" text → clears after 650ms, stays on same question
-- The question dot uses Tailwind `animate-pulse` (opacity) while no feedback is active, paused via `animationPlayState: "paused"` during feedback
+- **Wrong**: dot turns red, clicked button turns red, "Try again" text → clears after 650ms, stays on same question
 - Wrong answers do not reveal the correct note — active recall is required
 
 ### Fretboard layout
 
-`QuizFretboard` renders a horizontal fretboard with:
-- **Open string column** (36px) — to the left of the nut; shows the fret-0 dot when applicable
-- **Nut** (8px) — `var(--faint)` background, acts as the visual boundary between open and fret 1
-- **Fret cells** (40px each) — frets 1..maxFret, with a 1.5px `var(--fret-bar)` at the right edge of each cell
-- **Position markers** — single dot above frets 3, 5, 7, 9; double dot above 12/24; using `var(--faint)`
-- **Fret numbers** — below the fretboard in `font-mono text-[0.55rem]`; "0" appears under the open column
-- `DISPLAY_STRINGS` order — `["e","B","G","D","A","E"]` (high e at top, low E at bottom, matching guitar-facing perspective)
-- For `maxFret: 22`, total minimum width is ~924px; the container is `overflow-x-auto`
-
-### Controls
-
-- **Strings** — toggle any subset of the 6 strings (at least 1 must remain selected)
-- **Notes** — Naturals / Accidentals / Both; answer buttons shown in two rows (naturals on top, accidentals below) — naturals row hidden when scope is "accidentals", accidentals row hidden when scope is "naturals"
-- **Fret Range** — `0–12` or `0–22`
-- Settings panel shown before quiz starts; score bar (Score / Streak / Best Streak / Quit) shown during quiz
+`QuizFretboard` renders a horizontal fretboard. `DISPLAY_STRINGS` order — `["e","B","G","D","A","E"]` (high e at top). Open string column (36px) left of nut (8px); fret cells 40px each; `overflow-x-auto`. Position markers: single dot above frets 3, 5, 7, 9; double dot above 12/24.
 
 ## Staff Notes feature
 
-The Staff Notes page (`/staff-notes`) is a treble clef note-reading quiz. A whole note is displayed on a music staff SVG; the user identifies its name by clicking answer buttons.
+The Staff Notes page (`/staff-notes`) is a treble clef note-reading quiz. A whole note is displayed on a music staff SVG; the user identifies its name.
 
 ### Files
 
 - `app/components/StaffNotes.tsx` — all component code (self-contained, no sibling files)
 - `app/routes/staff-notes.tsx` — route wrapper
 
-### Data model
+### Key implementation details
 
-- `NOTES` — same 12 chromatic note names as Fretboard Notes: `["E","F","F#","G","Ab","A","Bb","B","C","Db","D","Eb"]`
-- `NATURAL_NOTES` / `ACCIDENTAL_NOTES` — answer button arrays: `["C","D","E","F","G","A","B"]` / `["F#","Ab","Bb","Db","Eb"]`
-- `PoolEntry` — `{ noteName: NoteName, octave: 4|5, staffStep: number, midi: number }`
-  - `staffStep` — diatonic position from C4: 0=C4, 1=D4, 2=E4 (bottom staff line), …, 7=C5, …, 10=F5 (top line), 12=A5 (ledger above), 13=B5
-  - Accidentals sit on their letter-name's staff position with an accidental sign (e.g. Ab4 is on A's space at step 5 with a ♭)
-- `FULL_POOL` — 24 static `PoolEntry` objects covering C4–B5, declared as a constant (not derived algorithmically)
-- `StaffSettings` — `{ scope: NoteScope, range: NoteRange }` where `NoteScope = "naturals" | "both"` and `NoteRange = 1 | 2` (1 = C4–B4, 2 = C4–B5)
+`FULL_POOL` — 24 static `PoolEntry` objects covering C4–B5 (not derived algorithmically). `pickNext(pool, prev)` deduplicates on `(noteName, octave)` — **not** `staffStep`, because e.g. B4 and Bb4 share the same staff line but are distinct questions.
 
-Pool sizes by settings: naturals+1oct=7, naturals+2oct=14, both+1oct=12, both+2oct=24.
+`highScore` persisted under `sn-hs-{scope}-{range}` (4 distinct keys). `noteStyle` persisted separately under `sn-note-style`.
 
-### Question pool
+**Staff SVG** (`StaffDisplay`, `viewBox="0 0 280 110"`, `overflow="visible"`):
+- Note head — two concentric ellipses at rotation −16°: outer filled in note color, inner filled in `var(--surface)`. This produces the standard engraved whole-note ring appearance.
+- Ledger lines drawn for C4 (below staff) and A5/B5 (above staff).
+- Note Y position: `noteY(step) = 73 - (step - 2) * 6` where `step` is the diatonic position from C4.
 
-`buildPool(settings)` filters `FULL_POOL` by scope and range. `pickNext(pool, prev)` deduplicates on `(noteName, octave)` — **not** `staffStep`, because e.g. B4 and Bb4 share `staffStep=6` but are distinct questions.
-
-### Scoring
-
-Same pattern as Fretboard Notes: `correct` / `total` / `streak` / `highScore`. `highScore` persisted to localStorage under `sn-hs-{scope}-{range}` (4 distinct keys). `noteStyle` preference persisted separately under `sn-note-style`.
-
-### Staff SVG layout
-
-`StaffDisplay` renders an inline SVG (`viewBox="0 0 280 110"`, `overflow="visible"`) containing:
-
-- **5 staff lines** at y = 25, 37, 49, 61, 73 (F5 top → E4 bottom, 12px apart)
-- **Treble clef** — Unicode character `𝄞` (U+1D11E) as an SVG `<text>` element at `x=4 y=93 fontSize=70 fontFamily="'Times New Roman',serif"`. The G-curl is calibrated to sit on the G4 line (y=61).
-- **Note head** — two concentric ellipses at the same rotation (−16°): outer `rx=11 ry=7` filled in the note color, inner `rx=7 ry=4.5` filled in `var(--surface)`. This produces the standard engraved whole-note ring appearance.
-- **Accidental sign** — `♯` or `♭` as SVG `<text>` to the left of the note head when `noteName` contains `#` or ends in `b`.
-- **Ledger lines** — drawn for `staffStep ≤ 0` (C4, at `y=85`) and `staffStep ≥ 12` (A5/B5, at `y=13`).
-
-Note Y position: `noteY(step) = 73 - (step - 2) * 6`
-
-Note colors: idle standard → `var(--text)`, idle color → `var(--accent)`, correct → `#2d8a40`, wrong → `#b03020`.
-
-### Note style setting
-
-`noteStyle: "standard" | "color"` is separate state (not part of `StaffSettings`, does not affect pool or highscore key). Persisted to `localStorage` under `"sn-note-style"`. Standard renders the note in `var(--text)` (sheet-music black); Color renders in `var(--accent)`.
-
-### Quiz UX
-
-Same pattern as Fretboard Notes: correct answer advances after 550ms (with audio), wrong answer shows "Try again" for 650ms without revealing the correct note.
-
-### Audio
-
-`playNote(ctx, midi)` — triangle oscillator, same envelope as Fretboard Notes. MIDI numbers map directly (C4=60, A4=69, etc.).
-
-### Controls
-
-- **Notes** — Naturals / Naturals + Accidentals
-- **Range** — C4–B4 / C4–B5
-- **Note Style** — Standard / Color
-- Settings panel shown before quiz; score bar (Score / Streak / Best Streak / Quit) shown during quiz
+Quiz UX is the same pattern as Fretboard Notes (550ms correct advance, 650ms wrong feedback, no answer reveal).
 
 ## Chord Voicings feature
 
@@ -486,68 +332,41 @@ The Chord Voicings page (`/chord-voicings`) shows the 5 CAGED chord shapes for f
 - `app/components/ChordVoicings.tsx` — all component code
 - `app/routes/chord-voicings.tsx` — route wrapper
 
-### Data model
+`buildChordVoicings(chordType)` — returns 5 `ChordVoicingData` objects (one per CAGED shape). For each string the best (lowest-fret) chord tone is selected; strings with no chord tones are marked muted.
 
-- `ChordType` — `"maj" | "min" | "dom7" | "maj7" | "min7"`
-- `CHORD_TONES` — the active degrees per chord type (R, 3/b3, 5, and optionally b7/7)
-- `buildChordVoicings(chordType)` — returns 5 `ChordVoicingData` objects (one per CAGED shape). Each describes: `shapeName`, `baseFret` (lowest fret on the neck), `showNut` (true when `baseFret <= 1`), and `strings` — an array of 6 `ChordStringVoicing` entries (open/muted/fret/deg).
-- For each string the best (lowest-fret) chord tone is selected; strings with no chord tones are marked muted.
-
-### Degree colors
-
-`DEG_COLOR` in `chordVoicings.utils.ts` maps degrees to CSS variables. Root → `var(--root-col)`, 3rd/b3 → `var(--sys-caged)`, 5th → `var(--fifth-col)`, 7th/b7 → `var(--seventh-col)`. Shared by both ChordVoicings and ArpeggioMaps.
-
-### Controls
-
-**Chord** toggle — Maj / Min / Dom 7 / Maj 7 / Min 7.
+`DEG_COLOR` maps degrees to CSS variables: Root → `var(--root-col)`, 3rd/b3 → `var(--sys-caged)`, 5th → `var(--fifth-col)`, 7th/b7 → `var(--seventh-col)`. Shared by both ChordVoicings and ArpeggioMaps.
 
 ## Arpeggio Maps feature
 
-The Arpeggio Maps page (`/arpeggio-maps`) shows chord-tone positions across the neck for two systems — CAGED (5 shapes) or 3nps (7 positions) — and the same five chord types as Chord Voicings. Displayed as full horizontal fretboard diagrams.
+The Arpeggio Maps page (`/arpeggio-maps`) shows chord-tone positions across the neck for two systems — CAGED (5 shapes) or 3nps (7 positions) — and the same five chord types as Chord Voicings.
 
 ### Files
 
-- `app/components/arpeggioMaps.utils.ts` — `buildArpeggioPositions(chordType)` (CAGED, 5 positions) and `buildArpeggio3npsPositions(chordType)` (3nps, 7 positions); both reuse existing builders from `scalePositions.utils.ts`
+- `app/components/arpeggioMaps.utils.ts` — `buildArpeggioPositions(chordType)` (CAGED) and `buildArpeggio3npsPositions(chordType)` (3nps); both reuse existing builders from `scalePositions.utils.ts`
 - `app/components/ArpeggioMaps.tsx` — all component code (shares `DEG_COLOR`, `CHORD_TONES`, `ChordType` from `chordVoicings.*`)
 - `app/routes/arpeggio-maps.tsx` — route wrapper
 
-### Data model
-
-- `buildArpeggioPositions(chordType)` — calls `buildCagedPositions()` with the chord's scale config. Returns 5 `ScalePosition` objects with `system: "caged"` and a `shapeName` field.
-- `buildArpeggio3npsPositions(chordType)` — calls `buildAllPositions()` and filters to `system === "3nps"`. Returns 7 `ScalePosition` objects (one per scale degree), each with a `scaletone` (1–7) but no `shapeName`.
-- Both use the same `cfgForChordType()` helper (dom7 uses a Mixolydian config so b7 appears in positions).
-
-### Controls
-
-- **System** toggle — CAGED / 3nps (switches between 5 and 7 cards)
-- **Chord** toggle — Maj / Min / Dom 7 / Maj 7 / Min 7
+Both builders use `cfgForChordType()` — dom7 uses a Mixolydian config so b7 appears in positions.
 
 ## Lick Stash feature
 
 The Lick Stash (`/lick-stash`) provides curated "lick packs" — collections of Guitar Pro tabs that users can view, play, and loop. The route is publicly accessible but gated in the UI: the Nav link and home-page card are hidden/disabled unless the visitor has unlocked preview mode (see **Preview gating** below).
 
-**Preview gating** — visiting any page with `?preview=true` writes `"shred-dojo-preview": "true"` to localStorage (done in both `HomePage` and `Nav`). Once set it persists across sessions. The Nav then renders the Lick Stash link as a normal `<Link>`; without it the link is a faint non-interactive `<span>`.
+**Preview gating** — visiting any page with `?preview=true` writes `"shred-dojo-preview": "true"` to localStorage (done in both `HomePage` and `Nav`). Once set it persists across sessions.
 
 ### Routes
 
 - `/lick-stash` (`routes/lick-stash.tsx`) — pack listing page. Available packs link to their detail page; disabled packs show at reduced opacity with "Coming soon".
 - `/lick-stash/:packSlug` (`routes/lick-stash-pack.tsx`) — individual pack page with accordion-style lick cards. Only one lick open at a time to avoid competing AlphaTab instances.
 
-### Data model
-
-- `lickStash.types.ts` — `Lick` (id, title, description, file) and `LickPack` (slug, title, subtitle, description, licks, available)
-- `lickStash.data.ts` — static pack definitions. The first pack ("Rock / Blues Pentatonic") has 10 licks; remaining packs are stubs with `available: false`.
-- Guitar Pro source files live in `resources/gp-tabs/`; servable copies go in `public/tabs/`.
+Guitar Pro source files live in `resources/gp-tabs/`; servable copies go in `public/tabs/`.
 
 ### AlphaTab integration
 
 - `AlphaTabPlayer.tsx` — client-only wrapper around `AlphaTabApi`. Uses dynamic `import("@coderline/alphatab")` inside `useEffect` to avoid SSR crashes (AlphaTab requires DOM, Web Workers, Web Audio).
-- **Stave profile**: `StaveProfile.ScoreTab` — renders standard notation above guitar tablature so timing/rhythm information is visible. (`TabMixed` = tab-only without rests; `ScoreTab` = notation + tab.)
-- **Layout**: horizontal scrolling, score metadata headers hidden (titles managed by our own UI).
-- **Playback**: play/pause, stop, and loop toggle. Player is initialized with `enablePlayer: true`, `enableCursor: true`. Soundfont served from `/soundfont/sonivox.sf2`.
+- **Stave profile**: `StaveProfile.ScoreTab` — renders standard notation above guitar tablature so timing/rhythm information is visible.
 - **Cursor**: AlphaTab injects `.at-cursor-bar` and `.at-cursor-beat` DOM elements during playback but ships no default CSS for them. Styles are injected via a `<style>` tag inside `AlphaTabPlayer.tsx` (the only place allowed to style third-party-generated class names that can't be reached with Tailwind utilities).
 - **Looping — do not use `api.isLooping`**: AlphaTab's built-in loop is reactive — it waits for the audio buffer to drain before restarting, producing an audible gap. This is a known bug tracked in AlphaTab issue #2569, planned for v1.8.2. Instead, `AlphaTabPlayer` implements looping manually: `playerPositionChanged` watches `currentTick`, and when `currentTick >= endTick - 20`, jumps back via `api.tickPosition = 0` while the player is still running. At 960 PPQ this is ~1/48th of a beat — inaudible — but early enough to prevent the sequencer from stopping MIDI event dispatch and triggering the fade-out drain. A `playerFinished` handler calling `api.play()` directly acts as a fallback if the tick window is missed.
-- **Vite plugin**: `@coderline/alphatab-vite` handles web worker bundling, audio worklet setup, and copies font/soundfont assets to the build output automatically.
 - **Cleanup**: `api.destroy()` is called in the `useEffect` cleanup to prevent memory leaks and detached DOM nodes.
 
 ## Wylde Scales feature
@@ -562,23 +381,13 @@ The Wylde Scales page (`/wylde-scales`) visualizes Zakk Wylde's 3-notes-per-stri
 
 ### How Wylde's 3nps differs from standard systems
 
-**vs. `build3nps`**: Strings E, A, D, G are identical (3 consecutive scale degrees each). On B string, Wylde resets the degree cursor to `(startDegIdx + 4) % 7` — one step back — instead of continuing sequentially. This repeats G string's last degree on B, keeping the shape in a compact 4–5 fret window. As a consequence, the high e string naturally cycles back to the same 3 degrees as the low E string.
+**vs. `build3nps`**: On B string, Wylde resets the degree cursor to `(startDegIdx + 4) % 7` — one step back — instead of continuing sequentially. This repeats G string's last degree on B, keeping the shape in a compact 4–5 fret window. The `buildWylde` function is identical to `build3nps` except for one line: at `si === 4` (B string), `degCursor` is reset.
 
 **vs. `buildSym`**: Sym drops G string to 2 notes so B can start cleanly. Wylde keeps G at 3 notes and deliberately overlaps the G→B transition.
 
-The `buildWylde` function is identical to `build3nps` except for one line: at `si === 4` (B string), `degCursor` is reset.
-
-### Data model
-
-- `WyldePosition` — `{ degIdx, modeName, strings: ScaleString[], startFret, pentaBoxIdx, pentaBox: BoxNote[], pentaRawMin }`
-- `buildAllWyldePositions(scale)` — builds all 7 positions. For each, finds the penta box whose raw min fret is closest to the diatonic's raw min fret (no modulo — direct distance comparison).
-- `pentaRawMin` — the raw (non-normalized) minimum absolute fret of the matched penta box. Required for octave-correct display (see below).
-
 ### Fret coordinate system / octave normalization
 
-Both the diatonic shape and the pentatonic box are built internally in G (ROOT_FRET = 3). Key transposition works the same as other pages: `keyOffset = (keyFret - ROOT_FRET + 12) % 12`, `displayStartFret = startFret + keyOffset`.
-
-**Critical**: the diatonic uses `startFret = rawMin % 12` (normalized), but penta boxes are built with raw absolute frets that can be at fret 12–15 for boxes near the octave boundary. Adding `keyOffset` directly to raw penta frets shifts them a full octave in the wrong direction.
+Both the diatonic shape and the pentatonic box are built internally in G (ROOT_FRET = 3). **Critical**: the diatonic uses `startFret = rawMin % 12` (normalized), but penta boxes are built with raw absolute frets that can be at fret 12–15 for boxes near the octave boundary. Adding `keyOffset` directly to raw penta frets shifts them a full octave in the wrong direction.
 
 The fix: penta display frets use the same normalization as diatonic:
 ```
@@ -587,36 +396,22 @@ pentaDisplayFret = (penta.fret - pentaRawMin) + pentaOffset
 // where pentaOffset = pentaAbsStart - displayStartFret
 ```
 
-This mirrors `toRelative()` for the penta box and keeps diatonic and pentatonic in the same neck region for all 12 keys.
+`pentaRawMin` — the raw (non-normalized) minimum absolute fret of the matched penta box — is stored on `WyldePosition` for this purpose.
 
-### Controls
-
-- **Scale** — Minor / Major (rebuilds all 7 positions)
-- **Key** — 12 chromatic keys E through Eb (persisted to `"shred-dojo-key"` localStorage)
-- **Register** — Lower 12 / Upper 12; `octaveShift: 0 | 12` applied via `computeWyldeAbsStarts()` after key transposition and lower-octave normalization
-
-### Full Neck view
-
-Each position card has a **"▼ Full Neck"** toggle that expands a `FullNeckFretboard`. The active position's notes are shown in full degree colors (`isMain: true`). **"Show other shapes (dimmed)"** overlays all 7 positions.
-
-**Layer positions**: the main (active) position uses `computeWyldeAbsStarts(pos, keyOffset, octaveShift)` — normalized + `octaveShift`. Dimmed positions use raw `pos.startFret + keyOffset` (no normalization, no `octaveShift`) so each of the 7 positions appears at its true location on the neck — positions before the active shape appear to the left, positions after appear to the right. Root notes in dimmed positions render at `var(--root-col)` (40% opacity).
-
-`rawNotesByPos` and `absNotesByPos` are separate `useMemo` arrays. `buildNeckLayers(cardIdx)` selects `absNotesByPos[i]` for the main card and `rawNotesByPos[i]` for all other cards.
+`rawNotesByPos` and `absNotesByPos` are separate `useMemo` arrays. `buildNeckLayers(cardIdx)` selects `absNotesByPos[i]` for the main card and `rawNotesByPos[i]` for all other (dimmed) cards in the Full Neck panel.
 
 ## FullNeckFretboard component
 
 `app/components/FullNeckFretboard.tsx` — shared fretboard component that renders the full guitar neck (frets 0–24) with layered note overlays. Used by Shape Explorer, Scale Positions (ShapeModal), Wylde Scales, and Yngwie Scales.
 
-- **`FullNeckNote`** — `{ string, absoluteFret, deg, penta? }` — note at an absolute fret (0 = open, 1–24)
-- **`FullNeckLayer`** — `{ notes: FullNeckNote[], isMain: boolean }` — `isMain: true` = full degree colors; `isMain: false` = dimmed overlay
-- **`FullNeckFretboard`** — accepts `layers: FullNeckLayer[]`; builds a `Map<"string:fret", {note, isMain}>` lookup across all layers (main layer overrides dimmed at the same position). Renders: inlay marker row, open string column (36px), nut (8px), 24 fret cells (36px each), string name labels, fret numbers. String rows are 28px tall (compact). Main-layer dots use the same color logic as `NeckDot` (root = `var(--root-col)`, b5+penta = `var(--blues-col)`, penta = `var(--text)` fill, diatonic = outlined).
-- **Dimmed dot rendering** — non-main notes: root (`deg === "R"`) → `var(--root-col)` at 40% opacity; all others → `var(--border)` at 40% opacity. This keeps root note locations identifiable even in ghosted positions.
-- **Raw vs. normalized positions** — callers pass dimmed layers using raw `startFret + keyOffset` (no lower-octave normalization, no `octaveShift`) so each shape appears at its natural location on the full 24-fret neck. Only the main (highlighted) layer uses the normalized + `octaveShift` position that matches the card display.
-- The component is `overflow-x-auto` with a fixed min-width (`24 × 36 + open + nut + padding`), scrollable horizontally on narrow screens
+- **`FullNeckLayer`** — `{ notes: FullNeckNote[], isMain: boolean }` — `isMain: true` = full degree colors; `isMain: false` = dimmed overlay. Main layer overrides dimmed at the same string:fret position.
+- **Dimmed dot rendering** — root (`deg === "R"`) → `var(--root-col)` at 40% opacity; all others → `var(--border)` at 40% opacity. This keeps root note locations identifiable even in ghosted positions.
+- **Raw vs. normalized positions** — callers pass dimmed layers using raw `startFret + keyOffset` (no lower-octave normalization, no `octaveShift`) so each shape appears at its natural location on the full 24-fret neck. Only the main layer uses the normalized + `octaveShift` position.
+- `overflow-x-auto` with fixed min-width, scrollable horizontally on narrow screens.
 
 ## Yngwie Scales feature
 
-The Yngwie Scales page (`/yngwie-scales`) visualizes two harmonic minor shapes favored by Yngwie Malmsteen, highlighting the raised 7th degree (leading tone) that creates the augmented 2nd with b6 defining the classical shred sound.
+The Yngwie Scales page (`/yngwie-scales`) visualizes two harmonic minor shapes favored by Yngwie Malmsteen, highlighting the raised 7th degree (leading tone).
 
 ### Files
 
@@ -624,111 +419,52 @@ The Yngwie Scales page (`/yngwie-scales`) visualizes two harmonic minor shapes f
 - `app/components/YngwieScales.tsx` — all component code (self-contained)
 - `app/routes/yngwie-scales.tsx` — route wrapper
 
-### Data model
+Two shapes: **Steeler Shape** (starts on 7th degree, the canonical Yngwie entry point) and **Little Savage Shape** (starts on 4th degree, higher neck position). Root dots use `var(--root-col)`; leading tone (`7`) uses `var(--seventh-col)` (purple).
 
-- `HARMONIC_MINOR_CFG` — `ScaleConfig` with scale `["R", "2", "b3", "4", "5", "b6", "7"]` and raised 7th (`11` semitones). Same structure as configs in `scalePositions.utils.ts`.
-- `YngwieShape` — `{ name, tagline, strings: ScaleString[], startFret }`
-- `SHAPE_DEFS` — two shapes: **Steeler Shape** (starts on 7th degree, the canonical Yngwie entry point) and **Little Savage Shape** (starts on 4th degree, higher neck position)
-- `buildYngwieShapes()` — calls `build3nps(startDegIdx, HARMONIC_MINOR_CFG)` for each shape def, normalizes with `toRelative()`, records `startFret = rawMin % 12`
-
-### Dot rendering
-
-- Root (`R`): `var(--root-col)` fill, white text
-- Leading tone (`7`): `var(--seventh-col)` (purple) fill, white text
-- All others: `var(--surface)` fill, `var(--text)` text, `1.5px solid var(--text)` border (uses `--text` not `--border` so dots remain visible in dark mode)
-
-### Key transposition
-
-`keyOffset = (keyIdx - ROOT_FRET + 12) % 12`. `computeDisplayFret(startFret, keyOffset, octaveShift)` normalizes to lower octave (`raw > 12 ? raw - 12 : raw`) then adds `octaveShift`. Precomputed per shape into `shapeData[i].dsf` via `useMemo`.
-
-### Controls
-
-- **Key** — 12 chromatic keys E through Eb (persisted to `"shred-dojo-key"` localStorage)
-- **Register** — Lower 12 / Upper 12; `octaveShift: 0 | 12` shifts display fret by one octave
-- **Full Neck** — per-card toggle revealing `FullNeckFretboard`; **"Show other shapes (dimmed)"** checkbox overlays both shapes. Main shape uses `shapeData[i].dsf` (normalized + `octaveShift`); dimmed shape uses raw `shape.startFret + keyOffset` so it appears at its natural neck position. Root notes in dimmed shapes render at `var(--root-col)` (40% opacity).
+`computeDisplayFret(startFret, keyOffset, octaveShift)` normalizes to lower octave (`raw > 12 ? raw - 12 : raw`) then adds `octaveShift`. Full Neck panel follows the same main/dimmed layer pattern as other pages.
 
 ## MetronomeWidget
 
 `app/components/MetronomeWidget.tsx` — a persistent floating metronome rendered in `root.tsx`, fixed to the bottom-right corner of every page. Self-contained: no props, no context. Manages its own dark-mode sync by polling `localStorage` every 500ms.
 
-**Mobile layout** — Tracks `windowWidth` and `windowHeight` via `useState` + `window.resize` listener. On mobile (`windowWidth < 700`): panel width is `Math.min(windowWidth - 32, 280)`, drone grid is 4 columns instead of 6, and all buttons are at least 40-44px tall. Bottom position uses `calc(env(safe-area-inset-bottom, 0px) + 16px)` on mobile (24px on desktop). BPM drag supports both mouse (`onMouseDown`) and touch (`onTouchStart`/`onTouchMove`/`onTouchEnd`) with `touchAction: "none"` to prevent scroll conflict. On short viewports (`windowHeight < 500`, i.e. landscape phones), the expanded panel gets `maxHeight = windowHeight - 60` with `overflowY: "auto"` so it never overflows the screen; the drone grid also switches to 4 columns.
+**Mobile layout** — Tracks `windowWidth` and `windowHeight` via resize listener. On mobile (`windowWidth < 700`): panel width is `Math.min(windowWidth - 32, 280)`, drone grid is 4 columns instead of 6. On short viewports (`windowHeight < 500`), the expanded panel gets `maxHeight = windowHeight - 60` with `overflowY: "auto"`. BPM drag supports touch events with `touchAction: "none"` to prevent scroll conflict.
 
 ### Audio engine
 
-Uses the Web Audio API look-ahead scheduler pattern: a `setTimeout` loop fires every `LOOKAHEAD_MS = 25ms` and schedules click events up to `SCHEDULE_AHEAD_S = 0.1s` ahead of `ctx.currentTime`. This decouples visual timing from audio timing and prevents glitches under UI load. `AudioContext` is created lazily on first play to satisfy browser autoplay policies.
+Uses the Web Audio API look-ahead scheduler pattern: a `setTimeout` loop fires every `LOOKAHEAD_MS = 25ms` and schedules click events up to `SCHEDULE_AHEAD_S = 0.1s` ahead of `ctx.currentTime`. `AudioContext` is created lazily on first play to satisfy browser autoplay policies.
 
 - **Click sound** — `OscillatorNode` (triangle wave). Downbeat: 1100 Hz, vol 0.45. Subdivision: 750 Hz, vol 0.25. Short exponential decay (~60ms).
-- **Drone sound** — `OscillatorNode` (sine wave) with `GainNode` (vol 0.2). Sustained continuously; fades in/out over ~100ms on start/stop/key change to avoid clicks. Base frequency: `E2_HZ = 82.41` Hz; transposed as `82.41 * 2^(semitone / 12)` where semitone is the chromatic distance from E.
+- **Drone sound** — `OscillatorNode` (sine wave), sustained continuously; fades in/out over ~100ms on key change to avoid clicks. Base: `E2_HZ = 82.41` Hz, transposed as `82.41 * 2^(semitone / 12)`.
 
 ### BPM controls
 
-- **Drag** — vertical mouse drag on the BPM number (`ns-resize` cursor). A `dragMoved` flag (threshold: 3px) distinguishes drag from click.
-- **Scroll** — mouse wheel over the BPM number nudges ±1.
-- **Click to type** — clicking the BPM number without dragging enters edit mode: the number becomes a `<input type="text" inputMode="numeric">` pre-selected for typing. Enter or blur commits; Escape cancels.
-- **±1 / ±5 buttons** — fine-adjustment row below the BPM display.
-- **Tap tempo** — averages the last 4 tap intervals.
-- Range: 40–240 BPM.
+- **Drag** — vertical mouse drag on the BPM number. A `dragMoved` flag (threshold: 3px) distinguishes drag from click.
+- **Click to type** — clicking without dragging enters edit mode: the number becomes an `<input type="text" inputMode="numeric">`. Enter or blur commits; Escape cancels.
+- **Tap tempo** — averages the last 4 tap intervals. Range: 40–240 BPM.
 
 ### Drone
 
-A section at the bottom of the expanded panel with a 6×2 grid of all 12 chromatic keys (same note names as the rest of the app: `E F F# G Ab A Bb B C Db D Eb`). Clicking a key starts the drone on that root; clicking the same key again stops it; clicking a different key crossfades to the new pitch. When a drone is active, the collapsed trigger button shows `~KEY` (e.g. `~A`) next to the BPM.
-
-### State
-
-- `bpm` — current tempo; `bpmRef` mirrors it for use inside the scheduler closure
-- `isPlaying` / `isPlayingRef` — playback state
-- `currentBeat` — 0–3, drives the beat segment indicators
-- `pulse` — 80ms flash on each beat, drives the scale-up animation on the BPM number and the dot in the trigger button
-- `isExpanded` — panel open/closed
-- `isDark` — synced from `localStorage` polling
-- `editingBpm` / `bpmInputVal` — BPM type-in mode
-- `droneKey` — `number | null`; semitone index (0 = E … 11 = Eb), null = drone off
+6×2 grid of all 12 chromatic keys. Clicking a key starts the drone; clicking the same key stops it; clicking a different key crossfades. When active, the collapsed trigger button shows `~KEY` (e.g. `~A`).
 
 ## Circle of Fifths feature
 
-The Circle of Fifths page (`/circle-of-fifths`) shows an interactive SVG diagram of the 12 keys arranged by perfect fifths, with three concentric rings. Clicking a key reveals its scale, diatonic chords, relative minor, and closely related keys.
+The Circle of Fifths page (`/circle-of-fifths`) shows an interactive SVG diagram of the 12 keys arranged by perfect fifths.
 
 ### Files
 
 - `app/components/circleOfFifths.utils.ts` — `FIFTHS` array (12 `KeyInfo` entries), `keySigLabel()`, `keySigShort()`
-- `app/components/CircleOfFifths.tsx` — all component code (self-contained: `CircleDiagram`, `InfoPanel`, page root)
+- `app/components/CircleOfFifths.tsx` — all component code (self-contained)
 - `app/routes/circle-of-fifths.tsx` — route wrapper
 
-### Data model
+`KeyInfo` — `{ major, minor, keySig, scaleNotes, diatonicChords, relatedMajors, relatedMinors }`. `FIFTHS` — 12 entries clockwise from C (top): C G D A E B F# Db Ab Eb Bb F. All data is hardcoded.
 
-- `KeyInfo` — `{ major, minor, keySig, scaleNotes, diatonicChords, relatedMajors, relatedMinors }`
-  - `keySig` — positive = sharps, negative = flats, 0 = none
-  - `diatonicChords` — 7 `{ numeral, name, quality }` entries (quality: `"maj" | "min" | "dim"`)
-  - `relatedMajors` — the 2 adjacent major keys on the circle (clockwise + counter-clockwise)
-  - `relatedMinors` — the relative minor of this key plus both neighbors' relative minors (5 closely related keys total)
-- `FIFTHS` — 12 entries clockwise from C (top): C G D A E B F# Db Ab Eb Bb F. All data is hardcoded.
-- `keySigShort(n)` — returns `"3#"` / `"2♭"` / `"·"` for use inside the SVG key-sig ring
-- `keySigLabel(n)` — returns human-readable string (`"3 sharps"`, `"No sharps or flats"`) for the info panel
+`CircleDiagram` renders a 560×560 SVG (center 280,280) with three concentric rings (major keys / key signature / relative minor) built from `arcSegmentPath()`. SVG fills use `style={{ fill: "var(--surface)" }}` (not presentation attributes) so CSS variables resolve correctly.
 
-### SVG diagram
-
-`CircleDiagram` renders a 560×560 SVG (center 280,280) with three concentric rings built from `arcSegmentPath()`:
-
-| Ring | rOuter | rInner | Text r | Content |
-|---|---|---|---|---|
-| Major keys | 260 | 180 | 220 | Key name |
-| Key signature | 178 | 140 | 159 | `keySigShort()` |
-| Relative minor | 138 | 84 | 111 | Minor key name |
-
-Each segment spans 28° with a 2° total gap (1° each side). `segmentAngles(i)` returns `{ start, end, mid }` using `i * 30 - 90` as the base (C at 12 o'clock). SVG fills/strokes use `style={{ fill: "var(--surface)" }}` (not presentation attributes) so CSS variables resolve correctly.
-
-Clicking any ring segment (major or minor) sets `selectedIdx`. The center disc shows the selected key name or "SELECT KEY".
-
-### InfoPanel
-
-Shown below the SVG when a key is selected. Three sections:
-1. **Header** — key name + `keySigLabel()` text
-2. **Diatonic chords** — 7-column grid of `(numeral / note / quality)` per scale degree; quality dim = accent color, min = muted, maj = text
-3. **Footer** — relative minor name + clickable pill buttons for `relatedMajors` + `relatedMinors` (clicking a pill updates `selectedIdx`)
+The `InfoPanel` below the SVG shows diatonic chords and clickable related-key pills when a key is selected.
 
 ## Scale Builder feature
 
-The Scale Builder page (`/scale-builder`) lets users explore the note content of five common scale formulas in any of 12 root keys. Two view modes — **Names** and **Staff** — show the resulting notes as labeled chips or on a VexFlow treble clef staff.
+The Scale Builder page (`/scale-builder`) lets users explore five common scale formulas in any of 12 root keys. Two view modes — **Names** and **Staff** — show the resulting notes as labeled chips or on a VexFlow treble clef staff.
 
 ### Files
 
@@ -738,107 +474,40 @@ The Scale Builder page (`/scale-builder`) lets users explore the note content of
 
 ### Data model
 
-- `KEY_NAMES` — `["E","F","F#","G","Ab","A","Bb","B","C","Db","D","Eb"]` (matches rest of app)
-- `NOTES_FROM_C` — `["C","Db","D","Eb","E","F","F#","G","Ab","A","Bb","B"]` — chromatic lookup ordered from C, used for octave-aware scale construction
-- `SEMI_FROM_C` — `Record<string, number>` mapping each note name → semitone offset from C (0–11)
-- `ScaleType` — `"major" | "minor" | "majorPenta" | "minorPenta" | "blues"`
-- `SCALE_TYPES` — per-type config with `label`, `intervals` (semitone steps including return-to-root), and `steps` (display labels: `"W"`, `"H"`, `"WH"`)
-- `ScaleNote` — `{ note: string, octave: number }`
-
-**Scale formulas:**
-| Scale | Intervals | Steps |
-|---|---|---|
-| Major | 2 2 1 2 2 2 1 | W W H W W W H |
-| Minor | 2 1 2 2 1 2 2 | W H W W H W W |
-| Maj Penta | 2 2 3 2 3 | W W WH W WH |
-| Min Penta | 3 2 2 3 2 | WH W W WH W |
-| Blues | 3 2 1 1 3 2 | WH W H H WH W |
-
-**`buildScale(root, intervals) → ScaleNote[]`** — MIDI arithmetic: `rootMidi = 60 + SEMI_FROM_C[root]`. Iterates `intervals.slice(0, -1)` (drops the return-to-root step), advancing `midi` and deriving `{ note: NOTES_FROM_C[midi % 12], octave: Math.floor(midi / 12) - 1 }` for each step. Produces 7 notes for diatonic, 5 for pentatonic, 6 for blues.
-
-**`toVexNote(sn) → { key, accidental }`** — converts a `ScaleNote` to VexFlow low-level format. Flat detection: `n.length === 2 && n[1] === "b"` (correctly distinguishes "Bb" from "B"). Key format: `"${letter}${acc}/${octave}"` (e.g. `"f#/4"`, `"ab/4"`, `"b/4"`).
+- `NOTES_FROM_C` — chromatic lookup ordered from C, used for octave-aware scale construction
+- `buildScale(root, intervals) → ScaleNote[]` — MIDI arithmetic: `rootMidi = 60 + SEMI_FROM_C[root]`. Iterates `intervals.slice(0, -1)` (drops the return-to-root step), deriving `{ note, octave }` per step.
+- `toVexNote(sn) → { key, accidental }` — flat detection: `n.length === 2 && n[1] === "b"` (correctly distinguishes "Bb" from "B").
 
 ### VexFlow integration (`StaffView`)
 
 Uses the **VexFlow 5 low-level API** (not EasyScore) for full control over note count and spacing.
 
-- **Dynamic import** inside `useEffect` to avoid SSR (`import("vexflow").then(...)`)
-- **`ResizeObserver`** tracks `containerWidth` state; a separate effect re-renders VexFlow whenever `[scaleNotes, isDark, containerWidth]` changes. The observer wraps every measurement in `requestAnimationFrame` and reads `el.getBoundingClientRect().width` (actual rendered width) rather than `contentRect.width` (which can be stale during orientation change before layout settles). A `window.addEventListener('resize', measure)` fallback fires after orientation change is complete, guaranteeing at least one correct measurement even if ResizeObserver misfires. This prevents the stem-detachment bug where stems and note heads land at different X positions because VexFlow formatted to a stale intermediate width.
-- **Cancellation flag** — each effect sets `let cancelled = false` and returns `() => { cancelled = true }`. The `.then()` callback checks `cancelled` before rendering, preventing stale async renders from appending duplicate SVGs
-- **`el.innerHTML = ""`** cleared inside the `.then()` (after the cancelled check), not before the import — ensures only the winning render clears the container
-- **`Voice.Mode.SOFT`** — suppresses beat-count validation so 5, 6, or 7 quarter notes all work without a time signature
-- **Formatter width** derived from stave geometry: `stave.getWidth() - (stave.getNoteStartX() - stave.getX()) - 10` — ensures the formatter's X reference matches the stave's note-start X so stems align with note heads
-- **Stave position**: `new Stave(10, 40, containerWidth - 20)` — Y=40 gives the treble clef glyph enough vertical room
-- **Dark mode**: `ctx.setFillStyle(textColor)` + `ctx.setStrokeStyle(textColor)` applied before any `draw()` calls; cascades to all SVG child elements
-- **Accidentals**: `note.addModifier(new Accidental(accidental), 0)` added explicitly (low-level API does not auto-render accidentals from the key string alone)
+- **Dynamic import** inside `useEffect` to avoid SSR.
+- **`ResizeObserver`** tracks `containerWidth`; the observer wraps measurements in `requestAnimationFrame` and reads `el.getBoundingClientRect().width` (actual rendered width) rather than `contentRect.width` (which can be stale during orientation change). A `window.addEventListener('resize', measure)` fallback guarantees at least one correct measurement. This prevents the stem-detachment bug where stems and note heads land at different X positions.
+- **Cancellation flag** — each effect sets `let cancelled = false` and returns `() => { cancelled = true }`. `el.innerHTML = ""` cleared inside the `.then()` (after the cancelled check), not before the import — ensures only the winning render clears the container.
+- **`Voice.Mode.SOFT`** — suppresses beat-count validation so 5, 6, or 7 quarter notes all work without a time signature.
+- **Formatter width** derived from stave geometry: `stave.getWidth() - (stave.getNoteStartX() - stave.getX()) - 10` — ensures stems align with note heads.
+- **Accidentals**: `note.addModifier(new Accidental(accidental), 0)` added explicitly (low-level API does not auto-render accidentals from the key string alone).
 
-**Exercise mode per-note coloring** — `StaffView` accepts optional exercise props (`filledNotes`, `currentSlot`, `feedback`, `completed`). When `filledNotes !== null`, each note is styled via `note.setStyle(...)`:
-- Filled slots → `textColor` (or `#2d8a40` green if `feedback === "correct"` and `i === currentSlot`)
-- Current slot → `~40%` opacity of text color (or `#b03020` red if `feedback === "wrong"`)
-- Future slots → `~12%` opacity ghost (shows correct pitch position as a reading cue)
+### Exercise mode
 
-The effect dep array includes all exercise props (`filledNotes`, `currentSlot`, `feedback`, `completed`) so the staff re-renders on every answer, updating note colors immediately.
-
-### Page mode and exercise state
-
-**`pageMode`** — `"reference" | "exercise"`. In reference mode the existing Names/Staff views are shown. In exercise mode:
-
-- **`ExerciseProgress`** — always shown; a chip row with the root pre-filled (accent color), answered slots filled dark, the current slot showing `"?"` (red border on wrong feedback, green for 450ms on correct), and future slots as `"·"`. Formula step labels sit between chips so the user can apply the formula visually.
-- **`NotePalette`** — 12 note buttons in two rows (naturals: E F G A B C D; accidentals: F# Ab Bb Db Eb). Wrong note turns accent-red for 600ms. Palette is disabled during feedback windows.
-- **Staff view (exercise)** — `StaffView` is rendered below `ExerciseProgress` with ghost notes; the current slot ghost shows the correct pitch position (turns the exercise into note-name reading from staff position). Names view shows only the chip row.
-- **Completion** — "Scale complete" shown in green with a "Try again" button.
-
-**Exercise state** — `filledNotes`, `currentSlot`, `feedback`, `wrongNote`, `completed`. Reset by `initExercise(scaleNotes)` which pre-fills index 0 with the root and sets `currentSlot = 1`. A `useEffect` on `[pageMode, scaleNotes]` calls `initExercise` whenever entering exercise mode or when the key/scale type changes.
-
-**Feedback timing** — correct: fill slot → `feedback = "correct"` → after 450ms advance slot (or complete). Wrong: `wrongNote = noteName` → `feedback = "wrong"` → after 600ms clear. Active recall only — wrong answers are never revealed.
-
-### State
-
-- `keyIdx` — 0–11, persisted to `"shred-dojo-key"` (shared with other pages)
-- `scaleType` — default `"major"`
-- `pageMode` — `"reference" | "exercise"`
-- `viewMode` — `"names" | "staff"`
-- `isDark` / `toggleDark` — standard per-page dark mode pattern
-
-### Controls
-
-- **Key** — 12 chip buttons (E through Eb)
-- **Scale** — 5 chip buttons (Major, Minor, Maj Penta, Min Penta, Blues)
-- **Formula row** — displays step labels (W / H / WH) with `—` separators; legend: "W = whole · H = half · WH = whole + half"
-- **Mode** — [Reference] [Exercise] toggle
-- **View** — [Names] [Staff] toggle (applies in both modes)
+**`pageMode`** — `"reference" | "exercise"`. In exercise mode, `StaffView` renders ghost notes for future slots (correct pitch visible, turns exercise into note-name reading). Wrong answers are never revealed — active recall only. `initExercise(scaleNotes)` pre-fills index 0 with the root; a `useEffect` on `[pageMode, scaleNotes]` calls it whenever entering exercise mode or when key/scale type changes.
 
 ## Chord Tones feature
 
-The Chord Tones page (`/chord-tones`) is an interactive quiz where the full scale shape is shown on a fretboard and the user must identify the interval/degree of one highlighted note at a time. Unlike the Fretboard Notes quiz (one isolated dot), the entire shape stays visible throughout — answered notes reveal their degree color, idle notes remain dimly visible, giving positional context.
+The Chord Tones page (`/chord-tones`) is an interactive quiz where the full scale shape is shown on a fretboard and the user must identify the interval/degree of one highlighted note at a time.
 
 ### Files
 
 - `app/components/ChordTones.tsx` — all component + logic (self-contained, no sibling files)
 - `app/routes/chord-tones.tsx` — route wrapper
 
-### Settings
+### Pool building
 
-- **Scale** — Minor Penta / Major Penta / Blues / Minor / Major
-- **System** — 3nps / CAGED (diatonic scales only)
-- **Shape** — Box 1–5 (penta/blues), Pos 1–7 (3nps), E D C A G (CAGED); resets on scale/system change
-- **Filter** — All Notes / Chord Tones (chord tones = R + 3/b3 + 5 only; applies to all scale types)
-- **Key** — 12 chromatic keys E–Eb; shifts fret number labels only (not dot positions); persisted to `"shred-dojo-key"`
-
-### Data model
-
-- `ScaleType` — `"minor_penta" | "major_penta" | "blues" | "minor" | "major"`
-- `QuizNote` — `{ string: StringName, fret: number, deg: string, key: string }` where `fret` is relative (0-based within position) and `key = "${string}-${fret}"`
-- `NoteState` — `"idle" | "current" | "correct" | "wrong" | "answered"`
-
-**Pool building:**
-- Pentatonic: `buildBox(boxIdx, "minor"/"major")` from `pentatonicTriads.utils.ts`; normalize absolute frets to relative by subtracting `minFret`; `startFret = minFret % 12`
+- Pentatonic: `buildBox(boxIdx, scale)` from `pentatonicTriads.utils.ts`; normalize absolute frets to relative by subtracting `minFret`; `startFret = minFret % 12`
 - Blues: minor penta pool + one `"b5"` note at `fret + 1` for every `"4"` note on the same string
 - Diatonic 3nps: `buildAllPositions(cfg)` filtered to `system === "3nps"`, indexed by `shapeIdx`
 - Diatonic CAGED: `buildCagedPositions(cfg)` indexed by `shapeIdx`
-- Chord-tones filter removes all degrees not in `{ R, 3/b3, 5 }`
-
-**Key transposition:** `keyOffset = (KEY_FRETS[keyIdx] - ROOT_FRET + 12) % 12`; `displayStartFret = startFret + keyOffset`. Fret number labels render as `f + displayStartFret`; dot positions stay relative.
 
 ### Answer degrees per mode
 
@@ -864,15 +533,7 @@ The Chord Tones page (`/chord-tones`) is an interactive quiz where the full scal
 
 ### Round / scoring
 
-Questions are picked randomly from the pool, excluding the immediately previous note. When all notes in the pool have been answered once (`answeredKeys.size >= pool.length`), `answeredKeys` is cleared and the round restarts — streak continues unbroken. Score bar shows correct/total, accuracy%, streak, best streak. High scores persisted to localStorage under `"ct-hs-${scale}-${system}-${shapeIdx}-${filter}"`. Audio: triangle oscillator (A4) on correct answers.
-
-### `ShapeQuizFretboard` component
-
-Inline component in `ChordTones.tsx`. Props: `notes: NoteDisplay[], fretCount, displayStartFret`.
-- 6 string rows (e at top), `44px` tall; fret cells `52px` wide; dots `26px`
-- Fret bars (1.5px `var(--fret-bar)`), inlay dots from `FRET_INLAYS` + `FRET_DOUBLE` (imported from `scalePositions.utils.ts`)
-- Thick left border (nut) when `displayStartFret <= 1`
-- Fret number labels below at `f + displayStartFret`
+When all notes in the pool have been answered once (`answeredKeys.size >= pool.length`), `answeredKeys` is cleared and the round restarts — streak continues unbroken. High scores persisted under `"ct-hs-${scale}-${system}-${shapeIdx}-${filter}"`.
 
 ## React Router v7 conventions
 
@@ -884,7 +545,25 @@ Inline component in `ChordTones.tsx`. Props: `notes: NoteDisplay[], fretCount, d
 ## Testing
 
 - **Vitest** — separate `vitest.config.ts` (avoids react-router plugin conflicts with `vite.config.ts`)
-- Scale position tests in `app/components/scalePositions.utils.test.ts` — snapshot fixtures verified against Pebber Brown's PDF reference material in `resources/diatonic-scales/`
+- Test files live alongside the source they cover (`*.utils.test.ts` next to `*.utils.ts`)
+- Only `*.utils.ts` files have tests — React components are not tested
+
+### Test files
+
+| File | Covers |
+|---|---|
+| `scalePositions.utils.test.ts` | `build3nps`, `buildSym`, `buildCagedPositions`, `buildAllPositions`, `mergePositions` — verified against Pebber Brown's PDF reference in `resources/diatonic-scales/` |
+| `wyldeScales.utils.test.ts` | `buildAllWyldePositions`, `pentaAbsoluteStart` — includes regression for the Lydian octave-squash bug |
+| `pentatonicTriads.utils.test.ts` | `buildBox`, `bluesNotesForBox`, `adjustAdjacentFrets` — `closestFret` is not exported but covered indirectly through `buildBox` |
+| `scaleBuilder.utils.test.ts` | `buildScale`, `toVexNote` |
+| `chordVoicings.utils.test.ts` | `buildChordVoicings` |
+
+### Testing patterns
+
+- **Compact format strings** — a `fmt` / `fmtBox` helper serialises note arrays to `"deg:fret deg:fret | …"` for human-readable snapshot assertions
+- **Spot checks** — a few known reference values (manually verified or checked against reference PDFs) anchor the expected output
+- **Invariant loops** — iterate over all configurations (all 7 scaletones, all 5 boxes, all 5 chord types, all 12 keys) to cover the full parameter space without hand-coding every case
+- **`buildScale` enharmonics** — uses `NOTES_FROM_C` which always returns flat enharmonics (Ab not G#, Db not C#); test expectations must reflect this
 
 ## Dev commands
 

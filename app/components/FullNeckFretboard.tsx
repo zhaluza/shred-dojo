@@ -1,6 +1,6 @@
 import type { Degree, StringName } from "./scalePositions.types";
 import { FRET_DOUBLE, FRET_INLAYS } from "./scalePositions.utils";
-import { STRING_LINE } from "./scalePositions.theme";
+import { STRING_LINE } from "./theme";
 
 const DISPLAY_STRINGS: StringName[] = ["e", "B", "G", "D", "A", "E"];
 const NECK_FRETS = 24;

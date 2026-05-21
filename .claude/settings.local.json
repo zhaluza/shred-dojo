@@ -60,7 +60,13 @@
       "Bash(grep -E \"\\\\.\\(css|ts|tsx\\)$\")",
       "Skill(update-config)",
       "Bash(git -C /Users/zhaluza/Desktop/coding/shred-dojo status)",
-      "Bash(git -C /Users/zhaluza/Desktop/coding/shred-dojo stash list)"
+      "Bash(git -C /Users/zhaluza/Desktop/coding/shred-dojo stash list)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(npx playwright *)",
+      "Bash(npm root *)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(xargs sed -i '' 's|scalePositions\\\\.theme|theme|g')"
     ]
   }
 }

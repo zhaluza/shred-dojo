@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
 import type { StringName } from "./scalePositions.types";

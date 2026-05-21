@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/lick-stash";
-import { LIGHT_THEME, DARK_THEME } from "~/components/scalePositions.theme";
+import { LIGHT_THEME, DARK_THEME } from "~/components/theme";
 import { LICK_PACKS } from "~/components/lickStash.data";
 import { Nav } from "~/components/Nav";
 import { useState, useEffect } from "react";

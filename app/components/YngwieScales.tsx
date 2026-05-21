@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Nav } from "./Nav";
-import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./scalePositions.theme";
+import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import type { Degree, ScaleString, StringName } from "./scalePositions.types";
 import { FRET_DOUBLE, FRET_INLAYS, ROOT_FRET } from "./scalePositions.utils";

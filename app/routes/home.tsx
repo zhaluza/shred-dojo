@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router";
 import type { Route } from "./+types/home";
-import { LIGHT_THEME, DARK_THEME } from "~/components/scalePositions.theme";
+import { LIGHT_THEME, DARK_THEME } from "~/components/theme";
 import { Nav } from "~/components/Nav";
 import { useState, useEffect } from "react";
 
