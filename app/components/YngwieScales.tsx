@@ -3,7 +3,7 @@ import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import type { Degree, ScaleString, StringName } from "./scalePositions.types";
-import { FRET_DOUBLE, FRET_INLAYS, ROOT_FRET } from "./scalePositions.utils";
+import { computeDisplayFret, FRET_DOUBLE, FRET_INLAYS, ROOT_FRET } from "./scalePositions.utils";
 import { buildYngwieShapes, KEY_NAMES, type YngwieShape } from "./yngwieScales.utils";
 import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 
@@ -12,14 +12,6 @@ import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./Full
 const KEYS = KEY_NAMES.map((name, fret) => ({ name, fret }));
 // Both shapes span 6 relative frets; 8 columns gives one column of breathing room
 const FRET_COUNT = 8;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function computeDisplayFret(startFret: number, keyOffset: number, octaveShift: number): number {
-  const raw = startFret + keyOffset;
-  const base = raw > 12 ? raw - 12 : raw;
-  return base + octaveShift;
-}
 
 function shapeToAbsNotes(shape: YngwieShape, dsf: number): FullNeckNote[] {
   return shape.strings.flatMap((str) =>

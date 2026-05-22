@@ -285,3 +285,18 @@ export function mergePositions(
     };
   });
 }
+
+/**
+ * Compute the display start fret for a shape given the key offset and octave
+ * shift (0 = Lower 12, 12 = Upper 12). Normalises to the lower octave first
+ * so Lower always falls in frets 0–11 and Upper in frets 12–23.
+ */
+export function computeDisplayFret(
+  startFret: number,
+  keyOffset: number,
+  octaveShift: number,
+): number {
+  const raw = startFret + keyOffset;
+  const base = raw >= 12 ? raw - 12 : raw;
+  return base + octaveShift;
+}

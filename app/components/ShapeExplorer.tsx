@@ -15,6 +15,7 @@ import type {
 import {
   buildAllPositions,
   buildCagedPositions,
+  computeDisplayFret,
   FRET_DOUBLE,
   FRET_INLAYS,
   ROOT_FRET,
@@ -494,13 +495,6 @@ function CombinedFretboard({
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function computeDisplayFret(startFret: number, keyOffset: number, octaveShift: number): number {
-  const raw = startFret + keyOffset;
-  const base = raw > 12 ? raw - 12 : raw;
-  return base + octaveShift;
-}
 
 // ─── OverviewGrid ─────────────────────────────────────────────────────────────
 
@@ -757,7 +751,7 @@ export function ShapeExplorer() {
           </h1>
         </div>
 
-        <div className="flex flex-wrap gap-x-7 gap-y-4 mb-5">
+        <div className="flex flex-wrap gap-x-7 gap-y-4 mb-7">
           {/* Scale mode */}
           <div className="flex flex-col gap-[0.4rem]">
             <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
@@ -905,45 +899,45 @@ export function ShapeExplorer() {
               />
             </div>
           </div>
-        </div>
 
-        {/* Key selector */}
-        <div className="flex flex-col gap-[0.4rem] mb-7">
-          <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
-            Key
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {KEYS.map((key, i) => (
-              <CtrlButton
-                key={key.name}
-                label={key.name}
-                active={keyIdx === i}
-                onClick={() => setKeyIdx(i)}
-                small
-                normalCase
-              />
-            ))}
+          {/* Key selector */}
+          <div className="flex flex-col gap-[0.4rem]">
+            <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
+              Key
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {KEYS.map((key, i) => (
+                <CtrlButton
+                  key={key.name}
+                  label={key.name}
+                  active={keyIdx === i}
+                  onClick={() => setKeyIdx(i)}
+                  small
+                  normalCase
+                />
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Register toggle */}
-        <div className="flex flex-col gap-[0.4rem] mb-7">
-          <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
-            Register
-          </p>
-          <div className="flex gap-1">
-            <CtrlButton
-              label="Lower 12"
-              active={octaveShift === 0}
-              onClick={() => setOctaveShift(0)}
-              small
-            />
-            <CtrlButton
-              label="Upper 12"
-              active={octaveShift === 12}
-              onClick={() => setOctaveShift(12)}
-              small
-            />
+          {/* Register toggle */}
+          <div className="flex flex-col gap-[0.4rem]">
+            <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
+              Register
+            </p>
+            <div className="flex gap-1">
+              <CtrlButton
+                label="Lower 12"
+                active={octaveShift === 0}
+                onClick={() => setOctaveShift(0)}
+                small
+              />
+              <CtrlButton
+                label="Upper 12"
+                active={octaveShift === 12}
+                onClick={() => setOctaveShift(12)}
+                small
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import {
   buildSym,
   buildAllPositions,
   buildCagedPositions,
+  computeDisplayFret,
   mergePositions,
   symTwoNoteString,
   toRelative,
@@ -389,5 +390,49 @@ describe("mergePositions", () => {
         expect(str.notes[i].fret).toBeGreaterThanOrEqual(str.notes[i - 1].fret);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeDisplayFret
+// ---------------------------------------------------------------------------
+describe("computeDisplayFret", () => {
+  // Regression: raw === 12 must normalise to base = 0, not 12.
+  // Concrete case: E minor CAGED E shape (startFret=3) in key E (keyOffset=9).
+  // Before the fix, Lower showed at fret 12 and Upper at fret 24 (beyond the neck).
+  it("normalises raw=12 to base 0 (regression: E minor CAGED E shape, key E)", () => {
+    expect(computeDisplayFret(3, 9, 0)).toBe(0);  // Lower
+    expect(computeDisplayFret(3, 9, 12)).toBe(12); // Upper
+  });
+
+  it("Lower (octaveShift=0) always returns frets 0–11", () => {
+    // All (startFret, keyOffset) combos; both are 0–11 so raw is 0–22
+    for (let sf = 0; sf <= 11; sf++) {
+      for (let ko = 0; ko <= 11; ko++) {
+        const result = computeDisplayFret(sf, ko, 0);
+        expect(result).toBeGreaterThanOrEqual(0);
+        expect(result).toBeLessThanOrEqual(11);
+      }
+    }
+  });
+
+  it("Upper (octaveShift=12) always returns frets 12–23, never 24", () => {
+    for (let sf = 0; sf <= 11; sf++) {
+      for (let ko = 0; ko <= 11; ko++) {
+        const result = computeDisplayFret(sf, ko, 12);
+        expect(result).toBeGreaterThanOrEqual(12);
+        expect(result).toBeLessThanOrEqual(23);
+      }
+    }
+  });
+
+  it("handles raw < 12 without shifting", () => {
+    expect(computeDisplayFret(3, 5, 0)).toBe(8);   // raw=8, base=8, Lower=8
+    expect(computeDisplayFret(3, 5, 12)).toBe(20);  // Upper=20
+  });
+
+  it("handles raw > 12 by subtracting 12", () => {
+    expect(computeDisplayFret(5, 9, 0)).toBe(2);   // raw=14, base=2, Lower=2
+    expect(computeDisplayFret(5, 9, 12)).toBe(14); // Upper=14
   });
 });
