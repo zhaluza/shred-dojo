@@ -13,12 +13,12 @@ import {
   KEYS,
   RELATIVE_MINORS,
   DRILLS,
+  CS_DRILLS,
   REFS,
+  CS_REFS,
   getKeyOffset,
   minorRootName,
 } from "./morningCoffee.utils";
-
-const TOTAL = KEYS.length * DRILLS.length; // 168
 
 // ─── Metronome hook ──────────────────────────────────────────────────────────
 
@@ -446,6 +446,232 @@ function MetronomePanel({
 const MAJ_E_SHAPE = buildCagedPositions(SCALES.major)[0];
 const MIN_E_SHAPE = buildCagedPositions(SCALES.minor)[0];
 
+const CS_GROUPS: { label: string; ids: string[] }[] = [
+  {
+    label: "Scale Types",
+    ids: ["cs-minor-scale", "cs-harmonic-minor", "cs-melodic-minor", "cs-melodic-minor-asc", "cs-harmonic-major", "cs-double-harmonic"],
+  },
+  {
+    label: "Broken Intervals (Minor)",
+    ids: ["cs-minor-broken-3rds", "cs-minor-broken-4ths", "cs-minor-broken-5ths", "cs-minor-broken-6ths", "cs-minor-broken-7ths", "cs-minor-broken-8vas", "cs-minor-broken-9ths", "cs-minor-broken-10ths"],
+  },
+  {
+    label: "Arpeggios",
+    ids: ["cs-dim7", "cs-aug"],
+  },
+];
+
+const CS_DRILL_MAP = Object.fromEntries(CS_DRILLS.map(d => [d.id, d]));
+
+function CSPanel({
+  selected,
+  onToggle,
+  onBulkChange,
+  onClose,
+}: {
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+  onBulkChange: (ids: string[], on: boolean) => void;
+  onClose: () => void;
+}) {
+  const selectedCount = selected.size;
+  const totalCount = CS_DRILLS.length;
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-[200]"
+        style={{ backgroundColor: "rgba(10,8,6,0.75)", backdropFilter: "blur(4px)" }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed top-0 right-0 h-full z-[201] flex flex-col"
+        style={{
+          width: "min(460px, 100vw)",
+          backgroundColor: "var(--surface)",
+          borderLeft: "1px solid var(--border)",
+          borderTop: "3px solid var(--accent)",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-start justify-between px-5 pt-4 pb-3 shrink-0"
+          style={{ borderBottom: "1px solid var(--border)" }}
+        >
+          <div>
+            <div className="font-display font-semibold text-[0.9rem] tracking-[0.1em] uppercase" style={{ color: "var(--text)" }}>
+              Cream &amp; Sugar
+            </div>
+            <div className="text-[0.58rem] tracking-[0.08em] mt-[3px]" style={{ color: "var(--muted)" }}>
+              Supplemental drills from Alex Rockwell&rsquo;s companion book
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="flex items-center justify-center w-9 h-9 shrink-0 ml-2 text-[var(--muted)] hover:text-[var(--text)] bg-transparent border-none cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            <span className="text-[1rem] leading-none">✕</span>
+          </button>
+        </div>
+
+        {/* Summary + bulk controls */}
+        <div
+          className="flex items-center justify-between px-5 py-2 shrink-0"
+          style={{ borderBottom: "1px solid var(--border)", background: "rgba(0,0,0,0.03)" }}
+        >
+          <span className="font-mono text-[0.62rem]" style={{ color: "var(--muted)" }}>
+            {selectedCount === 0
+              ? "No drills selected"
+              : `${selectedCount} of ${totalCount} drills · +${selectedCount * 12} steps`}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onBulkChange(CS_DRILLS.map(d => d.id), true)}
+              className="font-display text-[0.58rem] tracking-[0.1em] uppercase border px-2 py-[3px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+              style={{
+                background: selectedCount === totalCount ? "var(--text)" : "transparent",
+                borderColor: selectedCount === totalCount ? "var(--text)" : "var(--border)",
+                color: selectedCount === totalCount ? "var(--bg)" : "var(--muted)",
+              }}
+            >
+              All
+            </button>
+            <button
+              onClick={() => onBulkChange(CS_DRILLS.map(d => d.id), false)}
+              className="font-display text-[0.58rem] tracking-[0.1em] uppercase border px-2 py-[3px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+              style={{ background: "transparent", borderColor: "var(--border)", color: "var(--muted)" }}
+            >
+              None
+            </button>
+          </div>
+        </div>
+
+        {/* Groups */}
+        <div className="flex-1 overflow-y-auto">
+          {CS_GROUPS.map((group) => {
+            const groupSelected = group.ids.filter(id => selected.has(id)).length;
+            const allGroupOn = groupSelected === group.ids.length;
+            return (
+              <div key={group.label} style={{ borderBottom: "1px solid var(--border)" }}>
+                <div
+                  className="flex items-center justify-between px-5 py-[6px] sticky top-0"
+                  style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
+                >
+                  <span className="text-[0.48rem] tracking-[0.2em] uppercase" style={{ color: "var(--muted)" }}>
+                    {group.label}
+                  </span>
+                  <div className="flex gap-[6px]">
+                    <button
+                      onClick={() => onBulkChange(group.ids, true)}
+                      className="font-display text-[0.52rem] tracking-[0.1em] uppercase border px-[6px] py-[2px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+                      style={{
+                        background: allGroupOn ? "var(--accent)" : "transparent",
+                        borderColor: allGroupOn ? "var(--accent)" : "var(--border)",
+                        color: allGroupOn ? "#fff" : "var(--muted)",
+                      }}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => onBulkChange(group.ids, false)}
+                      className="font-display text-[0.52rem] tracking-[0.1em] uppercase border px-[6px] py-[2px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+                      style={{ background: "transparent", borderColor: "var(--border)", color: "var(--muted)" }}
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+                {group.ids.map((id, idxInGroup) => {
+                  const drill = CS_DRILL_MAP[id];
+                  const isOn = selected.has(id);
+                  const globalNum = DRILLS.length + CS_DRILLS.findIndex(d => d.id === id) + 1;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => onToggle(id)}
+                      className="w-full flex items-center gap-3 px-5 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--accent)]"
+                      style={{
+                        minHeight: 46,
+                        backgroundColor: isOn ? "rgba(180,130,30,0.09)" : idxInGroup % 2 === 1 ? "rgba(0,0,0,0.02)" : undefined,
+                        borderBottom: "1px solid var(--border)",
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <div
+                        className="shrink-0 flex items-center justify-center"
+                        style={{
+                          width: 15,
+                          height: 15,
+                          border: `1.5px solid ${isOn ? "var(--accent)" : "var(--border)"}`,
+                          backgroundColor: isOn ? "var(--accent)" : "transparent",
+                          transition: "background 120ms, border-color 120ms",
+                        }}
+                      >
+                        {isOn && (
+                          <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true">
+                            <path d="M1.5 3.5L3.5 5.5L7.5 1.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 py-3">
+                        <div className="flex items-baseline gap-[6px]">
+                          <span className="font-mono text-[0.6rem]" style={{ color: "var(--faint)" }}>{globalNum}.</span>
+                          <span
+                            className="font-mono text-[0.7rem] leading-snug"
+                            style={{ color: isOn ? "var(--text)" : "var(--muted)" }}
+                          >
+                            {drill.name}
+                          </span>
+                          <span
+                            className="text-[0.52rem] tracking-[0.06em] uppercase shrink-0"
+                            style={{ color: "var(--faint)" }}
+                          >
+                            {drill.mode}
+                          </span>
+                        </div>
+                        <div className="text-[0.6rem] mt-[2px]" style={{ color: "var(--faint)" }}>
+                          {drill.hint}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex items-center justify-between px-5 py-3 shrink-0"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <span className="text-[0.58rem]" style={{ color: "var(--muted)" }}>
+            {selectedCount > 0
+              ? `Routine: ${DRILLS.length + selectedCount} drills · ${(DRILLS.length + selectedCount) * 12} steps`
+              : `Routine: ${DRILLS.length} core drills · ${DRILLS.length * 12} steps`}
+          </span>
+          <button
+            onClick={onClose}
+            className="font-display text-[0.72rem] tracking-[0.08em] uppercase px-5 py-[0.4rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--surface)]"
+            style={{ background: "var(--accent)", color: "#fff", border: "1px solid var(--accent)" }}
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function MorningCoffee() {
   const [isDark, setIsDark] = useState(false);
 
@@ -473,8 +699,11 @@ export function MorningCoffee() {
     if (typeof window === "undefined") return 0;
     try {
       const s = JSON.parse(localStorage.getItem("mc-state3") ?? "{}");
+      const csStored: string[] = JSON.parse(localStorage.getItem("mc-cs-selected") ?? "[]");
+      const csCount = Array.isArray(csStored) ? csStored.length : 0;
+      const maxDrill = DRILLS.length + csCount - 1;
       return typeof s.d === "number"
-        ? Math.max(0, Math.min(DRILLS.length - 1, s.d))
+        ? Math.max(0, Math.min(maxDrill, s.d))
         : 0;
     } catch { return 0; }
   });
@@ -505,6 +734,16 @@ export function MorningCoffee() {
     } catch { return false; }
   });
 
+  const [selectedCSDrills, setSelectedCSDrills] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = JSON.parse(localStorage.getItem("mc-cs-selected") ?? "[]");
+      return new Set(Array.isArray(stored) ? stored.filter((id: unknown) => typeof id === "string") : []);
+    } catch { return new Set(); }
+  });
+
+  const [showCSPanel, setShowCSPanel] = useState(false);
+
   // Persist state
   useEffect(() => {
     try {
@@ -515,10 +754,48 @@ export function MorningCoffee() {
     } catch {}
   }, [drillIdx, keyIdx, sidebarOpen, showShape]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("mc-cs-selected", JSON.stringify([...selectedCSDrills]));
+    } catch {}
+  }, [selectedCSDrills]);
+
   const met = useMetronomePanel();
 
+  // C&S derived values
+  const selectedCSList = CS_DRILLS.filter(d => selectedCSDrills.has(d.id));
+  const activeDrills = [...DRILLS, ...selectedCSList];
+  const allRefs = { ...REFS, ...CS_REFS };
+  const TOTAL = activeDrills.length * KEYS.length;
+
+  // Clamp drillIdx if selected C&S drills shrink
+  useEffect(() => {
+    if (drillIdx >= activeDrills.length) {
+      setDrillIdx(activeDrills.length - 1);
+      setKeyIdx(KEYS.length - 1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDrills.length]);
+
+  function toggleCSDrill(id: string) {
+    setSelectedCSDrills(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function bulkChangeCS(ids: string[], on: boolean) {
+    setSelectedCSDrills(prev => {
+      const next = new Set(prev);
+      if (on) ids.forEach(id => next.add(id));
+      else ids.forEach(id => next.delete(id));
+      return next;
+    });
+  }
+
   // Derived values
-  const drill = DRILLS[drillIdx];
+  const drill = activeDrills[drillIdx];
   const key = KEYS[keyIdx];
   const cursor = drillIdx * KEYS.length + keyIdx;
   const isMinorDrill = drill.mode === "minor";
@@ -540,11 +817,11 @@ export function MorningCoffee() {
   const nextKey = useCallback(() => {
     if (keyIdx < KEYS.length - 1) {
       setKeyIdx((k) => k + 1);
-    } else if (drillIdx < DRILLS.length - 1) {
+    } else if (drillIdx < activeDrills.length - 1) {
       setDrillIdx((d) => d + 1);
       setKeyIdx(0);
     }
-  }, [keyIdx, drillIdx]);
+  }, [keyIdx, drillIdx, activeDrills.length]);
 
   const prevKey = useCallback(() => {
     if (keyIdx > 0) {
@@ -556,11 +833,11 @@ export function MorningCoffee() {
   }, [keyIdx, drillIdx]);
 
   const nextDrill = useCallback(() => {
-    if (drillIdx < DRILLS.length - 1) {
+    if (drillIdx < activeDrills.length - 1) {
       setDrillIdx((d) => d + 1);
       setKeyIdx(0);
     }
-  }, [drillIdx]);
+  }, [drillIdx, activeDrills.length]);
 
   const prevDrill = useCallback(() => {
     if (drillIdx > 0) {
@@ -589,9 +866,9 @@ export function MorningCoffee() {
     return () => document.removeEventListener("keydown", handler);
   }, [nextKey, prevKey, met.toggle]);
 
-  const ref = REFS[drill.id];
-  const isLast = drillIdx === DRILLS.length - 1 && keyIdx === KEYS.length - 1;
-  const isLastKey = keyIdx === KEYS.length - 1 && drillIdx < DRILLS.length - 1;
+  const ref = allRefs[drill.id];
+  const isLast = drillIdx === activeDrills.length - 1 && keyIdx === KEYS.length - 1;
+  const isLastKey = keyIdx === KEYS.length - 1 && drillIdx < activeDrills.length - 1;
 
   const nextLabel = isLast ? "Done" : isLastKey ? "Next drill →" : "Next key →";
 
@@ -603,11 +880,12 @@ export function MorningCoffee() {
         <div className="flex gap-0">
           {/* ── Sidebar ──────────────────────────────────────────────── */}
           <div
-            className={`flex-shrink-0 border-r border-[var(--border)] transition-all duration-200 overflow-hidden hidden min-[640px]:block ${
+            className={`flex-shrink-0 border-r border-[var(--border)] transition-all duration-200 overflow-hidden hidden min-[640px]:flex flex-col ${
               sidebarOpen ? "w-[176px] opacity-100" : "w-0 opacity-0"
             }`}
           >
-            <div className="text-[0.5rem] tracking-[0.18em] uppercase text-[var(--muted)] px-3 pt-1 pb-2">
+            {/* Core drills */}
+            <div className="text-[0.5rem] tracking-[0.18em] uppercase text-[var(--muted)] px-3 pt-1 pb-1">
               Drills
             </div>
             {DRILLS.map((d, di) => (
@@ -616,13 +894,59 @@ export function MorningCoffee() {
                 onClick={() => { setDrillIdx(di); setKeyIdx(0); }}
                 className={`block w-full text-left font-mono text-[0.68rem] leading-relaxed py-[5px] px-3 border-l-2 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
                   di === drillIdx
-                    ? "border-[var(--accent)] text-[var(--text)] bg-[var(--surface)]"
-                    : "border-transparent text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]"
+                    ? "border-[var(--accent)] text-[var(--text)]"
+                    : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"
                 }`}
+                style={{
+                  backgroundColor: di === drillIdx ? "var(--surface)" : undefined,
+                }}
               >
                 {di + 1}. {d.name}
               </button>
             ))}
+
+            {/* C&S section */}
+            <div className="mt-auto" style={{ borderTop: "1px solid var(--border)" }}>
+              <button
+                onClick={() => setShowCSPanel(true)}
+                className="w-full flex items-center justify-between px-3 py-[6px] transition-colors hover:bg-[var(--surface)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+              >
+                <span
+                  className="text-[0.5rem] tracking-[0.18em] uppercase"
+                  style={{ color: selectedCSList.length > 0 ? "var(--accent)" : "var(--muted)" }}
+                >
+                  Cream &amp; Sugar
+                </span>
+                <span
+                  className="font-display text-[0.52rem] tracking-[0.08em] uppercase border px-[5px] py-[2px] transition-colors"
+                  style={{
+                    background: selectedCSList.length > 0 ? "var(--accent)" : "transparent",
+                    borderColor: selectedCSList.length > 0 ? "var(--accent)" : "var(--border)",
+                    color: selectedCSList.length > 0 ? "#fff" : "var(--faint)",
+                  }}
+                >
+                  {selectedCSList.length > 0 ? selectedCSList.length : "＋"}
+                </span>
+              </button>
+              {selectedCSList.map((d, di) => (
+                <button
+                  key={d.id}
+                  onClick={() => { setDrillIdx(DRILLS.length + di); setKeyIdx(0); }}
+                  className={`block w-full text-left font-mono text-[0.68rem] leading-relaxed py-[5px] px-3 border-l-2 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
+                    DRILLS.length + di === drillIdx
+                      ? "border-[var(--accent)] text-[var(--text)]"
+                      : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"
+                  }`}
+                  style={{
+                    backgroundColor: DRILLS.length + di === drillIdx
+                      ? "rgba(180,130,30,0.18)"
+                      : "rgba(180,130,30,0.08)",
+                  }}
+                >
+                  {DRILLS.length + di + 1}. {d.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* ── Main ─────────────────────────────────────────────────── */}
@@ -768,7 +1092,7 @@ export function MorningCoffee() {
                 label="⟩⟩"
                 active={false}
                 onClick={nextDrill}
-                disabled={drillIdx === DRILLS.length - 1}
+                disabled={drillIdx === activeDrills.length - 1}
                 title="Next drill"
                 small
               />
@@ -811,21 +1135,41 @@ export function MorningCoffee() {
             <MetronomePanel met={met} />
 
             {/* Footer hints */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-3 flex-wrap">
               <span className="text-[0.6rem]" style={{ color: "var(--muted)" }}>
                 ← → keys · m = metronome
               </span>
-              <button
-                onClick={() => { setDrillIdx(0); setKeyIdx(0); }}
-                className="text-[0.6rem] transition-colors hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                style={{ color: "var(--muted)" }}
-              >
-                Reset progress
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowCSPanel(true)}
+                  className="text-[0.6rem] transition-colors hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  style={{ color: selectedCSList.length > 0 ? "var(--accent)" : "var(--muted)" }}
+                >
+                  {selectedCSList.length > 0
+                    ? `Cream & Sugar (${selectedCSList.length})`
+                    : "＋ Cream & Sugar"}
+                </button>
+                <button
+                  onClick={() => { setDrillIdx(0); setKeyIdx(0); }}
+                  className="text-[0.6rem] transition-colors hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  style={{ color: "var(--muted)" }}
+                >
+                  Reset progress
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {showCSPanel && (
+        <CSPanel
+          selected={selectedCSDrills}
+          onToggle={toggleCSDrill}
+          onBulkChange={bulkChangeCS}
+          onClose={() => setShowCSPanel(false)}
+        />
+      )}
     </div>
   );
 }

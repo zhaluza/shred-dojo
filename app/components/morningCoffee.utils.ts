@@ -219,3 +219,119 @@ export const REFS: Record<string, DrillRef> = {
     note: "All seven diatonic 7th chords.",
   },
 };
+
+export const CS_DRILLS: Drill[] = [
+  { id: "cs-minor-scale", name: "Minor scales", mode: "minor",
+    hint: "Ascending then descending.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} minor scale` },
+  { id: "cs-harmonic-minor", name: "Harmonic minor scales", mode: "minor",
+    hint: "Raised 7th degree.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} harmonic minor` },
+  { id: "cs-melodic-minor", name: "Melodic minor scales", mode: "minor",
+    hint: "Raised 6th and 7th ascending, natural descending.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} melodic minor` },
+  { id: "cs-melodic-minor-asc", name: "Melodic minor (ascending)", mode: "minor",
+    hint: "Raised 6th and 7th both directions (jazz melodic minor).", labelFor: (_, i) => `${RELATIVE_MINORS[i]} jazz melodic minor` },
+  { id: "cs-harmonic-major", name: "Harmonic major scales", mode: "major",
+    hint: "Major scale with lowered 6th.", labelFor: (k) => `${k} harmonic major` },
+  { id: "cs-double-harmonic", name: "Double harmonic major", mode: "major",
+    hint: "Lowered 2nd and 6th (Byzantine scale).", labelFor: (k) => `${k} double harmonic major` },
+  { id: "cs-minor-broken-3rds", name: "Minor broken 3rds", mode: "minor",
+    hint: "Each tone + the 3rd above.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken 3rds` },
+  { id: "cs-minor-broken-4ths", name: "Minor broken 4ths", mode: "minor",
+    hint: "Each tone + the 4th above.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken 4ths` },
+  { id: "cs-minor-broken-5ths", name: "Minor broken 5ths", mode: "minor",
+    hint: "Each tone + the 5th above.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken 5ths` },
+  { id: "cs-minor-broken-6ths", name: "Minor broken 6ths", mode: "minor",
+    hint: "Each tone + the 6th above.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken 6ths` },
+  { id: "cs-minor-broken-7ths", name: "Minor broken 7ths", mode: "minor",
+    hint: "Each tone + the 7th above.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken 7ths` },
+  { id: "cs-minor-broken-8vas", name: "Minor broken octaves", mode: "minor",
+    hint: "Each tone followed by its octave.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken octaves` },
+  { id: "cs-minor-broken-9ths", name: "Minor broken 9ths", mode: "minor",
+    hint: "Each tone + the 9th above.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken 9ths` },
+  { id: "cs-minor-broken-10ths", name: "Minor broken 10ths", mode: "minor",
+    hint: "Each tone + the 10th above.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — broken 10ths` },
+  { id: "cs-dim7", name: "Diminished 7th arpeggios", mode: "minor",
+    hint: "Four-note symmetrical arpeggio, minor context.", labelFor: (_, i) => `${RELATIVE_MINORS[i]} — dim7 arpeggio` },
+  { id: "cs-aug", name: "Augmented arpeggios", mode: "major",
+    hint: "Three-note symmetrical arpeggio, major context.", labelFor: (k) => `${k} — augmented arpeggio` },
+];
+
+export const CS_REFS: Record<string, DrillRef> = {
+  "cs-minor-scale": {
+    title: "Am minor scale — page 3",
+    tab: "e |-5-7-8-|\nB |-5-7-8-|\nG |-5-6-8-|\nD |-5-7-8-|\nA |-5-7-8-|\nE |-5-7-8-|",
+    note: "5th-fret position.",
+  },
+  "cs-harmonic-minor": {
+    title: "Am harmonic minor — page 6",
+    tab: "e |-5-6-8-|\nB |-4-5-7-|\nG |-5-6-7-|\nD |-5-7-8-|\nA |-5-7-8-|\nE |-5-7-8-|",
+    note: "5th-fret position, raised 7th (G#).",
+  },
+  "cs-melodic-minor": {
+    title: "Am melodic minor — page 9",
+    tab: "e |-5-7-8-|\nB |-5-6-8-|\nG |-5-6-8-|\nD |-5-7-8-|\nA |-5-7-8-|\nE |-5-7-8-|",
+    note: "5th-fret, raised 6th+7th ascending, natural descending.",
+  },
+  "cs-melodic-minor-asc": {
+    title: "Am jazz melodic minor — page 12",
+    tab: "e |-5-7-8-|\nB |-5-7-8-|\nG |-5-7-8-|\nD |-5-7-8-|\nA |-5-7-8-|\nE |-5-7-8-|",
+    note: "Raised 6th and 7th both ascending and descending.",
+  },
+  "cs-harmonic-major": {
+    title: "C harmonic major — page 15",
+    note: "Major scale with lowered 6th (Ab).",
+  },
+  "cs-double-harmonic": {
+    title: "C double harmonic major — page 18",
+    note: "Lowered 2nd (Db) and lowered 6th (Ab).",
+  },
+  "cs-minor-broken-3rds": {
+    title: "Am broken 3rds — page 21",
+    pairs: "A-C, B-D, C-E, D-F, E-G, F-A, G-B, A-C",
+    note: "Each tone + 3rd above, then reverse.",
+  },
+  "cs-minor-broken-4ths": {
+    title: "Am broken 4ths — page 27",
+    pairs: "A-D, B-E, C-F, D-G, E-A, F-B, G-C, A-D",
+    note: "Each tone + 4th above, then reverse.",
+  },
+  "cs-minor-broken-5ths": {
+    title: "Am broken 5ths — page 33",
+    pairs: "A-E, B-F, C-G, D-A, E-B, F-C, G-D, A-E",
+    note: "Each tone + 5th above, then reverse.",
+  },
+  "cs-minor-broken-6ths": {
+    title: "Am broken 6ths — page 39",
+    pairs: "A-F, B-G, C-A, D-B, E-C, F-D, G-E, A-F",
+    note: "Each tone + 6th above, then reverse.",
+  },
+  "cs-minor-broken-7ths": {
+    title: "Am broken 7ths — page 45",
+    pairs: "A-G, B-A, C-B, D-C, E-D, F-E, G-F, A-G",
+    note: "Each tone + 7th above, then reverse.",
+  },
+  "cs-minor-broken-8vas": {
+    title: "Am broken octaves — page 51",
+    pairs: "A-A, B-B, C-C, D-D, E-E, F-F, G-G, A-A",
+    note: "Each tone + its octave.",
+  },
+  "cs-minor-broken-9ths": {
+    title: "Am broken 9ths — page 57",
+    pairs: "A-B, B-C, C-D, D-E, E-F, F-G, G-A, A-B",
+    note: "Each tone + 9th above.",
+  },
+  "cs-minor-broken-10ths": {
+    title: "Am broken 10ths — page 63",
+    pairs: "A-C, B-D, C-E, D-F, E-G, F-A, G-B, A-C",
+    note: "Each tone + 10th above.",
+  },
+  "cs-dim7": {
+    title: "Diminished 7th arpeggios — page 69",
+    pairs: "G°7 → Bb°7 → Db°7 → E°7 (all enharmonic groups)",
+    note: "4 distinct dim7 chords × 3 enharmonic roots = 12 arpeggios.",
+  },
+  "cs-aug": {
+    title: "Augmented arpeggios — page 72",
+    pairs: "Bb+ → D+ → Gb+ (group 1 of 4)",
+    note: "4 distinct augmented chords × 3 enharmonic roots = 12 arpeggios.",
+  },
+};
