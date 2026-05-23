@@ -349,67 +349,78 @@ function MetronomePanel({
   const { bpm, setBpm, subdivision, setSubdivision, isPlaying, toggle, currentSlot } = met;
   const totalSlots = BEATS * subdivision;
 
+  const subButtons = (
+    [
+      { label: "♩", val: 1 as Subdivision, ariaLabel: "Quarter note" },
+      { label: "♫", val: 2 as Subdivision, ariaLabel: "Eighth notes" },
+      { label: null, val: 3 as Subdivision, ariaLabel: "Triplets" },
+    ] as const
+  ).map(({ label, val, ariaLabel }) => (
+    <button
+      key={val}
+      onClick={() => setSubdivision(val)}
+      aria-label={ariaLabel}
+      className="font-display text-[0.65rem] px-[0.5rem] py-[0.3rem] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      style={{
+        background: subdivision === val ? "var(--text)" : "transparent",
+        borderColor: subdivision === val ? "var(--text)" : "var(--border)",
+        color: subdivision === val ? "var(--bg)" : "var(--text)",
+      }}
+    >
+      {label ?? <TripletIcon />}
+    </button>
+  ));
+
   return (
     <div
       className="rounded-sm p-4"
       style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
       {/* BPM row */}
-      <div className="flex items-center gap-3 mb-3">
-        <button
-          onClick={toggle}
-          aria-label={isPlaying ? "Stop metronome" : "Start metronome"}
-          className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-          style={{
-            background: isPlaying ? "var(--text)" : "transparent",
-            borderColor: isPlaying ? "var(--text)" : "var(--border)",
-            color: isPlaying ? "var(--bg)" : "var(--text)",
-          }}
-        >
-          {isPlaying ? "Stop" : "Start"}
-        </button>
+      <div className="mb-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggle}
+            aria-label={isPlaying ? "Stop metronome" : "Start metronome"}
+            className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] shrink-0"
+            style={{
+              background: isPlaying ? "var(--text)" : "transparent",
+              borderColor: isPlaying ? "var(--text)" : "var(--border)",
+              color: isPlaying ? "var(--bg)" : "var(--text)",
+            }}
+          >
+            {isPlaying ? "Stop" : "Start"}
+          </button>
 
-        <span
-          className="font-display font-semibold tabular-nums flex-shrink-0"
-          style={{ fontSize: "1.5rem", color: "var(--text)", lineHeight: 1 }}
-        >
-          {bpm}
-        </span>
-        <span className="text-[0.55rem] tracking-[0.12em] uppercase flex-shrink-0" style={{ color: "var(--muted)" }}>
-          bpm
-        </span>
+          <span
+            className="font-display font-semibold tabular-nums flex-shrink-0"
+            style={{ fontSize: "1.5rem", color: "var(--text)", lineHeight: 1 }}
+          >
+            {bpm}
+          </span>
+          <span className="text-[0.55rem] tracking-[0.12em] uppercase flex-shrink-0" style={{ color: "var(--muted)" }}>
+            bpm
+          </span>
 
-        <input
-          type="range"
-          min={MET_MIN_BPM}
-          max={MET_MAX_BPM}
-          value={bpm}
-          onChange={(e) => setBpm(parseInt(e.target.value, 10))}
-          className="flex-1 accent-[var(--accent)]"
-          aria-label="BPM"
-        />
+          <input
+            type="range"
+            min={MET_MIN_BPM}
+            max={MET_MAX_BPM}
+            value={bpm}
+            onChange={(e) => setBpm(parseInt(e.target.value, 10))}
+            className="flex-1 min-w-0 accent-[var(--accent)]"
+            aria-label="BPM"
+          />
 
-        {/* Subdivision buttons */}
-        <div className="flex gap-1 flex-shrink-0">
-          {([
-            { label: "♩", val: 1 as Subdivision, ariaLabel: "Quarter note" },
-            { label: "♫", val: 2 as Subdivision, ariaLabel: "Eighth notes" },
-            { label: null, val: 3 as Subdivision, ariaLabel: "Triplets" },
-          ] as const).map(({ label, val, ariaLabel }) => (
-            <button
-              key={val}
-              onClick={() => setSubdivision(val)}
-              aria-label={ariaLabel}
-              className="font-display text-[0.65rem] px-[0.5rem] py-[0.25rem] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              style={{
-                background: subdivision === val ? "var(--text)" : "transparent",
-                borderColor: subdivision === val ? "var(--text)" : "var(--border)",
-                color: subdivision === val ? "var(--bg)" : "var(--text)",
-              }}
-            >
-              {label ?? <TripletIcon />}
-            </button>
-          ))}
+          {/* Subdivision buttons: inline on wider screens */}
+          <div className="hidden min-[460px]:flex gap-1 flex-shrink-0">
+            {subButtons}
+          </div>
+        </div>
+
+        {/* Subdivision buttons: own row on narrow screens */}
+        <div className="flex min-[460px]:hidden gap-2 mt-2 justify-end">
+          {subButtons}
         </div>
       </div>
 
@@ -1169,7 +1180,44 @@ export function MorningCoffee() {
           {/* ── Main ─────────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 pl-0 min-[640px]:pl-4 flex flex-col gap-4">
             {/* Progress row */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col min-[640px]:flex-row min-[640px]:items-center gap-2">
+
+              {/* Mobile: drill selector + counter */}
+              <div className="flex items-center gap-2 min-[640px]:hidden">
+                <button
+                  onClick={() => setShowMobileDrills(true)}
+                  aria-label="View drill list"
+                  className="flex-1 flex items-center gap-2 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 3,
+                  }}
+                >
+                  <span style={{ fontSize: "0.8rem", lineHeight: 1, color: "var(--muted)" }}>☰</span>
+                  <span
+                    className="font-mono text-[0.72rem] flex-1 truncate"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {drill.name}
+                  </span>
+                  <span
+                    className="font-mono text-[0.58rem] shrink-0"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    {drillIdx + 1}/{activeDrills.length}
+                  </span>
+                  <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>›</span>
+                </button>
+                <span
+                  className="text-[0.62rem] tracking-[0.06em] tabular-nums shrink-0"
+                  style={{ color: "var(--muted)" }}
+                >
+                  {cursor + 1}/{TOTAL}
+                </span>
+              </div>
+
+              {/* Desktop: sidebar toggle */}
               <button
                 onClick={() => setSidebarOpen((o) => !o)}
                 aria-label="Toggle drill list"
@@ -1178,17 +1226,11 @@ export function MorningCoffee() {
               >
                 ☰
               </button>
-              <button
-                onClick={() => setShowMobileDrills(true)}
-                aria-label="View drill list"
-                className="min-[640px]:hidden text-[var(--muted)] hover:text-[var(--text)] transition-colors px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                style={{ fontSize: "1rem" }}
-              >
-                ☰
-              </button>
+
+              {/* Progress bar */}
               <div
                 className="flex-1 rounded-full overflow-hidden"
-                style={{ height: 3, background: "var(--surface)" }}
+                style={{ height: 3, background: "var(--border)" }}
               >
                 <div
                   className="h-full transition-all duration-200"
@@ -1198,7 +1240,12 @@ export function MorningCoffee() {
                   }}
                 />
               </div>
-              <span className="text-[0.62rem] tracking-[0.06em] tabular-nums flex-shrink-0" style={{ color: "var(--muted)" }}>
+
+              {/* Desktop counter */}
+              <span
+                className="hidden min-[640px]:block text-[0.62rem] tracking-[0.06em] tabular-nums flex-shrink-0"
+                style={{ color: "var(--muted)" }}
+              >
                 {cursor + 1} / {TOTAL}
               </span>
             </div>
