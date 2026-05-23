@@ -276,11 +276,11 @@ In **Focus view**, a **"▼ Full Neck"** toggle expands a `FullNeckFretboard`. *
 
 ## Morning Coffee feature
 
-The Morning Coffee page (`/morning-coffee`) is a daily practice routine that cycles through 14 drills across all 12 keys (circle of fifths order). Based on Alex Rockwell's Morning Coffee book. Total: 168 steps (14 drills × 12 keys). The global `MetronomeWidget` is suppressed on this page (`root.tsx` checks `pathname !== "/morning-coffee"`); instead, an inline metronome panel is embedded in the page itself.
+The Morning Coffee page (`/morning-coffee`) is a daily practice routine that cycles through drills across all 12 keys (circle of fifths order). Based on Alex Rockwell's Morning Coffee book. The base routine has 14 core drills (168 steps). An optional **Cream & Sugar** supplement adds up to 16 more drills (up to 192 extra steps), selectable individually. The global `MetronomeWidget` is suppressed on this page (`root.tsx` checks `pathname !== "/morning-coffee"`); instead, an inline metronome panel is embedded in the page itself.
 
 ### Files
 
-- `app/components/MorningCoffee.tsx` — all component code, including inline sub-components
+- `app/components/MorningCoffee.tsx` — all component code, including inline sub-components (`ShapeFretboard`, `FretboardLegend`, `MetronomePanel`, `CSPanel`)
 - `app/components/morningCoffee.utils.ts` — drill data, key constants, reference content, key math
 - `app/routes/morning-coffee.tsx` — thin route wrapper
 
@@ -290,20 +290,45 @@ The Morning Coffee page (`/morning-coffee`) is a daily practice routine that cyc
 - `RELATIVE_MINORS = ['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm']`
 - `KEY_FRETS` — fret on low E for each of the 12 keys (+ enharmonic aliases C#, G#, D# for relative minor roots)
 - `getKeyOffset(keyName)` — `(KEY_FRETS[keyName] - ROOT_FRET + 12) % 12`
-- `DRILLS` — 14 drills, each with `{ id, name, mode: "major"|"minor", hint, labelFor }`
-- `REFS` — C-key reference content per drill: `{ title, tab?, pairs?, note }`. Drills 1–5 have ASCII guitar tab (clean hyphen notation: `e |-7-8-10-|`); drills 6–14 have note-pair strings.
+- `DRILLS` — 14 core drills, each with `{ id, name, mode: "major"|"minor", hint, labelFor }`
+- `REFS` — C-key reference content per drill: `{ title, tab?, pairs?, note }`. Drills 1–5 have ASCII guitar tab; drills 6–14 have note-pair strings.
+- `CS_DRILLS` — 16 Cream & Sugar supplement drills (same shape as `DRILLS`)
+- `CS_REFS` — C-key reference content for C&S drills
 
-### Drill structure
+### Core drill structure
 
-| # | Name | Mode |
-|---|---|---|
-| 1 | Major scale | major |
-| 2 | Major triad arpeggio | major |
-| 3 | Major pentatonic | major |
-| 4 | Minor triad arpeggio | minor |
-| 5 | Minor pentatonic | minor |
-| 6–13 | Broken 3rds through 10ths | major |
-| 14 | Diatonic 7th arpeggios | major |
+| # | Name | Mode | Sidebar group |
+|---|---|---|---|
+| 1 | Major scale | major | Major |
+| 2 | Major triad arpeggio | major | Major |
+| 3 | Major pentatonic | major | Major |
+| 4 | Minor triad arpeggio | minor | Minor |
+| 5 | Minor pentatonic | minor | Minor |
+| 6–13 | Broken 3rds through 10ths | major | Broken Intervals |
+| 14 | Diatonic 7th arpeggios | major | Diatonic |
+
+### Cream & Sugar supplement
+
+16 optional drills from Alex Rockwell's companion PDF, organized into three groups in the `CSPanel`:
+
+| Group | Drills |
+|---|---|
+| Scale Types | Minor, Harmonic minor, Melodic minor, Jazz melodic minor, Harmonic major, Double harmonic major |
+| Broken Intervals (Minor) | Minor broken 3rds through 10ths |
+| Arpeggios | Diminished 7th, Augmented |
+
+**Selection model** — `selectedCSDrills: Set<string>` tracks individual drill IDs. `activeDrills = [...DRILLS, ...CS_DRILLS.filter(d => selectedCSDrills.has(d.id))]`. When the selection shrinks, a `useEffect` on `activeDrills.length` clamps `drillIdx` to stay in bounds. `allRefs = { ...REFS, ...CS_REFS }` is always the merged object (lookups are by drill ID so there's no collision). `TOTAL = activeDrills.length * 12`.
+
+**`CSPanel`** — right-side drawer component (`fixed top-0 right-0 h-full w-[min(460px,100vw)]`). Shows drills in the three groups with individual checkboxes, per-group "All / None" buttons, and an overall bulk-select row. Entry points: the "Cream & Sugar" section at the bottom of the desktop sidebar, and a "＋ Cream & Sugar" link in the footer hints row (visible on all screen sizes including mobile).
+
+**Module-level constants** in `MorningCoffee.tsx`:
+- `CORE_GROUPS` — four groups for the sidebar core drill list: `{ label, indices: number[] }`
+- `CS_GROUPS` — three groups for `CSPanel`: `{ label, ids: string[] }`
+- `CS_DRILL_MAP` — `Record<string, Drill>` keyed by ID for O(1) lookup inside `CSPanel`
+
+### Sidebar structure
+
+The sidebar (desktop ≥640px) is a `flex-col` panel. Core drills are rendered via `CORE_GROUPS` — each group has a small uppercase label then its drill buttons. The C&S section sits at the bottom (`mt-auto`, `border-top`): a configure button showing the active count (or "＋" when none selected) opens `CSPanel`; selected C&S drills appear below it with an amber tint (`rgba(180,130,30,0.08/0.18)`).
 
 ### Fretboard display
 
@@ -319,7 +344,12 @@ Major drills show only the major E-shape; minor drills show only the relative mi
 
 ### State persistence
 
-localStorage key `"mc-state3"` → `{ d: drillIdx, k: keyIdx, sb: sidebarOpen, sh: showShape }`.
+| Key | Value | Notes |
+|---|---|---|
+| `"mc-state3"` | `{ d, k, sb, sh }` | drillIdx, keyIdx, sidebarOpen, showShape |
+| `"mc-cs-selected"` | JSON array of drill IDs | selected C&S drills; empty array = none |
+| `"mc-bpm"` | number | metronome BPM |
+| `"mc-sub"` | 1 \| 2 \| 3 | metronome subdivision |
 
 ### Keyboard shortcuts
 
