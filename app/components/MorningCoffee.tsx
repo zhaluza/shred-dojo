@@ -18,6 +18,7 @@ import {
   CS_REFS,
   getKeyOffset,
   minorRootName,
+  type Drill,
 } from "./morningCoffee.utils";
 
 // ─── Metronome hook ──────────────────────────────────────────────────────────
@@ -679,6 +680,203 @@ function CSPanel({
   );
 }
 
+// ─── MobileDrillSheet ────────────────────────────────────────────────────────
+
+function MobileDrillSheet({
+  drillIdx,
+  selectedCSList,
+  onSelect,
+  onOpenCS,
+  onClose,
+}: {
+  drillIdx: number;
+  selectedCSList: Drill[];
+  onSelect: (idx: number) => void;
+  onOpenCS: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[150] min-[640px]:hidden"
+        style={{ backgroundColor: "rgba(10,8,6,0.65)", backdropFilter: "blur(3px)" }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      {/* Bottom sheet */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[151] flex flex-col min-[640px]:hidden"
+        style={{
+          maxHeight: "75vh",
+          backgroundColor: "var(--surface)",
+          borderTop: "3px solid var(--accent)",
+          borderTopLeftRadius: 12,
+          borderTopRightRadius: 12,
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.18)",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-4 py-3 shrink-0"
+          style={{ borderBottom: "1px solid var(--border)" }}
+        >
+          <span
+            className="font-display text-[0.75rem] tracking-[0.12em] uppercase"
+            style={{ color: "var(--text)" }}
+          >
+            Drills
+          </span>
+          <button
+            onClick={onClose}
+            aria-label="Close drill list"
+            className="flex items-center justify-center w-8 h-8 text-[var(--muted)] hover:text-[var(--text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            <span style={{ fontSize: "0.9rem", lineHeight: 1 }}>✕</span>
+          </button>
+        </div>
+
+        {/* Drill list */}
+        <div className="flex-1 overflow-y-auto">
+          {CORE_GROUPS.map((group, gi) => (
+            <div key={group.label}>
+              <div
+                className="px-4 pt-2 pb-1 text-[0.48rem] tracking-[0.2em] uppercase sticky top-0"
+                style={{
+                  color: "var(--muted)",
+                  backgroundColor: "var(--surface)",
+                  borderTop: gi > 0 ? "1px solid var(--border)" : undefined,
+                }}
+              >
+                {group.label}
+              </div>
+              {group.indices.map(di => {
+                const d = DRILLS[di];
+                const isActive = di === drillIdx;
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => { onSelect(di); onClose(); }}
+                    className="flex items-center gap-3 w-full text-left px-4 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--accent)]"
+                    style={{
+                      minHeight: 48,
+                      backgroundColor: isActive ? "var(--bg)" : undefined,
+                      borderLeft: `3px solid ${isActive ? "var(--accent)" : "transparent"}`,
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    <span
+                      className="font-mono text-[0.6rem] shrink-0"
+                      style={{ color: "var(--faint)", minWidth: 20 }}
+                    >
+                      {di + 1}.
+                    </span>
+                    <span
+                      className="font-mono text-[0.78rem]"
+                      style={{ color: isActive ? "var(--text)" : "var(--muted)" }}
+                    >
+                      {d.name}
+                    </span>
+                    {isActive && (
+                      <span
+                        className="ml-auto font-mono text-[0.52rem] tracking-[0.08em] uppercase shrink-0"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        current
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+
+          {/* Selected C&S drills */}
+          {selectedCSList.length > 0 && (
+            <div>
+              <div
+                className="px-4 pt-2 pb-1 text-[0.48rem] tracking-[0.2em] uppercase sticky top-0"
+                style={{
+                  color: "var(--accent)",
+                  backgroundColor: "var(--surface)",
+                  borderTop: "1px solid var(--border)",
+                }}
+              >
+                Cream &amp; Sugar
+              </div>
+              {selectedCSList.map((d, i) => {
+                const globalIdx = DRILLS.length + i;
+                const isActive = globalIdx === drillIdx;
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => { onSelect(globalIdx); onClose(); }}
+                    className="flex items-center gap-3 w-full text-left px-4 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--accent)]"
+                    style={{
+                      minHeight: 48,
+                      backgroundColor: isActive ? "rgba(180,130,30,0.18)" : "rgba(180,130,30,0.07)",
+                      borderLeft: `3px solid ${isActive ? "var(--accent)" : "transparent"}`,
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    <span
+                      className="font-mono text-[0.6rem] shrink-0"
+                      style={{ color: "var(--faint)", minWidth: 20 }}
+                    >
+                      {globalIdx + 1}.
+                    </span>
+                    <span
+                      className="font-mono text-[0.78rem]"
+                      style={{ color: isActive ? "var(--text)" : "var(--muted)" }}
+                    >
+                      {d.name}
+                    </span>
+                    {isActive && (
+                      <span
+                        className="ml-auto font-mono text-[0.52rem] tracking-[0.08em] uppercase shrink-0"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        current
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer: C&S configure */}
+        <div
+          className="shrink-0 px-4 py-3"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <button
+            onClick={() => { onOpenCS(); onClose(); }}
+            className="w-full font-display text-[0.68rem] tracking-[0.1em] uppercase border py-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            style={{
+              borderColor: selectedCSList.length > 0 ? "var(--accent)" : "var(--border)",
+              color: selectedCSList.length > 0 ? "var(--accent)" : "var(--muted)",
+              background: "transparent",
+            }}
+          >
+            {selectedCSList.length > 0
+              ? `Cream & Sugar (${selectedCSList.length} active)`
+              : "＋ Configure Cream & Sugar"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── MorningCoffee ───────────────────────────────────────────────────────────
+
 export function MorningCoffee() {
   const [isDark, setIsDark] = useState(false);
 
@@ -750,6 +948,7 @@ export function MorningCoffee() {
   });
 
   const [showCSPanel, setShowCSPanel] = useState(false);
+  const [showMobileDrills, setShowMobileDrills] = useState(false);
 
   // Persist state
   useEffect(() => {
@@ -968,13 +1167,21 @@ export function MorningCoffee() {
           </div>
 
           {/* ── Main ─────────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0 pl-4 flex flex-col gap-4">
+          <div className="flex-1 min-w-0 pl-0 min-[640px]:pl-4 flex flex-col gap-4">
             {/* Progress row */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setSidebarOpen((o) => !o)}
                 aria-label="Toggle drill list"
                 className="hidden min-[640px]:block text-[var(--muted)] hover:text-[var(--text)] transition-colors px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                style={{ fontSize: "1rem" }}
+              >
+                ☰
+              </button>
+              <button
+                onClick={() => setShowMobileDrills(true)}
+                aria-label="View drill list"
+                className="min-[640px]:hidden text-[var(--muted)] hover:text-[var(--text)] transition-colors px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 style={{ fontSize: "1rem" }}
               >
                 ☰
@@ -1005,7 +1212,7 @@ export function MorningCoffee() {
                 borderTop: "3px solid var(--accent)",
               }}
             >
-              <div className="text-[0.5rem] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--muted)" }}>
+              <div className="text-[0.65rem] min-[640px]:text-[0.5rem] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--muted)" }}>
                 {drill.name}
               </div>
               <div
@@ -1064,12 +1271,11 @@ export function MorningCoffee() {
                   key={k}
                   onClick={() => setKeyIdx(ki)}
                   aria-label={`Key ${k}`}
-                  className={`font-display text-[0.6rem] tracking-[0.04em] border rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)] ${
+                  className={`font-display text-[0.6rem] tracking-[0.04em] border rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)] flex items-center justify-center w-[26px] h-[26px] max-[700px]:w-[34px] max-[700px]:h-[34px] ${
                     ki === keyIdx
                       ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
                       : "text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]"
                   }`}
-                  style={{ width: 26, height: 26 }}
                 >
                   {k}
                 </button>
@@ -1186,6 +1392,16 @@ export function MorningCoffee() {
           onToggle={toggleCSDrill}
           onBulkChange={bulkChangeCS}
           onClose={() => setShowCSPanel(false)}
+        />
+      )}
+
+      {showMobileDrills && (
+        <MobileDrillSheet
+          drillIdx={drillIdx}
+          selectedCSList={selectedCSList}
+          onSelect={(idx) => { setDrillIdx(idx); setKeyIdx(0); }}
+          onOpenCS={() => setShowCSPanel(true)}
+          onClose={() => setShowMobileDrills(false)}
         />
       )}
     </div>
