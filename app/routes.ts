@@ -18,4 +18,5 @@ export default [
   route("chord-tones", "routes/chord-tones.tsx"),
   route("note-recognition", "routes/note-recognition.tsx"),
   route("staff-notes", "routes/staff-notes.tsx"),
+  route("morning-coffee", "routes/morning-coffee.tsx"),
 ] satisfies RouteConfig;

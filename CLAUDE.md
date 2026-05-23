@@ -268,15 +268,66 @@ In **Focus view**, a **"▼ Full Neck"** toggle expands a `FullNeckFretboard`. *
 `app/components/Nav.tsx` — persistent navigation bar rendered at the top of every page. Props: `isDark: boolean`, `toggleDark: () => void`. Each page owns its own dark-mode state and passes it in. Dark mode and preview state are persisted to localStorage. Preview-gated nav links render as a faint non-interactive `<span>` when not unlocked.
 
 **Nav structure** (5 category groups with `|` separators):
-- **Scales**: Systems → `/scale-positions`, Shape Explorer → `/shape-explorer`, Wylde → `/wylde-scales`
-- **Pentatonic**: Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
+- **Scales**: Shape Explorer → `/shape-explorer`, Systems → `/scale-positions`, Wylde → `/wylde-scales`, Yngwie → `/yngwie-scales`, Scale Builder → `/scale-builder`
+- **Pentatonic**: Pentatonic Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
 - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`, Circle of Fifths → `/circle-of-fifths`
 - **Vocabulary**: Lick Stash → `/lick-stash` *(preview-gated)*
-- **Practice**: Fretboard Notes → `/note-recognition`, Staff Notes → `/staff-notes`
+- **Practice**: Morning Coffee → `/morning-coffee` *(first)*, Note Recognition → `/note-recognition`, Staff Notes → `/staff-notes`, Chord Tones → `/chord-tones`
+
+## Morning Coffee feature
+
+The Morning Coffee page (`/morning-coffee`) is a daily practice routine that cycles through 14 drills across all 12 keys (circle of fifths order). Based on Alex Rockwell's Morning Coffee book. Total: 168 steps (14 drills × 12 keys). The global `MetronomeWidget` is suppressed on this page (`root.tsx` checks `pathname !== "/morning-coffee"`); instead, an inline metronome panel is embedded in the page itself.
+
+### Files
+
+- `app/components/MorningCoffee.tsx` — all component code, including inline sub-components
+- `app/components/morningCoffee.utils.ts` — drill data, key constants, reference content, key math
+- `app/routes/morning-coffee.tsx` — thin route wrapper
+
+### Key constants (`morningCoffee.utils.ts`)
+
+- `KEYS = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F']` — circle of fifths order
+- `RELATIVE_MINORS = ['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm']`
+- `KEY_FRETS` — fret on low E for each of the 12 keys (+ enharmonic aliases C#, G#, D# for relative minor roots)
+- `getKeyOffset(keyName)` — `(KEY_FRETS[keyName] - ROOT_FRET + 12) % 12`
+- `DRILLS` — 14 drills, each with `{ id, name, mode: "major"|"minor", hint, labelFor }`
+- `REFS` — C-key reference content per drill: `{ title, tab?, pairs?, note }`. Drills 1–5 have ASCII guitar tab (clean hyphen notation: `e |-7-8-10-|`); drills 6–14 have note-pair strings.
+
+### Drill structure
+
+| # | Name | Mode |
+|---|---|---|
+| 1 | Major scale | major |
+| 2 | Major triad arpeggio | major |
+| 3 | Major pentatonic | major |
+| 4 | Minor triad arpeggio | minor |
+| 5 | Minor pentatonic | minor |
+| 6–13 | Broken 3rds through 10ths | major |
+| 14 | Diatonic 7th arpeggios | major |
+
+### Fretboard display
+
+Uses `buildCagedPositions()` from `scalePositions.utils.ts` to get the CAGED E-shape (index 0). Transposed by `getKeyOffset()`. Two pre-computed module-level shapes:
+- `MAJ_E_SHAPE = buildCagedPositions(SCALES.major)[0]`
+- `MIN_E_SHAPE = buildCagedPositions(SCALES.minor)[0]`
+
+Major drills show only the major E-shape; minor drills show only the relative minor E-shape. The `ShapeFretboard` component is a self-contained SVG renderer (not shared — defined inline in `MorningCoffee.tsx`).
+
+### Inline metronome
+
+`useMetronomePanel()` hook owns the Web Audio API look-ahead scheduler (same pattern as `MetronomeWidget`). Supports 3 subdivisions: 1 = quarter notes (♩), 2 = eighth notes (♫), 3 = triplets (custom inline SVG `TripletIcon`). Three-tier click frequencies: downbeat 1500 Hz / beat 1000 Hz / subdivision 700 Hz (square wave). State persisted under `"mc-bpm"` and `"mc-sub"`.
+
+### State persistence
+
+localStorage key `"mc-state3"` → `{ d: drillIdx, k: keyIdx, sb: sidebarOpen, sh: showShape }`.
+
+### Keyboard shortcuts
+
+`→` / `Space` = next key, `←` = prev key, `m` = metronome toggle.
 
 ## Fretboard Notes feature
 
-The Fretboard Notes page (`/fretboard-notes`) is an interactive quiz for building instant note-recognition on the guitar neck. A dot is highlighted on a fretboard diagram; the user identifies the note name.
+The Fretboard Notes page (`/note-recognition`) is an interactive quiz for building instant note-recognition on the guitar neck. A dot is highlighted on a fretboard diagram; the user identifies the note name.
 
 ### Files
 
@@ -425,7 +476,7 @@ Two shapes: **Steeler Shape** (starts on 7th degree, the canonical Yngwie entry 
 
 ## MetronomeWidget
 
-`app/components/MetronomeWidget.tsx` — a persistent floating metronome rendered in `root.tsx`, fixed to the bottom-right corner of every page. Self-contained: no props, no context. Manages its own dark-mode sync by polling `localStorage` every 500ms.
+`app/components/MetronomeWidget.tsx` — a persistent floating metronome rendered in `root.tsx`, fixed to the bottom-right corner of every page. **Not rendered on `/morning-coffee`** (suppressed via `pathname` check in `root.tsx`; Morning Coffee embeds its own inline panel instead). Self-contained: no props, no context. Manages its own dark-mode sync by polling `localStorage` every 500ms.
 
 **Mobile layout** — Tracks `windowWidth` and `windowHeight` via resize listener. On mobile (`windowWidth < 700`): panel width is `Math.min(windowWidth - 32, 280)`, drone grid is 4 columns instead of 6. On short viewports (`windowHeight < 500`), the expanded panel gets `maxHeight = windowHeight - 60` with `overflowY: "auto"`. BPM drag supports touch events with `touchAction: "none"` to prevent scroll conflict.
 

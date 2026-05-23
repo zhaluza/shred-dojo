@@ -73,7 +73,7 @@ const HERO_DECO_ROWS: Array<{
 
 const TOOL_CATEGORIES: Array<{
   label: string;
-  tools: Array<{ to: string; title: string; body: string }>;
+  tools: Array<{ to: string; title: string; body: string; featured?: true }>;
 }> = [
   {
     label: "Scales",
@@ -138,6 +138,12 @@ const TOOL_CATEGORIES: Array<{
   {
     label: "Practice",
     tools: [
+      {
+        to: "/morning-coffee",
+        title: "Morning Coffee",
+        body: "Your daily routine: major scales, triads, pentatonics, and broken intervals across all 12 keys. Based on Alex Rockwell's Morning Coffee method. Do it every day.",
+        featured: true,
+      },
       {
         to: "/note-recognition",
         title: "Note Recognition",
@@ -314,14 +320,20 @@ function HomePage({
               cat.tools.length === 1 ? "" : "grid grid-cols-2 max-[600px]:grid-cols-1",
             ].join(" ")}>
               {cat.tools.map((tool, i) => {
-                const isLeft = i % 2 === 0;
-                const hasRight = i + 1 < cat.tools.length;
-                const isLast = i === cat.tools.length - 1;
+                const isFeatured = !!tool.featured;
+                const nonFeaturedTools = cat.tools.filter((t) => !t.featured);
+                const nonFeaturedIdx = nonFeaturedTools.indexOf(tool);
+                const isLeft = !isFeatured && nonFeaturedIdx % 2 === 0;
+                const hasRight = isLeft && nonFeaturedIdx + 1 < nonFeaturedTools.length;
+                const isLastNonFeatured = !isFeatured && nonFeaturedIdx === nonFeaturedTools.length - 1;
+                const hasBelowFeatured = isFeatured && nonFeaturedTools.length > 0;
+                const needsBottomBorder = hasBelowFeatured || (!isFeatured && !isLastNonFeatured && nonFeaturedTools.length > 2);
                 const isLocked = tool.to === "/lick-stash" && !preview;
                 const sharedClass = [
                   "p-7 block",
-                  isLeft && hasRight ? "border-r border-[var(--border)] max-[600px]:border-r-0 max-[600px]:border-b max-[600px]:border-[var(--border)]" : "",
-                  !isLast && cat.tools.length > 2 ? "border-b border-[var(--border)]" : "",
+                  isFeatured ? "col-span-2 max-[600px]:col-span-1" : "",
+                  hasRight ? "border-r border-[var(--border)] max-[600px]:border-r-0 max-[600px]:border-b max-[600px]:border-[var(--border)]" : "",
+                  needsBottomBorder ? "border-b border-[var(--border)]" : "",
                 ].join(" ");
                 return isLocked ? (
                   <div key={tool.to} className={sharedClass + " opacity-40 cursor-default"}>
@@ -343,7 +355,9 @@ function HomePage({
                     to={tool.to}
                     className={[
                       "no-underline text-[var(--text)] hover:bg-[var(--surface)] transition-all duration-200 group",
-                      "border-l-2 border-l-transparent hover:border-l-[var(--accent)]",
+                      isFeatured
+                        ? "border-l-[3px] border-l-[var(--accent)] hover:border-l-[var(--accent)]"
+                        : "border-l-2 border-l-transparent hover:border-l-[var(--accent)]",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]",
                       sharedClass,
                     ].join(" ")}
@@ -353,13 +367,16 @@ function HomePage({
                         className="text-[0.48rem] tracking-[0.12em] uppercase"
                         style={{ color: "var(--accent)" }}
                       >
-                        Live
+                        {isFeatured ? "Daily practice" : "Live"}
                       </span>
                       <span className="text-[0.9rem] text-[var(--faint)] group-hover:text-[var(--text)] group-hover:translate-x-1 transition-all duration-200 leading-none">
                         →
                       </span>
                     </div>
-                    <h2 className="font-display text-[1.05rem] tracking-[0.06em] uppercase leading-tight mb-3">
+                    <h2 className={[
+                      "font-display tracking-[0.06em] uppercase leading-tight mb-3",
+                      isFeatured ? "text-[1.15rem]" : "text-[1.05rem]",
+                    ].join(" ")}>
                       {tool.title}
                     </h2>
                     <p className="text-[0.67rem] leading-[1.75] text-[var(--muted)]">
