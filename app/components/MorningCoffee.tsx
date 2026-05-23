@@ -446,6 +446,13 @@ function MetronomePanel({
 const MAJ_E_SHAPE = buildCagedPositions(SCALES.major)[0];
 const MIN_E_SHAPE = buildCagedPositions(SCALES.minor)[0];
 
+const CORE_GROUPS: { label: string; indices: number[] }[] = [
+  { label: "Major",            indices: [0, 1, 2] },
+  { label: "Minor",            indices: [3, 4] },
+  { label: "Broken Intervals", indices: [5, 6, 7, 8, 9, 10, 11, 12] },
+  { label: "Diatonic",         indices: [13] },
+];
+
 const CS_GROUPS: { label: string; ids: string[] }[] = [
   {
     label: "Scale Types",
@@ -885,24 +892,35 @@ export function MorningCoffee() {
             }`}
           >
             {/* Core drills */}
-            <div className="text-[0.5rem] tracking-[0.18em] uppercase text-[var(--muted)] px-3 pt-1 pb-1">
-              Drills
-            </div>
-            {DRILLS.map((d, di) => (
-              <button
-                key={d.id}
-                onClick={() => { setDrillIdx(di); setKeyIdx(0); }}
-                className={`block w-full text-left font-mono text-[0.68rem] leading-relaxed py-[5px] px-3 border-l-2 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
-                  di === drillIdx
-                    ? "border-[var(--accent)] text-[var(--text)]"
-                    : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"
-                }`}
-                style={{
-                  backgroundColor: di === drillIdx ? "var(--surface)" : undefined,
-                }}
-              >
-                {di + 1}. {d.name}
-              </button>
+            {CORE_GROUPS.map((group, gi) => (
+              <div key={group.label}>
+                <div
+                  className="px-3 pt-[7px] pb-[3px] text-[0.45rem] tracking-[0.2em] uppercase"
+                  style={{
+                    color: "var(--muted)",
+                    borderTop: gi > 0 ? "1px solid var(--border)" : undefined,
+                  }}
+                >
+                  {group.label}
+                </div>
+                {group.indices.map(di => {
+                  const d = DRILLS[di];
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => { setDrillIdx(di); setKeyIdx(0); }}
+                      className={`block w-full text-left font-mono text-[0.68rem] leading-relaxed py-[5px] px-3 border-l-2 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
+                        di === drillIdx
+                          ? "border-[var(--accent)] text-[var(--text)]"
+                          : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"
+                      }`}
+                      style={{ backgroundColor: di === drillIdx ? "var(--surface)" : undefined }}
+                    >
+                      {di + 1}. {d.name}
+                    </button>
+                  );
+                })}
+              </div>
             ))}
 
             {/* C&S section */}
