@@ -10,32 +10,35 @@ const SCHEDULE_AHEAD_S = 0.1;
 const NOTE_NAMES = ["E", "F", "F#", "G", "Ab", "A", "Bb", "B", "C", "Db", "D", "Eb"] as const;
 const E2_HZ = 82.41;
 
+type SubDiv = 1 | 2 | 3 | 4 | 6;
+
 // ─── Audio ────────────────────────────────────────────────────────────────────
 
 function scheduleClick(
-  beat: number,
+  type: "down" | "beat" | "sub",
   time: number,
   ctx: AudioContext,
-  onBeat: (b: number) => void
+  onTick?: () => void
 ) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
   gain.connect(ctx.destination);
 
-  // Downbeat: higher pitch, louder
   osc.type = "triangle";
-  osc.frequency.value = beat === 0 ? 1100 : 750;
+  osc.frequency.value = type === "down" ? 1100 : type === "beat" ? 750 : 500;
+  const vol = type === "down" ? 0.45 : type === "beat" ? 0.25 : 0.1;
 
-  const vol = beat === 0 ? 0.45 : 0.25;
   gain.gain.setValueAtTime(0, time);
   gain.gain.linearRampToValueAtTime(vol, time + 0.003);
   gain.gain.exponentialRampToValueAtTime(0.001, time + 0.055);
   osc.start(time);
   osc.stop(time + 0.06);
 
-  const msFromNow = Math.max(0, (time - ctx.currentTime) * 1000);
-  setTimeout(() => onBeat(beat), msFromNow);
+  if (onTick) {
+    const msFromNow = Math.max(0, (time - ctx.currentTime) * 1000);
+    setTimeout(onTick, msFromNow);
+  }
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -51,11 +54,79 @@ function getColors(isDark: boolean) {
   };
 }
 
+// ─── Subdivision icons ────────────────────────────────────────────────────────
+
+function IconQuarter() {
+  return (
+    <svg width="9" height="12" viewBox="0 0 9 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+      <ellipse cx="2.2" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.2 12.5)" />
+      <rect x="4.3" y="1" width="1.2" height="12" />
+    </svg>
+  );
+}
+
+function IconEighths() {
+  return (
+    <svg width="15" height="12" viewBox="0 0 16 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+      <ellipse cx="2.2" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.2 12.5)" />
+      <ellipse cx="11" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 11 12.5)" />
+      <rect x="4.3" y="3.5" width="1.2" height="9" />
+      <rect x="13.1" y="3.5" width="1.2" height="9" />
+      <rect x="4.3" y="3.5" width="10" height="1.6" />
+    </svg>
+  );
+}
+
+function IconSixteenths() {
+  return (
+    <svg width="15" height="12" viewBox="0 0 16 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+      <ellipse cx="2.2" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.2 12.5)" />
+      <ellipse cx="11" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 11 12.5)" />
+      <rect x="4.3" y="2" width="1.2" height="10.5" />
+      <rect x="13.1" y="2" width="1.2" height="10.5" />
+      <rect x="4.3" y="2" width="10" height="1.6" />
+      <rect x="4.3" y="5.5" width="10" height="1.6" />
+    </svg>
+  );
+}
+
+function IconEighthTriplet() {
+  return (
+    <svg width="22" height="12" viewBox="0 0 22 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+      <text x="11" y="4" textAnchor="middle" fontSize="5" fontStyle="italic" fontFamily="sans-serif">3</text>
+      <rect x="1.5" y="5" width="19" height="1.6" />
+      <rect x="1.5" y="5" width="1.2" height="7" />
+      <rect x="10.4" y="5" width="1.2" height="7" />
+      <rect x="19.3" y="5" width="1.2" height="7" />
+      <ellipse cx="2.1" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.1 12.5)" />
+      <ellipse cx="11" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 11 12.5)" />
+      <ellipse cx="19.9" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 19.9 12.5)" />
+    </svg>
+  );
+}
+
+function IconSixteenthTriplet() {
+  return (
+    <svg width="22" height="12" viewBox="0 0 22 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+      <text x="11" y="3" textAnchor="middle" fontSize="4.5" fontStyle="italic" fontFamily="sans-serif">3</text>
+      <rect x="1.5" y="4" width="19" height="1.5" />
+      <rect x="1.5" y="7.5" width="19" height="1.5" />
+      <rect x="1.5" y="4" width="1.2" height="8.5" />
+      <rect x="10.4" y="4" width="1.2" height="8.5" />
+      <rect x="19.3" y="4" width="1.2" height="8.5" />
+      <ellipse cx="2.1" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.1 12.5)" />
+      <ellipse cx="11" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 11 12.5)" />
+      <ellipse cx="19.9" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 19.9 12.5)" />
+    </svg>
+  );
+}
+
 // ─── MetronomeWidget ──────────────────────────────────────────────────────────
 
 export function MetronomeWidget() {
   const [mounted, setMounted] = useState(false);
   const [bpm, setBpm] = useState(120);
+  const [subdiv, setSubdiv] = useState<SubDiv>(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -78,6 +149,7 @@ export function MetronomeWidget() {
   const beatIndexRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bpmRef = useRef(bpm);
+  const subdivRef = useRef<SubDiv>(subdiv);
   const isPlayingRef = useRef(false);
   const tapTimesRef = useRef<number[]>([]);
   const dragStartRef = useRef<{ y: number; bpm: number } | null>(null);
@@ -88,6 +160,10 @@ export function MetronomeWidget() {
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
+  useEffect(() => {
+    subdivRef.current = subdiv;
+    beatIndexRef.current = 0; // Reset to avoid out-of-bounds slot on subdivision change
+  }, [subdiv]);
 
   // Track window width for responsive panel sizing
   useEffect(() => {
@@ -128,11 +204,27 @@ export function MetronomeWidget() {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
 
+    const sub = subdivRef.current;
     const spb = 60.0 / bpmRef.current;
+    const sps = spb / sub;
+    const totalSlots = BEATS * sub;
+
     while (nextNoteTimeRef.current < ctx.currentTime + SCHEDULE_AHEAD_S) {
-      scheduleClick(beatIndexRef.current, nextNoteTimeRef.current, ctx, onBeat);
-      beatIndexRef.current = (beatIndexRef.current + 1) % BEATS;
-      nextNoteTimeRef.current += spb;
+      const slot = beatIndexRef.current;
+      const isDownbeat = slot === 0;
+      const isBeat = slot % sub === 0;
+      const type = isDownbeat ? "down" : isBeat ? "beat" : "sub";
+      const visualBeat = Math.floor(slot / sub);
+
+      scheduleClick(
+        type,
+        nextNoteTimeRef.current,
+        ctx,
+        isBeat ? () => onBeat(visualBeat) : undefined
+      );
+
+      beatIndexRef.current = (beatIndexRef.current + 1) % totalSlots;
+      nextNoteTimeRef.current += sps;
     }
     timerRef.current = setTimeout(runScheduler, LOOKAHEAD_MS);
   }, [onBeat]);
@@ -324,6 +416,14 @@ export function MetronomeWidget() {
   // In landscape / short viewports, cap panel height so it doesn't overflow screen
   const panelMaxHeight = isShortViewport ? windowHeight - 60 : undefined;
 
+  const subdivOptions: Array<{ val: SubDiv; label: string; icon: React.ReactNode }> = [
+    { val: 1, label: "Quarter note", icon: <IconQuarter /> },
+    { val: 2, label: "Eighth note", icon: <IconEighths /> },
+    { val: 4, label: "Sixteenth note", icon: <IconSixteenths /> },
+    { val: 3, label: "Eighth triplet", icon: <IconEighthTriplet /> },
+    { val: 6, label: "Sixteenth triplet", icon: <IconSixteenthTriplet /> },
+  ];
+
   return (
     <div
       style={{
@@ -474,6 +574,53 @@ export function MetronomeWidget() {
               marginBottom: 10,
             }}>
               bpm · drag · scroll · click
+            </div>
+          </div>
+
+          {/* Subdivision */}
+          <div style={{ padding: "0 12px 10px" }}>
+            <div style={{
+              fontFamily: "'Source Code Pro', monospace",
+              fontSize: "0.44rem",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: C.muted,
+              marginBottom: 5,
+            }}>
+              Subdivision
+            </div>
+            <div style={{ display: "flex", gap: 3 }}>
+              {subdivOptions.map(({ val, label, icon }) => {
+                const active = subdiv === val;
+                const hk = `sub${val}`;
+                const isHov = hoveredEl === hk;
+                return (
+                  <button
+                    key={val}
+                    onClick={() => setSubdiv(val)}
+                    onMouseEnter={() => setHoveredEl(hk)}
+                    onMouseLeave={() => setHoveredEl(null)}
+                    title={label}
+                    aria-label={label}
+                    aria-pressed={active}
+                    style={{
+                      flex: 1,
+                      padding: isMobile ? "9px 2px" : "5px 2px",
+                      background: active ? C.text : "transparent",
+                      border: `1px solid ${active ? C.text : isHov ? C.text : C.border}`,
+                      color: active ? C.bg : C.text,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: isMobile ? 40 : undefined,
+                      transition: "background 80ms, color 80ms, border-color 80ms",
+                    }}
+                  >
+                    {icon}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
