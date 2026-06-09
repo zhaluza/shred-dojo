@@ -514,8 +514,12 @@ Two shapes: **Steeler Shape** (starts on 7th degree, the canonical Yngwie entry 
 
 Uses the Web Audio API look-ahead scheduler pattern: a `setTimeout` loop fires every `LOOKAHEAD_MS = 25ms` and schedules click events up to `SCHEDULE_AHEAD_S = 0.1s` ahead of `ctx.currentTime`. `AudioContext` is created lazily on first play to satisfy browser autoplay policies.
 
-- **Click sound** — `OscillatorNode` (triangle wave). Downbeat: 1100 Hz, vol 0.45. Subdivision: 750 Hz, vol 0.25. Short exponential decay (~60ms).
+- **Click sound** — `OscillatorNode` (triangle wave). Three-tier frequencies: downbeat 1100 Hz / beat 750 Hz / subdivision 500 Hz. Volumes: 0.45 / 0.25 / 0.10. Short exponential decay (~60ms).
 - **Drone sound** — `OscillatorNode` (sine wave), sustained continuously; fades in/out over ~100ms on key change to avoid clicks. Base: `E2_HZ = 82.41` Hz, transposed as `82.41 * 2^(semitone / 12)`.
+
+### Subdivisions
+
+Five options selectable via icon buttons in the expanded panel: 1 = quarter (♩), 2 = eighth (♫), 4 = sixteenth, 3 = eighth triplet, 6 = sixteenth triplet. `SubDiv` type is `1 | 2 | 3 | 4 | 6`. The scheduler computes `totalSlots = BEATS × sub` and `sps = spb / sub`. Slots where `slot % sub === 0` are beats; slot 0 is the downbeat. Only beat/downbeat slots trigger the visual bar pulse. Changing `subdiv` resets `beatIndexRef = 0` to prevent out-of-bounds slot indices. Icons for quarter, eighth, and sixteenth are inline SVGs; triplet icons reuse the same stem+beam+`"3"` pattern as MorningCoffee's `TripletIcon`, with sixteenth triplet adding a second beam. Subdivision state is held in `subdivRef` (updated via `useEffect`) for access inside the scheduler closure without re-creating the callback.
 
 ### BPM controls
 
