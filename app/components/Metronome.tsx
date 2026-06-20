@@ -10,7 +10,7 @@ import { LIGHT_THEME, DARK_THEME } from "./theme";
 const BEATS = 4;
 const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_S = 0.1;
-const MET_MIN_BPM = 40;
+const MET_MIN_BPM = 30;
 const MET_MAX_BPM = 220;
 const DEFAULT_BPM = 100;
 
@@ -195,7 +195,7 @@ function BeatDial({
   const onDownbeat = isPlaying && currentSlot === 0;
 
   return (
-    <div className="w-[min(74vw,300px)] aspect-square mx-auto select-none">
+    <div className="w-[min(48vw,190px)] aspect-square mx-auto select-none">
       <svg viewBox="0 0 200 200" width="100%" height="100%" aria-hidden="true">
         {/* downbeat glow ring */}
         <circle
@@ -456,11 +456,14 @@ function Stepper({
 // ─── Timer ───────────────────────────────────────────────────────────────────
 // Countdown with presets + completion chime (from PentatonicPractice).
 
+const TIMER_PRESETS = [1, 2, 3, 5, 10];
+const TIMER_MAX_MIN = 180;
+
 function Timer() {
-  const PRESETS = [1, 2, 3, 5];
-  const [target, setTarget] = useState(180); // seconds
-  const [remaining, setRemaining] = useState(180);
+  const [target, setTarget] = useState<number>(() => readInt("met-timer-sec", 180, 10, TIMER_MAX_MIN * 60));
+  const [remaining, setRemaining] = useState<number>(() => readInt("met-timer-sec", 180, 10, TIMER_MAX_MIN * 60));
   const [running, setRunning] = useState(false);
+  const [customMin, setCustomMin] = useState("");
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
 
@@ -508,11 +511,35 @@ function Timer() {
 
   useEffect(() => () => { ctxRef.current?.close(); }, []);
 
+  const persistTarget = (s: number) => {
+    try { localStorage.setItem("met-timer-sec", String(s)); } catch {}
+  };
+
   const setPreset = (mins: number) => {
     const s = mins * 60;
     setTarget(s);
     setRemaining(s);
     setRunning(false);
+    setCustomMin("");
+    persistTarget(s);
+  };
+  const applyCustom = (raw: string) => {
+    setCustomMin(raw);
+    const n = parseInt(raw, 10);
+    if (!isNaN(n) && n >= 1 && n <= TIMER_MAX_MIN) {
+      const s = n * 60;
+      setTarget(s);
+      setRemaining(s);
+      setRunning(false);
+      persistTarget(s);
+    }
+  };
+  // Tack on 5 minutes — extends the running/paused session, or resumes a finished one.
+  const addFive = () => {
+    const wasDone = remaining === 0;
+    setTarget((t) => { const nt = t + 300; persistTarget(nt); return nt; });
+    setRemaining((r) => r + 300);
+    if (wasDone) setRunning(true);
   };
   const toggle = () => {
     if (remaining === 0) {
@@ -531,69 +558,90 @@ function Timer() {
   const ss = String(remaining % 60).padStart(2, "0");
   const pct = target ? (remaining / target) * 100 : 0;
   const done = remaining === 0;
+  const isPresetActive = TIMER_PRESETS.some((m) => target === m * 60);
 
   return (
     <div>
       <div className="text-[0.5rem] tracking-[0.18em] uppercase mb-3" style={{ color: "var(--muted)" }}>
         Timer
       </div>
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex gap-1 flex-shrink-0">
-          {PRESETS.map((m) => {
-            const on = target === m * 60;
-            return (
-              <button
-                key={m}
-                onClick={() => setPreset(m)}
-                className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] min-w-[34px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                style={{
-                  background: on ? "var(--text)" : "transparent",
-                  borderColor: on ? "var(--text)" : "var(--border)",
-                  color: on ? "var(--bg)" : "var(--muted)",
-                }}
-              >
-                {m}m
-              </button>
-            );
-          })}
-        </div>
 
-        <div className="flex-1 min-w-[90px] flex flex-col gap-[6px]">
+      {/* Time readout + progress */}
+      <div className="flex flex-col gap-2 mb-4">
+        <div
+          className="font-mono font-semibold text-center tabular-nums"
+          style={{ fontSize: "2rem", letterSpacing: "0.04em", color: done ? "var(--accent)" : "var(--text)", lineHeight: 1 }}
+        >
+          {mm}:{ss}
+        </div>
+        <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--border)" }}>
           <div
-            className="font-mono font-semibold text-center tabular-nums"
-            style={{ fontSize: "1.4rem", letterSpacing: "0.04em", color: done ? "var(--accent)" : "var(--text)", lineHeight: 1 }}
-          >
-            {mm}:{ss}
-          </div>
-          <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--border)" }}>
-            <div
-              className="h-full"
-              style={{ width: pct + "%", background: "var(--accent)", transition: "width 1s linear" }}
-            />
-          </div>
+            className="h-full"
+            style={{ width: pct + "%", background: "var(--accent)", transition: "width 1s linear" }}
+          />
         </div>
+      </div>
 
-        <div className="flex gap-2 flex-shrink-0">
-          <button
-            onClick={toggle}
-            className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] min-w-[72px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      {/* Presets + custom length */}
+      <div className="flex items-center gap-1 flex-wrap mb-3">
+        {TIMER_PRESETS.map((m) => {
+          const on = target === m * 60;
+          return (
+            <button
+              key={m}
+              onClick={() => setPreset(m)}
+              className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] min-w-[34px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              style={{
+                background: on ? "var(--text)" : "transparent",
+                borderColor: on ? "var(--text)" : "var(--border)",
+                color: on ? "var(--bg)" : "var(--muted)",
+              }}
+            >
+              {m}m
+            </button>
+          );
+        })}
+        <label className="flex items-center gap-1 ml-1">
+          <input
+            type="number"
+            min={1}
+            max={TIMER_MAX_MIN}
+            value={customMin}
+            onChange={(e) => applyCustom(e.target.value)}
+            placeholder="—"
+            aria-label="Custom length in minutes"
+            className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] w-[3.6rem] text-center bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             style={{
-              background: running ? "var(--accent)" : "transparent",
-              borderColor: running ? "var(--accent)" : "var(--border)",
-              color: running ? "#fff" : "var(--text)",
+              borderColor: !isPresetActive ? "var(--text)" : "var(--border)",
+              color: "var(--text)",
             }}
-          >
-            {running ? "Pause" : done ? "Restart" : "Start"}
-          </button>
-          <button
-            onClick={reset}
-            aria-label="Reset timer"
-            className="font-display border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-            style={{ background: "transparent", borderColor: "var(--border)", color: "var(--text)", lineHeight: 1, fontSize: "1rem" }}
-          >
-            ↺
-          </button>
-        </div>
+          />
+          <span className="font-mono text-[0.6rem]" style={{ color: "var(--muted)" }}>min</span>
+        </label>
+      </div>
+
+      {/* Controls */}
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={toggle}
+          className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] min-w-[72px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          style={{
+            background: running ? "var(--accent)" : "transparent",
+            borderColor: running ? "var(--accent)" : "var(--border)",
+            color: running ? "#fff" : "var(--text)",
+          }}
+        >
+          {running ? "Pause" : done ? "Restart" : "Start"}
+        </button>
+        <CtrlButton label="+5 min" active={false} onClick={addFive} normalCase />
+        <button
+          onClick={reset}
+          aria-label="Reset timer"
+          className="font-display border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          style={{ background: "transparent", borderColor: "var(--border)", color: "var(--text)", lineHeight: 1, fontSize: "1rem" }}
+        >
+          ↺
+        </button>
       </div>
     </div>
   );
@@ -630,83 +678,83 @@ export function Metronome() {
     <div style={theme} className="bg-[var(--bg)] text-[var(--text)] min-h-screen">
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
-      <div className="max-w-[560px] mx-auto px-4 pt-8 pb-20 [@media(max-height:500px)]:pt-3">
-        <div className="text-[0.58rem] tracking-[0.18em] uppercase mb-2" style={{ color: "var(--muted)" }}>
-          Practice Station
+      <div className="max-w-[960px] mx-auto px-4 pt-6 max-[700px]:pt-5 pb-16 [@media(max-height:500px)]:pt-3">
+        <div className="mb-4">
+          <div className="text-[0.58rem] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--muted)" }}>
+            Practice Station
+          </div>
+          <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none m-0">
+            Metronome
+          </h1>
         </div>
-        <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none m-0">
-          Metronome
-        </h1>
-        <p className="text-[0.85rem] leading-[1.55] mt-3 mb-7 max-w-[52ch]" style={{ color: "var(--muted)" }}>
-          Set a tempo, pick a subdivision, and woodshed. Use the trainer to ramp speed
-          automatically, and the timer to keep your session honest.
-        </p>
 
         <span className="sr-only" aria-live="polite">Tempo {bpm} BPM</span>
 
-        <BeatDial
-          bpm={bpm}
-          subdivision={subdivision}
-          currentSlot={currentSlot}
-          isPlaying={isPlaying}
-          reduced={reduced}
-        />
-
-        {/* ── Tempo controls ── */}
-        <div
-          className="mt-8 p-5 max-[700px]:p-4 flex flex-col gap-5"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-        >
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <button
-              onClick={toggle}
-              aria-label={isPlaying ? "Stop metronome" : "Start metronome"}
-              className="font-display text-[0.82rem] tracking-[0.1em] uppercase border px-7 py-[0.5rem] max-[700px]:py-[0.6rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              style={{
-                background: isPlaying ? "var(--accent)" : "transparent",
-                borderColor: isPlaying ? "var(--accent)" : "var(--border)",
-                color: isPlaying ? "#fff" : "var(--text)",
-              }}
-            >
-              {isPlaying ? "Stop" : "Start"}
-            </button>
-            <CtrlButton label="Tap" active={false} onClick={handleTap} />
-            <SubdivisionButtons subdivision={subdivision} setSubdivision={setSubdivision} />
-          </div>
-
-          {/* BPM slider + fine steppers */}
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1 flex-shrink-0">
-              <CtrlButton label="−5" active={false} onClick={() => setBpm(bpm - 5)} small />
-              <CtrlButton label="−1" active={false} onClick={() => setBpm(bpm - 1)} small />
-            </div>
-            <input
-              type="range"
-              min={MET_MIN_BPM}
-              max={MET_MAX_BPM}
-              value={bpm}
-              onChange={(e) => setBpm(parseInt(e.target.value, 10))}
-              className="flex-1 min-w-0 accent-[var(--accent)]"
-              aria-label="Tempo in BPM"
+        <div className="grid grid-cols-[1.25fr_1fr] max-[820px]:grid-cols-1 gap-4 items-start">
+          {/* ── Metronome ── */}
+          <div
+            className="p-5 max-[700px]:p-4 flex flex-col gap-4"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <BeatDial
+              bpm={bpm}
+              subdivision={subdivision}
+              currentSlot={currentSlot}
+              isPlaying={isPlaying}
+              reduced={reduced}
             />
-            <div className="flex gap-1 flex-shrink-0">
-              <CtrlButton label="+1" active={false} onClick={() => setBpm(bpm + 1)} small />
-              <CtrlButton label="+5" active={false} onClick={() => setBpm(bpm + 5)} small />
+
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <button
+                onClick={toggle}
+                aria-label={isPlaying ? "Stop metronome" : "Start metronome"}
+                className="font-display text-[0.82rem] tracking-[0.1em] uppercase border px-7 py-[0.5rem] max-[700px]:py-[0.6rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                style={{
+                  background: isPlaying ? "var(--accent)" : "transparent",
+                  borderColor: isPlaying ? "var(--accent)" : "var(--border)",
+                  color: isPlaying ? "#fff" : "var(--text)",
+                }}
+              >
+                {isPlaying ? "Stop" : "Start"}
+              </button>
+              <CtrlButton label="Tap" active={false} onClick={handleTap} />
+              <SubdivisionButtons subdivision={subdivision} setSubdivision={setSubdivision} />
             </div>
+
+            {/* BPM slider + fine steppers */}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 flex-shrink-0">
+                <CtrlButton label="−5" active={false} onClick={() => setBpm(bpm - 5)} small />
+                <CtrlButton label="−1" active={false} onClick={() => setBpm(bpm - 1)} small />
+              </div>
+              <input
+                type="range"
+                min={MET_MIN_BPM}
+                max={MET_MAX_BPM}
+                value={bpm}
+                onChange={(e) => setBpm(parseInt(e.target.value, 10))}
+                className="flex-1 min-w-0 accent-[var(--accent)]"
+                aria-label="Tempo in BPM"
+              />
+              <div className="flex gap-1 flex-shrink-0">
+                <CtrlButton label="+1" active={false} onClick={() => setBpm(bpm + 1)} small />
+                <CtrlButton label="+5" active={false} onClick={() => setBpm(bpm + 5)} small />
+              </div>
+            </div>
+
+            {/* divider */}
+            <div style={{ height: 1, background: "var(--border)" }} />
+
+            <TempoTrainer met={met} />
           </div>
 
-          {/* divider */}
-          <div style={{ height: 1, background: "var(--border)" }} />
-
-          <TempoTrainer met={met} />
-        </div>
-
-        {/* ── Timer ── */}
-        <div
-          className="mt-4 p-5 max-[700px]:p-4"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-        >
-          <Timer />
+          {/* ── Timer ── */}
+          <div
+            className="p-5 max-[700px]:p-4"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <Timer />
+          </div>
         </div>
       </div>
     </div>
