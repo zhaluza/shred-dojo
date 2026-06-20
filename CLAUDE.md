@@ -107,7 +107,7 @@ Built-in fretboard/quiz pages. Each has a `routes/<name>.tsx` wrapper + a `compo
 | `/circle-of-fifths` | Interactive SVG circle-of-fifths with diatonic-chord info panel. |
 | `/lick-stash` + `/:packSlug` | Curated Guitar Pro lick packs (AlphaTab playback). Preview-gated in UI. |
 | `/morning-coffee` | Daily routine cycling drills across 12 keys; inline metronome; optional Cream & Sugar drills. |
-| `/pentatonic-practice` | Six-step pentatonic routine; inline metronome + countdown timer. |
+| `/pentatonic-practice` | Six-step pentatonic routine; inline metronome + countdown timer + key-following tonic drone (off by default). |
 | `/metronome` | Standalone "Practice Station": circular beat-dial metronome (tap tempo, subdivisions, tempo-trainer auto-ramp) + countdown timer (presets/custom length/+5 min). Two-column layout so both fit above the fold. |
 | `/note-recognition` | Fretboard note-recognition quiz. |
 | `/staff-notes` | Treble-clef note-reading quiz. |
@@ -127,7 +127,7 @@ These are easy to get wrong and worth knowing before touching the relevant area:
 - **Wylde / penta octave-squash** — penta boxes are built with raw absolute frets (can be fret 12–15 near the octave boundary); adding `keyOffset` directly shifts them an octave the wrong way. Normalize penta display frets the same way as the diatonic shape (`pentaRawMin % 12`). Regression-tested in `wyldeScales.utils.test.ts`.
 - **`buildScale` enharmonics** — uses `NOTES_FROM_C`, which always returns flat enharmonics (Ab not G#, Db not C#); test expectations must match.
 - **Staff Notes dedup** — `pickNext` dedups on `(noteName, octave)`, not `staffStep` (B4 and Bb4 share a line but are distinct questions).
-- **Inline metronomes** — Morning Coffee, Pentatonic Practice, and the standalone `/metronome` page each embed their own metronome and suppress the global `MetronomeWidget` (`root.tsx` checks `pathname`). All three use the same look-ahead Web Audio scheduler hook (currently **duplicated** inline, not shared — `useMetronomePanel` in the routine pages, `useMetronome` in `Metronome.tsx`) with independent persistence keys (`mc-*`, `pp-*`, `met-*`). `met-*` also covers master volume (`met-vol`, 0–1), tempo-trainer (`met-ramp-on/amt/bars`), and timer length (`met-timer-sec`). De-duplicating these into one shared hook is a known pending cleanup.
+- **Inline metronomes** — Morning Coffee, Pentatonic Practice, and the standalone `/metronome` page each embed their own metronome and suppress the global `MetronomeWidget` (`root.tsx` checks `pathname`). All three use the same look-ahead Web Audio scheduler hook (currently **duplicated** inline, not shared — `useMetronomePanel` in the routine pages, `useMetronome` in `Metronome.tsx`) with independent persistence keys (`mc-*`, `pp-*`, `met-*`). `met-*` also covers master volume (`met-vol`, 0–1), tempo-trainer (`met-ramp-on/amt/bars`), and timer length (`met-timer-sec`). De-duplicating these into one shared hook is a known pending cleanup. Pentatonic Practice also has a separate `useDrone` hook (own AudioContext, sine root+fifth+octave voices) that follows the selected key's root; it starts off and only persists volume (`pp-drone-vol`) — an "on" state isn't restored since audio can't auto-resume without a gesture. Toggle key: `d`.
 - **Preview gating** — visiting any page with `?preview=true` writes `"shred-dojo-preview": "true"` to localStorage (persists). Gates Lick Stash nav link + home card.
 
 ## Testing
