@@ -13,6 +13,10 @@ const SCHEDULE_AHEAD_S = 0.1;
 const MET_MIN_BPM = 30;
 const MET_MAX_BPM = 220;
 const DEFAULT_BPM = 100;
+const DEFAULT_VOLUME = 0.85; // 0–1 master level; louder than the old fixed gains
+// Peak gain per click tier at full volume (square wave). Bumped up from the
+// previous 0.3 / 0.18 / 0.1 so the click cuts through an amp.
+const TIER_GAIN = { downbeat: 0.5, beat: 0.34, sub: 0.2 };
 
 type Subdivision = 1 | 2 | 3;
 
@@ -27,6 +31,11 @@ function useMetronome() {
     const v = parseInt(localStorage.getItem("met-sub") ?? "", 10);
     return (v === 1 || v === 2 || v === 3 ? v : 1) as Subdivision;
   });
+  const [volume, setVolumeState] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_VOLUME;
+    const v = parseFloat(localStorage.getItem("met-vol") ?? "");
+    return v >= 0 && v <= 1 ? v : DEFAULT_VOLUME;
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSlot, setCurrentSlot] = useState(-1);
 
@@ -34,6 +43,7 @@ function useMetronome() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bpmRef = useRef(bpm);
   const subRef = useRef(subdivision);
+  const volRef = useRef(volume);
   const nextNoteTimeRef = useRef(0);
   const beatCountRef = useRef(0);
   const isPlayingRef = useRef(false);
@@ -41,6 +51,13 @@ function useMetronome() {
 
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
   useEffect(() => { subRef.current = subdivision; }, [subdivision]);
+  useEffect(() => { volRef.current = volume; }, [volume]);
+
+  const setVolume = useCallback((v: number) => {
+    const clamped = Math.max(0, Math.min(1, v));
+    setVolumeState(clamped);
+    try { localStorage.setItem("met-vol", String(clamped)); } catch {}
+  }, []);
 
   const setBpm = useCallback((v: number) => {
     const clamped = Math.max(MET_MIN_BPM, Math.min(MET_MAX_BPM, Math.round(v)));
@@ -81,7 +98,10 @@ function useMetronome() {
     const isDownbeat = slot === 0;
     const isBeat = slot % sub === 0;
     osc.frequency.value = isDownbeat ? 1500 : isBeat ? 1000 : 700;
-    const vol = isDownbeat ? 0.3 : isBeat ? 0.18 : 0.1;
+    const tier = isDownbeat ? TIER_GAIN.downbeat : isBeat ? TIER_GAIN.beat : TIER_GAIN.sub;
+    // Floor at a tiny epsilon: exponential ramps can't target 0, and this keeps
+    // volume 0% effectively silent without breaking the envelope.
+    const vol = Math.max(0.0001, tier * volRef.current);
 
     gain.gain.setValueAtTime(0, time);
     gain.gain.linearRampToValueAtTime(vol, time + 0.001);
@@ -136,7 +156,7 @@ function useMetronome() {
     audioCtxRef.current?.close();
   }, []);
 
-  return { bpm, setBpm, subdivision, setSubdivision, isPlaying, toggle, currentSlot, handleTap };
+  return { bpm, setBpm, subdivision, setSubdivision, volume, setVolume, isPlaying, toggle, currentSlot, handleTap };
 }
 
 // prefers-reduced-motion as reactive state.
@@ -672,7 +692,8 @@ export function Metronome() {
   const theme = isDark ? DARK_THEME : LIGHT_THEME;
   const reduced = useReducedMotion();
   const met = useMetronome();
-  const { bpm, setBpm, subdivision, setSubdivision, isPlaying, toggle, currentSlot, handleTap } = met;
+  const { bpm, setBpm, subdivision, setSubdivision, volume, setVolume, isPlaying, toggle, currentSlot, handleTap } = met;
+  const volPct = Math.round(volume * 100);
 
   return (
     <div style={theme} className="bg-[var(--bg)] text-[var(--text)] min-h-screen">
@@ -740,6 +761,31 @@ export function Metronome() {
                 <CtrlButton label="+1" active={false} onClick={() => setBpm(bpm + 1)} small />
                 <CtrlButton label="+5" active={false} onClick={() => setBpm(bpm + 5)} small />
               </div>
+            </div>
+
+            {/* Volume */}
+            <div className="flex items-center gap-3">
+              <span
+                className="text-[0.5rem] tracking-[0.14em] uppercase shrink-0"
+                style={{ color: "var(--muted)" }}
+              >
+                Vol
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={volPct}
+                onChange={(e) => setVolume(parseInt(e.target.value, 10) / 100)}
+                className="flex-1 min-w-0 accent-[var(--accent)]"
+                aria-label="Metronome volume"
+              />
+              <span
+                className="font-mono text-[0.65rem] tabular-nums text-right shrink-0 w-[2.6rem]"
+                style={{ color: "var(--muted)" }}
+              >
+                {volPct}%
+              </span>
             </div>
 
             {/* divider */}
