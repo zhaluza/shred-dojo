@@ -14,9 +14,9 @@ const MET_MIN_BPM = 30;
 const MET_MAX_BPM = 220;
 const DEFAULT_BPM = 100;
 const DEFAULT_VOLUME = 0.85; // 0–1 master level; louder than the old fixed gains
-// Peak gain per click tier at full volume (square wave). Bumped up from the
-// previous 0.3 / 0.18 / 0.1 so the click cuts through an amp.
-const TIER_GAIN = { downbeat: 0.5, beat: 0.34, sub: 0.2 };
+// Peak gain per click tier at full volume (square wave). Pushed high so the
+// short click reads loud against an amp; the master volume scales these down.
+const TIER_GAIN = { downbeat: 0.95, beat: 0.7, sub: 0.42 };
 
 type Subdivision = 1 | 2 | 3;
 
@@ -105,9 +105,9 @@ function useMetronome() {
 
     gain.gain.setValueAtTime(0, time);
     gain.gain.linearRampToValueAtTime(vol, time + 0.001);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
     osc.start(time);
-    osc.stop(time + 0.05);
+    osc.stop(time + 0.07);
 
     const msFromNow = Math.max(0, (time - ctx.currentTime) * 1000);
     setTimeout(() => setCurrentSlot(slot), msFromNow);
