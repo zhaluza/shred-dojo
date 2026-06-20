@@ -58,7 +58,8 @@ export default function App() {
     <>
       <Outlet />
       {pathname !== "/morning-coffee" &&
-        pathname !== "/pentatonic-practice" && <MetronomeWidget />}
+        pathname !== "/pentatonic-practice" &&
+        pathname !== "/metronome" && <MetronomeWidget />}
     </>
   );
 }

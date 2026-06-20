@@ -1,0 +1,714 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Nav } from "./Nav";
+import { CtrlButton } from "./CtrlButton";
+import { LIGHT_THEME, DARK_THEME } from "./theme";
+
+// ─── Metronome hook ──────────────────────────────────────────────────────────
+// Same look-ahead Web Audio scheduler as MorningCoffee / PentatonicPractice,
+// with its own `met-*` persistence keys plus tap-tempo (from MetronomeWidget).
+
+const BEATS = 4;
+const LOOKAHEAD_MS = 25;
+const SCHEDULE_AHEAD_S = 0.1;
+const MET_MIN_BPM = 40;
+const MET_MAX_BPM = 220;
+const DEFAULT_BPM = 100;
+
+type Subdivision = 1 | 2 | 3;
+
+function useMetronome() {
+  const [bpm, setBpmState] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_BPM;
+    const v = parseInt(localStorage.getItem("met-bpm") ?? "", 10);
+    return v >= MET_MIN_BPM && v <= MET_MAX_BPM ? v : DEFAULT_BPM;
+  });
+  const [subdivision, setSubdivisionState] = useState<Subdivision>(() => {
+    if (typeof window === "undefined") return 1;
+    const v = parseInt(localStorage.getItem("met-sub") ?? "", 10);
+    return (v === 1 || v === 2 || v === 3 ? v : 1) as Subdivision;
+  });
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSlot, setCurrentSlot] = useState(-1);
+
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bpmRef = useRef(bpm);
+  const subRef = useRef(subdivision);
+  const nextNoteTimeRef = useRef(0);
+  const beatCountRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const tapTimesRef = useRef<number[]>([]);
+
+  useEffect(() => { bpmRef.current = bpm; }, [bpm]);
+  useEffect(() => { subRef.current = subdivision; }, [subdivision]);
+
+  const setBpm = useCallback((v: number) => {
+    const clamped = Math.max(MET_MIN_BPM, Math.min(MET_MAX_BPM, Math.round(v)));
+    setBpmState(clamped);
+    try { localStorage.setItem("met-bpm", String(clamped)); } catch {}
+  }, []);
+
+  const setSubdivision = useCallback((v: Subdivision) => {
+    setSubdivisionState(v);
+    try { localStorage.setItem("met-sub", String(v)); } catch {}
+  }, []);
+
+  // Tap tempo — average of last 4 tap intervals (from MetronomeWidget).
+  const handleTap = useCallback(() => {
+    const now = performance.now();
+    const taps = [...tapTimesRef.current, now].slice(-4);
+    tapTimesRef.current = taps;
+    if (taps.length >= 2) {
+      let total = 0;
+      for (let i = 1; i < taps.length; i++) total += taps[i] - taps[i - 1];
+      const avg = total / (taps.length - 1);
+      setBpm(Math.min(MET_MAX_BPM, Math.max(MET_MIN_BPM, Math.round(60000 / avg))));
+    }
+  }, [setBpm]);
+
+  const scheduleClick = useCallback((
+    ctx: AudioContext,
+    time: number,
+    slot: number,
+  ) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "square";
+
+    const sub = subRef.current;
+    const isDownbeat = slot === 0;
+    const isBeat = slot % sub === 0;
+    osc.frequency.value = isDownbeat ? 1500 : isBeat ? 1000 : 700;
+    const vol = isDownbeat ? 0.3 : isBeat ? 0.18 : 0.1;
+
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(vol, time + 0.001);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
+    osc.start(time);
+    osc.stop(time + 0.05);
+
+    const msFromNow = Math.max(0, (time - ctx.currentTime) * 1000);
+    setTimeout(() => setCurrentSlot(slot), msFromNow);
+  }, []);
+
+  const runScheduler = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (!ctx) return;
+    const sub = subRef.current;
+    const totalSlots = BEATS * sub;
+    const spSlot = 60.0 / bpmRef.current / sub;
+    while (nextNoteTimeRef.current < ctx.currentTime + SCHEDULE_AHEAD_S) {
+      scheduleClick(ctx, nextNoteTimeRef.current, beatCountRef.current);
+      beatCountRef.current = (beatCountRef.current + 1) % totalSlots;
+      nextNoteTimeRef.current += spSlot;
+    }
+    timerRef.current = setTimeout(runScheduler, LOOKAHEAD_MS);
+  }, [scheduleClick]);
+
+  const start = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new AudioContext();
+    }
+    const ctx = audioCtxRef.current;
+    if (ctx.state === "suspended") ctx.resume();
+    beatCountRef.current = 0;
+    nextNoteTimeRef.current = ctx.currentTime + 0.05;
+    isPlayingRef.current = true;
+    setIsPlaying(true);
+    runScheduler();
+  }, [runScheduler]);
+
+  const stop = useCallback(() => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+    setCurrentSlot(-1);
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (isPlayingRef.current) stop(); else start();
+  }, [start, stop]);
+
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    audioCtxRef.current?.close();
+  }, []);
+
+  return { bpm, setBpm, subdivision, setSubdivision, isPlaying, toggle, currentSlot, handleTap };
+}
+
+// prefers-reduced-motion as reactive state.
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+function TripletIcon() {
+  return (
+    <svg
+      width="22" height="14" viewBox="0 0 22 14"
+      fill="currentColor" aria-hidden="true"
+      style={{ display: "inline-block", verticalAlign: "-2px" }}
+    >
+      <text x="11" y="4" textAnchor="middle" fontSize="5" fontStyle="italic" fontFamily="sans-serif">3</text>
+      <rect x="1.5" y="5" width="19" height="1.6" />
+      <rect x="1.5" y="5" width="1.2" height="7" />
+      <rect x="10.4" y="5" width="1.2" height="7" />
+      <rect x="19.3" y="5" width="1.2" height="7" />
+      <ellipse cx="2.1" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.1 12.5)" />
+      <ellipse cx="11" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 11 12.5)" />
+      <ellipse cx="19.9" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 19.9 12.5)" />
+    </svg>
+  );
+}
+
+// ─── Beat dial (signature element) ───────────────────────────────────────────
+// A ring of subdivision dots around a circle, downbeat at 12 o'clock, with the
+// giant BPM at center that pulses on the downbeat.
+
+function BeatDial({
+  bpm,
+  subdivision,
+  currentSlot,
+  isPlaying,
+  reduced,
+}: {
+  bpm: number;
+  subdivision: Subdivision;
+  currentSlot: number;
+  isPlaying: boolean;
+  reduced: boolean;
+}) {
+  const totalSlots = BEATS * subdivision;
+  const CX = 100;
+  const CY = 100;
+  const R = 80;
+  const onDownbeat = isPlaying && currentSlot === 0;
+
+  return (
+    <div className="w-[min(74vw,300px)] aspect-square mx-auto select-none">
+      <svg viewBox="0 0 200 200" width="100%" height="100%" aria-hidden="true">
+        {/* downbeat glow ring */}
+        <circle
+          cx={CX}
+          cy={CY}
+          r={R}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth={1}
+          style={{
+            opacity: onDownbeat ? 0.5 : 0,
+            transition: reduced ? "none" : onDownbeat ? "opacity 60ms ease-out" : "opacity 260ms ease-in",
+          }}
+        />
+
+        {/* subdivision dots */}
+        {Array.from({ length: totalSlots }, (_, i) => {
+          const angle = (-90 + (360 / totalSlots) * i) * (Math.PI / 180);
+          const x = CX + R * Math.cos(angle);
+          const y = CY + R * Math.sin(angle);
+          const isBeat = i % subdivision === 0;
+          const isActive = isPlaying && i === currentSlot;
+          const r = isActive ? 8 : isBeat ? 5 : 3.5;
+          const fill = isActive
+            ? "var(--accent)"
+            : isBeat
+              ? "var(--text)"
+              : "var(--faint)";
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={r}
+              fill={fill}
+              style={{ transition: reduced ? "none" : "r 80ms ease-out, fill 120ms ease-out" }}
+            />
+          );
+        })}
+
+        {/* center BPM */}
+        <g
+          style={{
+            transformOrigin: "100px 100px",
+            transform: onDownbeat ? "scale(1.05)" : "scale(1)",
+            transition: reduced ? "none" : onDownbeat ? "transform 60ms ease-out" : "transform 240ms ease-in",
+          }}
+        >
+          <text
+            x={CX}
+            y={CY - 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontFamily="Oswald, sans-serif"
+            fontWeight={600}
+            fontSize="42"
+            fill="var(--text)"
+            style={{ fontVariantNumeric: "tabular-nums" }}
+          >
+            {bpm}
+          </text>
+          <text
+            x={CX}
+            y={CY + 26}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontFamily="Oswald, sans-serif"
+            fontSize="9"
+            letterSpacing="2"
+            fill="var(--muted)"
+          >
+            BPM
+          </text>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+// ─── Subdivision selector ────────────────────────────────────────────────────
+
+function SubdivisionButtons({
+  subdivision,
+  setSubdivision,
+}: {
+  subdivision: Subdivision;
+  setSubdivision: (v: Subdivision) => void;
+}) {
+  return (
+    <div className="flex gap-1">
+      {([
+        { label: "♩", val: 1 as Subdivision, ariaLabel: "Quarter note" },
+        { label: "♫", val: 2 as Subdivision, ariaLabel: "Eighth notes" },
+        { label: null, val: 3 as Subdivision, ariaLabel: "Triplets" },
+      ] as const).map(({ label, val, ariaLabel }) => (
+        <button
+          key={val}
+          onClick={() => setSubdivision(val)}
+          aria-label={ariaLabel}
+          aria-pressed={subdivision === val}
+          className="font-display text-[0.7rem] px-[0.6rem] py-[0.35rem] max-[700px]:min-h-[44px] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          style={{
+            background: subdivision === val ? "var(--text)" : "transparent",
+            borderColor: subdivision === val ? "var(--text)" : "var(--border)",
+            color: subdivision === val ? "var(--bg)" : "var(--text)",
+          }}
+        >
+          {label ?? <TripletIcon />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Tempo trainer ───────────────────────────────────────────────────────────
+// Auto-increase BPM by `amt` every `bars` measures while the metronome runs.
+
+function readInt(key: string, fallback: number, min: number, max: number) {
+  if (typeof window === "undefined") return fallback;
+  const v = parseInt(localStorage.getItem(key) ?? "", 10);
+  return v >= min && v <= max ? v : fallback;
+}
+
+function TempoTrainer({
+  met,
+}: {
+  met: ReturnType<typeof useMetronome>;
+}) {
+  const [enabled, setEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("met-ramp-on") === "true";
+  });
+  const [amt, setAmt] = useState<number>(() => readInt("met-ramp-amt", 5, 1, 50));
+  const [bars, setBars] = useState<number>(() => readInt("met-ramp-bars", 4, 1, 64));
+  const [barsLeft, setBarsLeft] = useState(bars);
+
+  const prevSlotRef = useRef(-1);
+  const completedRef = useRef(0);
+  // Latest config readable from the slot-watching effect without stale closures.
+  const cfgRef = useRef({ enabled, bars, amt, bpm: met.bpm, playing: met.isPlaying });
+  cfgRef.current = { enabled, bars, amt, bpm: met.bpm, playing: met.isPlaying };
+
+  const setEnabledP = (v: boolean) => {
+    setEnabled(v);
+    try { localStorage.setItem("met-ramp-on", String(v)); } catch {}
+  };
+  const setAmtP = (v: number) => {
+    const c = Math.max(1, Math.min(50, v));
+    setAmt(c);
+    try { localStorage.setItem("met-ramp-amt", String(c)); } catch {}
+  };
+  const setBarsP = (v: number) => {
+    const c = Math.max(1, Math.min(64, v));
+    setBars(c);
+    try { localStorage.setItem("met-ramp-bars", String(c)); } catch {}
+  };
+
+  // Reset the bar counter whenever playback stops or the trainer is toggled.
+  useEffect(() => {
+    if (!met.isPlaying || !enabled) {
+      completedRef.current = 0;
+      setBarsLeft(bars);
+    }
+  }, [met.isPlaying, enabled, bars]);
+
+  // Count completed bars on each downbeat and bump the tempo when due.
+  useEffect(() => {
+    const slot = met.currentSlot;
+    const prev = prevSlotRef.current;
+    prevSlotRef.current = slot;
+    const { enabled, bars, amt, bpm, playing } = cfgRef.current;
+    if (!enabled || !playing) return;
+    // A wrap into slot 0 (prev was a later slot) marks a completed measure.
+    if (slot === 0 && prev > 0) {
+      completedRef.current += 1;
+      if (completedRef.current >= bars) {
+        completedRef.current = 0;
+        met.setBpm(bpm + amt);
+      }
+      setBarsLeft(bars - completedRef.current);
+    }
+  }, [met.currentSlot]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="text-[0.5rem] tracking-[0.18em] uppercase" style={{ color: "var(--muted)" }}>
+          Tempo Trainer
+        </div>
+        <CtrlButton
+          label={enabled ? "On" : "Off"}
+          active={enabled}
+          onClick={() => setEnabledP(!enabled)}
+          small
+        />
+      </div>
+
+      {enabled && (
+        <div className="flex items-center gap-4 flex-wrap">
+          <Stepper
+            label="+ bpm"
+            value={amt}
+            onChange={setAmtP}
+            steps={[-1, 1]}
+            suffix=""
+          />
+          <Stepper
+            label="every"
+            value={bars}
+            onChange={setBarsP}
+            steps={[-1, 1]}
+            suffix=" bars"
+          />
+          <div className="text-[0.62rem] tabular-nums" style={{ color: "var(--faint)" }}>
+            {met.isPlaying
+              ? `next +${amt} in ${barsLeft} bar${barsLeft === 1 ? "" : "s"}`
+              : "starts when running"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// A small labelled −/value/+ stepper.
+function Stepper({
+  label,
+  value,
+  onChange,
+  steps,
+  suffix,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  steps: [number, number];
+  suffix: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[0.5rem] tracking-[0.14em] uppercase" style={{ color: "var(--muted)" }}>
+        {label}
+      </span>
+      <div className="flex items-center gap-1">
+        <CtrlButton label="−" active={false} onClick={() => onChange(value + steps[0])} small />
+        <span
+          className="font-mono text-[0.8rem] tabular-nums text-center min-w-[58px]"
+          style={{ color: "var(--text)" }}
+        >
+          {value}{suffix}
+        </span>
+        <CtrlButton label="+" active={false} onClick={() => onChange(value + steps[1])} small />
+      </div>
+    </div>
+  );
+}
+
+// ─── Timer ───────────────────────────────────────────────────────────────────
+// Countdown with presets + completion chime (from PentatonicPractice).
+
+function Timer() {
+  const PRESETS = [1, 2, 3, 5];
+  const [target, setTarget] = useState(180); // seconds
+  const [remaining, setRemaining] = useState(180);
+  const [running, setRunning] = useState(false);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+
+  const chime = useCallback(() => {
+    try {
+      const ctx = ctxRef.current ?? new AudioContext();
+      ctxRef.current = ctx;
+      ctx.resume();
+      const now = ctx.currentTime;
+      [880, 1318].forEach((f, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = f;
+        const t = now + i * 0.18;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.55);
+      });
+    } catch {
+      /* audio unavailable */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!running) {
+      if (tickRef.current) clearInterval(tickRef.current);
+      return;
+    }
+    tickRef.current = setInterval(() => {
+      setRemaining((r) => {
+        if (r <= 1) {
+          if (tickRef.current) clearInterval(tickRef.current);
+          setRunning(false);
+          chime();
+          return 0;
+        }
+        return r - 1;
+      });
+    }, 1000);
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, [running, chime]);
+
+  useEffect(() => () => { ctxRef.current?.close(); }, []);
+
+  const setPreset = (mins: number) => {
+    const s = mins * 60;
+    setTarget(s);
+    setRemaining(s);
+    setRunning(false);
+  };
+  const toggle = () => {
+    if (remaining === 0) {
+      setRemaining(target);
+      setRunning(true);
+      return;
+    }
+    setRunning((v) => !v);
+  };
+  const reset = () => {
+    setRunning(false);
+    setRemaining(target);
+  };
+
+  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const ss = String(remaining % 60).padStart(2, "0");
+  const pct = target ? (remaining / target) * 100 : 0;
+  const done = remaining === 0;
+
+  return (
+    <div>
+      <div className="text-[0.5rem] tracking-[0.18em] uppercase mb-3" style={{ color: "var(--muted)" }}>
+        Timer
+      </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex gap-1 flex-shrink-0">
+          {PRESETS.map((m) => {
+            const on = target === m * 60;
+            return (
+              <button
+                key={m}
+                onClick={() => setPreset(m)}
+                className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] min-w-[34px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                style={{
+                  background: on ? "var(--text)" : "transparent",
+                  borderColor: on ? "var(--text)" : "var(--border)",
+                  color: on ? "var(--bg)" : "var(--muted)",
+                }}
+              >
+                {m}m
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex-1 min-w-[90px] flex flex-col gap-[6px]">
+          <div
+            className="font-mono font-semibold text-center tabular-nums"
+            style={{ fontSize: "1.4rem", letterSpacing: "0.04em", color: done ? "var(--accent)" : "var(--text)", lineHeight: 1 }}
+          >
+            {mm}:{ss}
+          </div>
+          <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--border)" }}>
+            <div
+              className="h-full"
+              style={{ width: pct + "%", background: "var(--accent)", transition: "width 1s linear" }}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={toggle}
+            className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] min-w-[72px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            style={{
+              background: running ? "var(--accent)" : "transparent",
+              borderColor: running ? "var(--accent)" : "var(--border)",
+              color: running ? "#fff" : "var(--text)",
+            }}
+          >
+            {running ? "Pause" : done ? "Restart" : "Start"}
+          </button>
+          <button
+            onClick={reset}
+            aria-label="Reset timer"
+            className="font-display border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            style={{ background: "transparent", borderColor: "var(--border)", color: "var(--text)", lineHeight: 1, fontSize: "1rem" }}
+          >
+            ↺
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+export function Metronome() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("shred-dojo-dark");
+    if (stored !== null) {
+      setIsDark(stored === "true");
+    } else {
+      setIsDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+  }, []);
+
+  const toggleDark = useCallback(() => {
+    setIsDark((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("shred-dojo-dark", String(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  const theme = isDark ? DARK_THEME : LIGHT_THEME;
+  const reduced = useReducedMotion();
+  const met = useMetronome();
+  const { bpm, setBpm, subdivision, setSubdivision, isPlaying, toggle, currentSlot, handleTap } = met;
+
+  return (
+    <div style={theme} className="bg-[var(--bg)] text-[var(--text)] min-h-screen">
+      <Nav isDark={isDark} toggleDark={toggleDark} />
+
+      <div className="max-w-[560px] mx-auto px-4 pt-8 pb-20 [@media(max-height:500px)]:pt-3">
+        <div className="text-[0.58rem] tracking-[0.18em] uppercase mb-2" style={{ color: "var(--muted)" }}>
+          Practice Station
+        </div>
+        <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none m-0">
+          Metronome
+        </h1>
+        <p className="text-[0.85rem] leading-[1.55] mt-3 mb-7 max-w-[52ch]" style={{ color: "var(--muted)" }}>
+          Set a tempo, pick a subdivision, and woodshed. Use the trainer to ramp speed
+          automatically, and the timer to keep your session honest.
+        </p>
+
+        <span className="sr-only" aria-live="polite">Tempo {bpm} BPM</span>
+
+        <BeatDial
+          bpm={bpm}
+          subdivision={subdivision}
+          currentSlot={currentSlot}
+          isPlaying={isPlaying}
+          reduced={reduced}
+        />
+
+        {/* ── Tempo controls ── */}
+        <div
+          className="mt-8 p-5 max-[700px]:p-4 flex flex-col gap-5"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button
+              onClick={toggle}
+              aria-label={isPlaying ? "Stop metronome" : "Start metronome"}
+              className="font-display text-[0.82rem] tracking-[0.1em] uppercase border px-7 py-[0.5rem] max-[700px]:py-[0.6rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              style={{
+                background: isPlaying ? "var(--accent)" : "transparent",
+                borderColor: isPlaying ? "var(--accent)" : "var(--border)",
+                color: isPlaying ? "#fff" : "var(--text)",
+              }}
+            >
+              {isPlaying ? "Stop" : "Start"}
+            </button>
+            <CtrlButton label="Tap" active={false} onClick={handleTap} />
+            <SubdivisionButtons subdivision={subdivision} setSubdivision={setSubdivision} />
+          </div>
+
+          {/* BPM slider + fine steppers */}
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1 flex-shrink-0">
+              <CtrlButton label="−5" active={false} onClick={() => setBpm(bpm - 5)} small />
+              <CtrlButton label="−1" active={false} onClick={() => setBpm(bpm - 1)} small />
+            </div>
+            <input
+              type="range"
+              min={MET_MIN_BPM}
+              max={MET_MAX_BPM}
+              value={bpm}
+              onChange={(e) => setBpm(parseInt(e.target.value, 10))}
+              className="flex-1 min-w-0 accent-[var(--accent)]"
+              aria-label="Tempo in BPM"
+            />
+            <div className="flex gap-1 flex-shrink-0">
+              <CtrlButton label="+1" active={false} onClick={() => setBpm(bpm + 1)} small />
+              <CtrlButton label="+5" active={false} onClick={() => setBpm(bpm + 5)} small />
+            </div>
+          </div>
+
+          {/* divider */}
+          <div style={{ height: 1, background: "var(--border)" }} />
+
+          <TempoTrainer met={met} />
+        </div>
+
+        {/* ── Timer ── */}
+        <div
+          className="mt-4 p-5 max-[700px]:p-4"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          <Timer />
+        </div>
+      </div>
+    </div>
+  );
+}

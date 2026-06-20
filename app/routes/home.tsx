@@ -149,6 +149,11 @@ const TOOL_CATEGORIES: Array<{
         title: "Pentatonic Practice",
         body: "A six-step routine for total pentatonic command: memorize the 5 shapes, place them in any key, transpose on sight, find the lowest shape, run horizontal string sets, then improvise. With metronome and timer.",
       },
+      {
+        to: "/metronome",
+        title: "Metronome",
+        body: "A standalone practice station: a big beat-dial metronome with tap tempo, a tempo trainer that ramps speed for you, and a countdown timer. Just sit down and woodshed.",
+      },
     ],
   },
   {
