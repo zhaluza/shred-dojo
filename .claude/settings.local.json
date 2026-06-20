@@ -67,7 +67,8 @@
       "Bash(npm root *)",
       "Bash(npx --yes playwright --version)",
       "Bash(xargs sed -i '' 's|scalePositions\\\\.theme|theme|g')",
-      "WebFetch(domain:www.reddit.com)"
+      "WebFetch(domain:www.reddit.com)",
+      "Bash(pkill -f \"react-router\")"
     ]
   }
 }

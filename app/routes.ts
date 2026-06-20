@@ -19,4 +19,5 @@ export default [
   route("note-recognition", "routes/note-recognition.tsx"),
   route("staff-notes", "routes/staff-notes.tsx"),
   route("morning-coffee", "routes/morning-coffee.tsx"),
+  route("pentatonic-practice", "routes/pentatonic-practice.tsx"),
 ] satisfies RouteConfig;

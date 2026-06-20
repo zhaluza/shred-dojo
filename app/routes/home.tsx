@@ -136,7 +136,7 @@ const TOOL_CATEGORIES: Array<{
     ],
   },
   {
-    label: "Practice",
+    label: "Routines",
     tools: [
       {
         to: "/morning-coffee",
@@ -144,6 +144,16 @@ const TOOL_CATEGORIES: Array<{
         body: "Your daily routine: major scales, triads, pentatonics, and broken intervals across all 12 keys. Based on Alex Rockwell's Morning Coffee method. Do it every day.",
         featured: true,
       },
+      {
+        to: "/pentatonic-practice",
+        title: "Pentatonic Practice",
+        body: "A six-step routine for total pentatonic command: memorize the 5 shapes, place them in any key, transpose on sight, find the lowest shape, run horizontal string sets, then improvise. With metronome and timer.",
+      },
+    ],
+  },
+  {
+    label: "Practice",
+    tools: [
       {
         to: "/note-recognition",
         title: "Note Recognition",

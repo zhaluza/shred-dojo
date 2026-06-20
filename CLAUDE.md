@@ -267,12 +267,15 @@ In **Focus view**, a **"▼ Full Neck"** toggle expands a `FullNeckFretboard`. *
 
 `app/components/Nav.tsx` — persistent navigation bar rendered at the top of every page. Props: `isDark: boolean`, `toggleDark: () => void`. Each page owns its own dark-mode state and passes it in. Dark mode and preview state are persisted to localStorage. Preview-gated nav links render as a faint non-interactive `<span>` when not unlocked.
 
-**Nav structure** (5 category groups with `|` separators):
+**Nav structure** (6 category groups with `|` separators):
 - **Scales**: Shape Explorer → `/shape-explorer`, Systems → `/scale-positions`, Wylde → `/wylde-scales`, Yngwie → `/yngwie-scales`, Scale Builder → `/scale-builder`
 - **Pentatonic**: Pentatonic Triads → `/pentatonic-triads`, Colors → `/pentatonic-colors`, Intervals → `/interval-shapes`
 - **Harmony**: Chords → `/chord-voicings`, Arpeggios → `/arpeggio-maps`, Circle of Fifths → `/circle-of-fifths`
 - **Vocabulary**: Lick Stash → `/lick-stash` *(preview-gated)*
-- **Practice**: Morning Coffee → `/morning-coffee` *(first)*, Note Recognition → `/note-recognition`, Staff Notes → `/staff-notes`, Chord Tones → `/chord-tones`
+- **Routines**: Morning Coffee → `/morning-coffee`, Pentatonic → `/pentatonic-practice`
+- **Practice**: Note Recognition → `/note-recognition`, Staff Notes → `/staff-notes`, Chord Tones → `/chord-tones`
+
+The same Routines/Practice split is mirrored in `home.tsx` `TOOL_CATEGORIES` (Morning Coffee stays the `featured` card in the Routines category).
 
 ## Morning Coffee feature
 
@@ -354,6 +357,42 @@ Major drills show only the major E-shape; minor drills show only the relative mi
 ### Keyboard shortcuts
 
 `→` / `Space` = next key, `←` = prev key, `m` = metronome toggle.
+
+## Pentatonic Practice feature
+
+The Pentatonic Practice page (`/pentatonic-practice`) is a six-step routine for total pentatonic command, adapted from a standalone prototype. It is the second entry in the **Routines** nav group. Like Morning Coffee, the global `MetronomeWidget` is suppressed here (`root.tsx` checks `pathname !== "/pentatonic-practice"`); the page embeds its own inline metronome **and** a countdown timer.
+
+### Files
+
+- `app/components/pentatonicPractice.utils.ts` — pure music data and helpers (no React deps): `KEYS` (circle-of-fifths order with `{ maj, min, pc }`), `NOTE_NAMES`, `OPEN_PCS`, `STRING_NAMES`, `SHAPE_OFFSETS`, `SHAPES` (per-string fret pairs relative to the minor root), `SHAPE_MIN_REL`, `STRING_SETS`, `STEPS`, and `mod12` / `pcAt` / `rootFretLowE`.
+- `app/components/PentatonicPractice.tsx` — all component code (self-contained), including the metronome hook + panel, timer, and SVG diagrams.
+- `app/routes/pentatonic-practice.tsx` — thin route wrapper.
+
+### The six steps (`STEPS`)
+
+1. **Parallel Placement** — every shape anchored to the same low-E fret (key drifts); pure fingering memorization.
+2. **Key Placement** — one key, five positions walked up the neck where they actually live; shows each shape's low-E start fret.
+3. **Key Transposition** — same anchored drill as step 1, but name the key out loud, then **Reveal** the implied key derived from the anchor fret + shape.
+4. **Lowest Available Shape** — for the key, find (then **Reveal**) the lowest fully-playable shape via `SHAPE_MIN_REL`.
+5. **Horizontal String Sets** — run the pentatonic along one of 5 string pairs (`STRING_SETS`) across the whole neck.
+6. **Improvisation** — free play across all shapes; offers a Random shape button.
+
+Steps 0 and 2 are **anchored** (`anchored = step === 0 || step === 2`): the shape's low-E start is fixed at `anchorFret` regardless of key, and the diagram's root pitch class is the *implied* minor pc back-derived from that fret. All other steps use the real key's `startFretInKey` / `minorRootPc`.
+
+### Diagrams
+
+The prototype's purpose-built SVG diagrams are kept (the app's `buildBox` / position builders don't express anchored parallel-placement or string-pair maps) but restyled to theme tokens, app fonts, and the shared inlay sets (`FRET_INLAYS` / `FRET_DOUBLE` from `scalePositions.utils.ts`):
+- **`ShapeDiagram`** — one box as fret-columns × 6 string-rows (low E at bottom). Current-mode root = filled `var(--root-col)`; relative (other-mode) root = `var(--root-col)` ring; scale tone = filled `var(--text)`.
+- **`StringPairDiagram`** — a two-string horizontal map (frets 0–15) for step 5.
+- **`CircleSelector`** — adapted circle-of-fifths key picker; outer ring = major keys, inner = relative minors. The active `mode` (Minor/Major) emphasizes the corresponding ring; the selected wedge fills `var(--accent)` at 16% opacity.
+
+### Metronome + timer
+
+`useMetronomePanel()` is the same look-ahead scheduler hook used in Morning Coffee (3 subdivisions: quarter/eighth/triplet, three-tier square-wave clicks), with BPM/subdivision persisted under `"pp-bpm"` / `"pp-sub"` (independent of Morning Coffee's `mc-*` keys). The `Timer` is a countdown with 1/2/3/5-minute presets and a two-tone chime on completion; its state is ephemeral (not persisted).
+
+### Keyboard shortcuts
+
+`→` = next key, `←` = prev key, `m` = metronome toggle.
 
 ## Fretboard Notes feature
 
@@ -506,7 +545,7 @@ Two shapes: **Steeler Shape** (starts on 7th degree, the canonical Yngwie entry 
 
 ## MetronomeWidget
 
-`app/components/MetronomeWidget.tsx` — a persistent floating metronome rendered in `root.tsx`, fixed to the bottom-right corner of every page. **Not rendered on `/morning-coffee`** (suppressed via `pathname` check in `root.tsx`; Morning Coffee embeds its own inline panel instead). Self-contained: no props, no context. Manages its own dark-mode sync by polling `localStorage` every 500ms.
+`app/components/MetronomeWidget.tsx` — a persistent floating metronome rendered in `root.tsx`, fixed to the bottom-right corner of every page. **Not rendered on `/morning-coffee` or `/pentatonic-practice`** (suppressed via `pathname` checks in `root.tsx`; both pages embed their own inline metronome panel instead). Self-contained: no props, no context. Manages its own dark-mode sync by polling `localStorage` every 500ms.
 
 **Mobile layout** — Tracks `windowWidth` and `windowHeight` via resize listener. On mobile (`windowWidth < 700`): panel width is `Math.min(windowWidth - 32, 280)`, drone grid is 4 columns instead of 6. On short viewports (`windowHeight < 500`), the expanded panel gets `maxHeight = windowHeight - 60` with `overflowY: "auto"`. BPM drag supports touch events with `touchAction: "none"` to prevent scroll conflict.
 
