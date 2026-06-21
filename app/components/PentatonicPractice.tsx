@@ -3,6 +3,8 @@ import { Nav } from "./Nav";
 import { CtrlButton } from "./CtrlButton";
 import { LIGHT_THEME, DARK_THEME } from "./theme";
 import { Timer, fmtClock } from "./Timer";
+import { useDrone, DronePanel } from "./Drone";
+import { CircleKeySelector } from "./CircleKeySelector";
 import { FRET_INLAYS, FRET_DOUBLE } from "./scalePositions.utils";
 import {
   KEYS,
@@ -138,140 +140,6 @@ function useMetronomePanel() {
   return { bpm, setBpm, subdivision, setSubdivision, isPlaying, toggle, currentSlot };
 }
 
-// ─── Drone hook ──────────────────────────────────────────────────────────────
-// Sustained tonic drone that follows the selected key. Own AudioContext (created
-// lazily on first toggle, within the click gesture, to satisfy autoplay policy).
-// Off by default; only volume persists (an "on" state can't auto-resume audio).
-
-const A4_HZ = 440;
-const DRONE_BASE_MIDI = 48; // root pc 0 → C3 (130.8 Hz); keeps the drone low-mid
-const DRONE_MASTER_MAX = 0.4; // master-gain ceiling at volume = 1
-
-// Relative-to-root voices (semitones, gain weight, detune cents)
-const DRONE_VOICES = [
-  { semis: 0, gain: 0.5, detune: 0 },
-  { semis: 0, gain: 0.28, detune: -6 }, // chorus
-  { semis: 7, gain: 0.24, detune: 0 }, // fifth
-  { semis: 12, gain: 0.14, detune: 0 }, // octave
-];
-
-const pcToFreq = (pc: number, semis = 0) =>
-  A4_HZ * Math.pow(2, (DRONE_BASE_MIDI + pc + semis - 69) / 12);
-
-type DroneVoice = { osc: OscillatorNode; gain: GainNode; semis: number };
-
-function useDrone(rootPc: number) {
-  const [enabled, setEnabled] = useState(false);
-  const [volume, setVolumeState] = useState<number>(() => {
-    if (typeof window === "undefined") return 0.5;
-    const v = parseFloat(localStorage.getItem("pp-drone-vol") ?? "");
-    return v >= 0 && v <= 1 ? v : 0.5;
-  });
-
-  const ctxRef = useRef<AudioContext | null>(null);
-  const masterRef = useRef<GainNode | null>(null);
-  const voicesRef = useRef<DroneVoice[]>([]);
-  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const enabledRef = useRef(false);
-  const volumeRef = useRef(volume);
-  const rootPcRef = useRef(rootPc);
-
-  const start = useCallback(() => {
-    if (stopTimerRef.current) { clearTimeout(stopTimerRef.current); stopTimerRef.current = null; }
-    let ctx = ctxRef.current;
-    if (!ctx) { ctx = new AudioContext(); ctxRef.current = ctx; }
-    if (ctx.state === "suspended") ctx.resume();
-    let master = masterRef.current;
-    if (!master) {
-      master = ctx.createGain();
-      master.gain.value = 0;
-      master.connect(ctx.destination);
-      masterRef.current = master;
-    }
-    if (voicesRef.current.length === 0) {
-      voicesRef.current = DRONE_VOICES.map((v) => {
-        const osc = ctx!.createOscillator();
-        osc.type = "sine";
-        osc.frequency.value = pcToFreq(rootPcRef.current, v.semis);
-        osc.detune.value = v.detune;
-        const gain = ctx!.createGain();
-        gain.gain.value = v.gain;
-        osc.connect(gain).connect(master!);
-        osc.start();
-        return { osc, gain, semis: v.semis };
-      });
-    }
-    const now = ctx.currentTime;
-    const g = master.gain;
-    g.cancelScheduledValues(now);
-    g.setValueAtTime(Math.max(0.0001, g.value), now);
-    g.linearRampToValueAtTime(volumeRef.current * DRONE_MASTER_MAX, now + 0.12);
-  }, []);
-
-  const stop = useCallback(() => {
-    const ctx = ctxRef.current;
-    const master = masterRef.current;
-    if (!ctx || !master) return;
-    const now = ctx.currentTime;
-    master.gain.cancelScheduledValues(now);
-    master.gain.setValueAtTime(master.gain.value, now);
-    master.gain.linearRampToValueAtTime(0.0001, now + 0.15);
-    const voices = voicesRef.current;
-    voicesRef.current = [];
-    stopTimerRef.current = setTimeout(() => {
-      voices.forEach(({ osc, gain }) => {
-        try { osc.stop(); osc.disconnect(); gain.disconnect(); } catch {}
-      });
-    }, 220);
-  }, []);
-
-  const toggle = useCallback(() => {
-    setEnabled((prev) => {
-      const next = !prev;
-      enabledRef.current = next;
-      if (next) start(); else stop();
-      return next;
-    });
-  }, [start, stop]);
-
-  const setVolume = useCallback((v: number) => {
-    const clamped = Math.max(0, Math.min(1, v));
-    volumeRef.current = clamped;
-    setVolumeState(clamped);
-    try { localStorage.setItem("pp-drone-vol", String(clamped)); } catch {}
-    const ctx = ctxRef.current;
-    const master = masterRef.current;
-    if (ctx && master && enabledRef.current) {
-      const now = ctx.currentTime;
-      master.gain.cancelScheduledValues(now);
-      master.gain.setValueAtTime(master.gain.value, now);
-      master.gain.linearRampToValueAtTime(clamped * DRONE_MASTER_MAX, now + 0.06);
-    }
-  }, []);
-
-  // Retune live when the key changes.
-  useEffect(() => {
-    rootPcRef.current = rootPc;
-    const ctx = ctxRef.current;
-    if (!ctx || voicesRef.current.length === 0) return;
-    const now = ctx.currentTime;
-    voicesRef.current.forEach(({ osc, semis }) => {
-      const f = pcToFreq(rootPc, semis);
-      osc.frequency.cancelScheduledValues(now);
-      osc.frequency.setValueAtTime(osc.frequency.value, now);
-      osc.frequency.exponentialRampToValueAtTime(f, now + 0.08);
-    });
-  }, [rootPc]);
-
-  useEffect(() => () => {
-    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-    voicesRef.current.forEach(({ osc }) => { try { osc.stop(); } catch {} });
-    ctxRef.current?.close();
-  }, []);
-
-  return { enabled, toggle, volume, setVolume };
-}
-
 function TripletIcon() {
   return (
     <svg
@@ -390,56 +258,6 @@ function MetronomePanel({ met }: { met: ReturnType<typeof useMetronomePanel> }) 
             />
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-// ─── DronePanel ──────────────────────────────────────────────────────────────
-
-function DronePanel({
-  drone,
-  rootNote,
-}: {
-  drone: ReturnType<typeof useDrone>;
-  rootNote: string;
-}) {
-  const { enabled, toggle, volume, setVolume } = drone;
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[0.5rem] tracking-[0.18em] uppercase" style={{ color: "var(--muted)" }}>
-          Drone
-        </span>
-        <span className="font-display text-[0.62rem] tracking-[0.06em] uppercase" style={{ color: "var(--faint)" }}>
-          root · {rootNote}
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={toggle}
-          aria-pressed={enabled}
-          aria-label={enabled ? "Turn drone off" : "Turn drone on"}
-          className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] min-w-[58px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] shrink-0"
-          style={{
-            background: enabled ? "var(--accent)" : "transparent",
-            borderColor: enabled ? "var(--accent)" : "var(--border)",
-            color: enabled ? "#fff" : "var(--text)",
-          }}
-        >
-          {enabled ? "On" : "Off"}
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={volume}
-          onChange={(e) => setVolume(parseFloat(e.target.value))}
-          disabled={!enabled}
-          className="flex-1 min-w-0 accent-[var(--accent)] disabled:opacity-40"
-          aria-label="Drone volume"
-        />
       </div>
     </div>
   );
@@ -629,100 +447,6 @@ function StringPairDiagram({
   );
 }
 
-// ─── CircleOfFifths key selector ─────────────────────────────────────────────
-
-function CircleSelector({
-  keyIdx,
-  mode,
-  onSelect,
-}: {
-  keyIdx: number;
-  mode: "minor" | "major";
-  onSelect: (i: number) => void;
-}) {
-  const R = 130, cx = 150, cy = 150;
-  const majorActive = mode === "major";
-  return (
-    <svg
-      viewBox="0 0 300 300"
-      style={{ width: "100%", maxWidth: 280 }}
-      role="img"
-      aria-label="Circle of fifths key selector"
-    >
-      {KEYS.map((k, i) => {
-        const a0 = ((i - 0.5) / 12) * Math.PI * 2 - Math.PI / 2;
-        const a1 = ((i + 0.5) / 12) * Math.PI * 2 - Math.PI / 2;
-        const arc = (r: number, a: number): [number, number] => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-        const [x0, y0] = arc(R, a0);
-        const [x1, y1] = arc(R, a1);
-        const [x2, y2] = arc(46, a1);
-        const [x3, y3] = arc(46, a0);
-        const [bx0, by0] = arc(92, a0);
-        const [bx1, by1] = arc(92, a1);
-        const mid = (a0 + a1) / 2;
-        const [mx, my] = arc(R - 24, mid);
-        const [ix, iy] = arc(68, mid);
-        const sel = i === keyIdx;
-        return (
-          <g key={k.maj} onClick={() => onSelect(i)} style={{ cursor: "pointer" }}>
-            {/* outer (major) wedge */}
-            <path
-              d={`M ${x0} ${y0} A ${R} ${R} 0 0 1 ${x1} ${y1} L ${bx1} ${by1} A 92 92 0 0 0 ${bx0} ${by0} Z`}
-              fill="var(--accent)"
-              fillOpacity={sel && majorActive ? 0.16 : 0}
-              stroke="var(--border)"
-              strokeWidth="1"
-            />
-            {/* inner (minor) wedge */}
-            <path
-              d={`M ${bx0} ${by0} A 92 92 0 0 1 ${bx1} ${by1} L ${x2} ${y2} A 46 46 0 0 0 ${x3} ${y3} Z`}
-              fill="var(--accent)"
-              fillOpacity={sel && !majorActive ? 0.16 : 0}
-              stroke="var(--border)"
-              strokeWidth="1"
-            />
-            <text
-              x={mx} y={my + 4}
-              textAnchor="middle"
-              fontSize={majorActive ? 15 : 12}
-              fontWeight={sel && majorActive ? 700 : 500}
-              fill={sel && majorActive ? "var(--accent)" : majorActive ? "var(--text)" : "var(--faint)"}
-              fontFamily="'Oswald', sans-serif"
-              style={{ pointerEvents: "none" }}
-            >
-              {k.maj}
-            </text>
-            <text
-              x={ix} y={iy + 3}
-              textAnchor="middle"
-              fontSize={majorActive ? 9 : 12}
-              fontWeight={sel && !majorActive ? 700 : 500}
-              fill={sel && !majorActive ? "var(--accent)" : majorActive ? "var(--faint)" : "var(--text)"}
-              fontFamily="'Oswald', sans-serif"
-              style={{ pointerEvents: "none" }}
-            >
-              {k.min}
-            </text>
-          </g>
-        );
-      })}
-      <circle cx={cx} cy={cy} r={46} fill="none" stroke="var(--border)" />
-      <circle
-        cx={cx} cy={cy} r={92}
-        fill="none"
-        stroke={majorActive ? "var(--border)" : "var(--accent)"}
-        strokeOpacity={majorActive ? 1 : 0.55}
-      />
-      <circle
-        cx={cx} cy={cy} r={R}
-        fill="none"
-        stroke={majorActive ? "var(--accent)" : "var(--border)"}
-        strokeOpacity={majorActive ? 0.55 : 1}
-      />
-    </svg>
-  );
-}
-
 // ─── PentatonicPractice ──────────────────────────────────────────────────────
 
 export function PentatonicPractice() {
@@ -784,7 +508,7 @@ export function PentatonicPractice() {
   const keyLabel = mode === "minor" ? key.min : key.maj;
 
   // Tonic drone follows the selected key's root.
-  const drone = useDrone(rootPc);
+  const drone = useDrone(rootPc, "pp-drone-vol");
 
   // anchor fret for steps 1 & 3
   const anchorKey = KEYS[anchorKeyIdx];
@@ -1121,7 +845,7 @@ export function PentatonicPractice() {
                 </button>
               ))}
             </div>
-            <CircleSelector keyIdx={keyIdx} mode={mode} onSelect={selectKey} />
+            <CircleKeySelector keyIdx={keyIdx} mode={mode} onSelect={selectKey} />
             <p className="text-[0.62rem] text-center m-0" style={{ color: "var(--faint)" }}>
               Tap a wedge to set the key{anchored ? " (also resets the anchor)" : ""}.
             </p>

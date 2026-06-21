@@ -3,6 +3,9 @@ import { Nav } from "./Nav";
 import { CtrlButton } from "./CtrlButton";
 import { LIGHT_THEME, DARK_THEME } from "./theme";
 import { Timer } from "./Timer";
+import { useDrone, DronePanel } from "./Drone";
+import { CircleKeySelector } from "./CircleKeySelector";
+import { KEYS, NOTE_NAMES, mod12 } from "./pentatonicPractice.utils";
 
 // ─── Metronome hook ──────────────────────────────────────────────────────────
 // Same look-ahead Web Audio scheduler as MorningCoffee / PentatonicPractice,
@@ -474,6 +477,64 @@ function Stepper({
   );
 }
 
+// ─── Key & drone ─────────────────────────────────────────────────────────────
+// Pick a key on the circle of fifths; an optional tonic drone follows its root.
+// Key/mode/volume persist under `met-drone-*`.
+
+function KeyDrone() {
+  const [keyIdx, setKeyIdx] = useState<number>(() => readInt("met-drone-key", 0, 0, 11));
+  const [mode, setMode] = useState<"minor" | "major">(() => {
+    if (typeof window === "undefined") return "minor";
+    return localStorage.getItem("met-drone-mode") === "major" ? "major" : "minor";
+  });
+
+  const minorRootPc = mod12(KEYS[keyIdx].pc + 9);
+  const rootPc = mode === "minor" ? minorRootPc : KEYS[keyIdx].pc;
+  const drone = useDrone(rootPc, "met-drone-vol");
+
+  const selectKey = (i: number) => {
+    setKeyIdx(i);
+    try { localStorage.setItem("met-drone-key", String(i)); } catch {}
+  };
+  const selectMode = (m: "minor" | "major") => {
+    setMode(m);
+    try { localStorage.setItem("met-drone-mode", m); } catch {}
+  };
+
+  return (
+    <div className="grid grid-cols-[auto_1fr] max-[560px]:grid-cols-1 gap-6 max-[560px]:gap-4 items-center">
+      <div className="flex flex-col items-center gap-3 w-[240px] max-[560px]:w-full max-[560px]:max-w-[280px] max-[560px]:mx-auto">
+        <div className="flex gap-2 w-full">
+          {(["minor", "major"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => selectMode(m)}
+              aria-pressed={mode === m}
+              className="flex-1 font-display text-[0.72rem] tracking-[0.06em] uppercase border py-2 max-[700px]:py-[0.6rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              style={{
+                background: mode === m ? "var(--accent)" : "transparent",
+                borderColor: mode === m ? "var(--accent)" : "var(--border)",
+                color: mode === m ? "#fff" : "var(--muted)",
+              }}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+        <CircleKeySelector keyIdx={keyIdx} mode={mode} onSelect={selectKey} />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <DronePanel drone={drone} rootNote={NOTE_NAMES[rootPc]} />
+        <p className="text-[0.62rem] leading-[1.5] m-0" style={{ color: "var(--faint)" }}>
+          Tap a wedge to set the key. The drone sustains that key's root so you can
+          check intonation or jam against a tonal center.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export function Metronome() {
@@ -608,6 +669,17 @@ export function Metronome() {
           >
             <Timer storageKey="met-timer-sec" />
           </div>
+        </div>
+
+        {/* ── Key & drone ── */}
+        <div
+          className="mt-4 p-5 max-[700px]:p-4"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          <div className="text-[0.58rem] tracking-[0.18em] uppercase mb-4" style={{ color: "var(--muted)" }}>
+            Key &amp; Drone
+          </div>
+          <KeyDrone />
         </div>
       </div>
     </div>

@@ -116,10 +116,13 @@ export function Timer({
     }
   };
   // Tack on 5 minutes — extends the running/paused session, or resumes a finished one.
+  // Clear any typed custom value so it can't go stale against the new total (the
+  // total reads off the "/ MM:SS" display instead).
   const addFive = () => {
     const wasDone = remaining === 0;
     setTarget((t) => { const nt = t + 300; persistTarget(nt); return nt; });
     setRemaining((r) => r + 300);
+    setCustomMin("");
     if (wasDone) setRunning(true);
   };
   const toggle = () => {
@@ -149,11 +152,20 @@ export function Timer({
 
       {/* Time readout + progress */}
       <div className="flex flex-col gap-2 mb-4">
-        <div
-          className="font-mono font-semibold text-center tabular-nums"
-          style={{ fontSize: "2rem", letterSpacing: "0.04em", color: done ? "var(--accent)" : "var(--text)", lineHeight: 1 }}
-        >
-          {mm}:{ss}
+        <div className="flex items-baseline justify-center gap-2">
+          <span
+            className="font-mono font-semibold tabular-nums"
+            style={{ fontSize: "2rem", letterSpacing: "0.04em", color: done ? "var(--accent)" : "var(--text)", lineHeight: 1 }}
+          >
+            {mm}:{ss}
+          </span>
+          <span
+            className="font-mono tabular-nums text-[0.8rem]"
+            style={{ color: "var(--muted)" }}
+            title="Total session length"
+          >
+            / {fmtClock(target)}
+          </span>
         </div>
         <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--border)" }}>
           <div
@@ -193,7 +205,7 @@ export function Timer({
             aria-label="Custom length in minutes"
             className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] w-[3.6rem] text-center bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             style={{
-              borderColor: !isPresetActive ? "var(--text)" : "var(--border)",
+              borderColor: customMin !== "" && !isPresetActive ? "var(--text)" : "var(--border)",
               color: "var(--text)",
             }}
           />
