@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Nav } from "./Nav";
 import { CtrlButton } from "./CtrlButton";
 import { LIGHT_THEME, DARK_THEME } from "./theme";
+import { Timer, fmtClock } from "./Timer";
 import { FRET_INLAYS, FRET_DOUBLE } from "./scalePositions.utils";
 import {
   KEYS,
@@ -444,151 +445,6 @@ function DronePanel({
   );
 }
 
-// ─── Timer ───────────────────────────────────────────────────────────────────
-
-function Timer() {
-  const PRESETS = [1, 2, 3, 5];
-  const [target, setTarget] = useState(180); // seconds
-  const [remaining, setRemaining] = useState(180);
-  const [running, setRunning] = useState(false);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const ctxRef = useRef<AudioContext | null>(null);
-
-  const chime = useCallback(() => {
-    try {
-      const ctx = ctxRef.current ?? new AudioContext();
-      ctxRef.current = ctx;
-      ctx.resume();
-      const now = ctx.currentTime;
-      [880, 1318].forEach((f, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.frequency.value = f;
-        const t = now + i * 0.18;
-        gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.55);
-      });
-    } catch {
-      /* audio unavailable */
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!running) {
-      if (tickRef.current) clearInterval(tickRef.current);
-      return;
-    }
-    tickRef.current = setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          if (tickRef.current) clearInterval(tickRef.current);
-          setRunning(false);
-          chime();
-          return 0;
-        }
-        return r - 1;
-      });
-    }, 1000);
-    return () => { if (tickRef.current) clearInterval(tickRef.current); };
-  }, [running, chime]);
-
-  useEffect(() => () => { ctxRef.current?.close(); }, []);
-
-  const setPreset = (mins: number) => {
-    const s = mins * 60;
-    setTarget(s);
-    setRemaining(s);
-    setRunning(false);
-  };
-  const toggle = () => {
-    if (remaining === 0) {
-      setRemaining(target);
-      setRunning(true);
-      return;
-    }
-    setRunning((v) => !v);
-  };
-  const reset = () => {
-    setRunning(false);
-    setRemaining(target);
-  };
-
-  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
-  const ss = String(remaining % 60).padStart(2, "0");
-  const pct = target ? (remaining / target) * 100 : 0;
-  const done = remaining === 0;
-
-  return (
-    <div>
-      <div className="text-[0.5rem] tracking-[0.18em] uppercase mb-2" style={{ color: "var(--muted)" }}>
-        Timer
-      </div>
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex gap-1 flex-shrink-0">
-          {PRESETS.map((m) => {
-            const on = target === m * 60;
-            return (
-              <button
-                key={m}
-                onClick={() => setPreset(m)}
-                className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] min-w-[34px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                style={{
-                  background: on ? "var(--text)" : "transparent",
-                  borderColor: on ? "var(--text)" : "var(--border)",
-                  color: on ? "var(--bg)" : "var(--muted)",
-                }}
-              >
-                {m}m
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex-1 min-w-[90px] flex flex-col gap-[6px]">
-          <div
-            className="font-mono font-semibold text-center tabular-nums"
-            style={{ fontSize: "1.4rem", letterSpacing: "0.04em", color: done ? "var(--accent)" : "var(--text)", lineHeight: 1 }}
-          >
-            {mm}:{ss}
-          </div>
-          <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--border)" }}>
-            <div
-              className="h-full"
-              style={{ width: pct + "%", background: "var(--accent)", transition: "width 1s linear" }}
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2 flex-shrink-0">
-          <button
-            onClick={toggle}
-            className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] min-w-[72px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-            style={{
-              background: running ? "var(--accent)" : "transparent",
-              borderColor: running ? "var(--accent)" : "var(--border)",
-              color: running ? "#fff" : "var(--text)",
-            }}
-          >
-            {running ? "Pause" : done ? "Restart" : "Start"}
-          </button>
-          <button
-            onClick={reset}
-            aria-label="Reset timer"
-            className="font-display border px-3 py-[0.35rem] max-[700px]:py-[0.55rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-            style={{ background: "transparent", borderColor: "var(--border)", color: "var(--text)", lineHeight: 1, fontSize: "1rem" }}
-          >
-            ↺
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── ShapeDiagram ────────────────────────────────────────────────────────────
 
 function ShapeDiagram({
@@ -900,6 +756,25 @@ export function PentatonicPractice() {
   const [revealed, setRevealed] = useState(false);
   const [showHints, setShowHints] = useState(true);
   const [showDiagram, setShowDiagram] = useState(true);
+
+  // Per-section practice log: stepIndex → accumulated seconds, persisted to localStorage.
+  const [log, setLog] = useState<Record<number, number>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = JSON.parse(localStorage.getItem("pp-log") ?? "{}");
+      const out: Record<number, number> = {};
+      for (let i = 0; i < STEPS.length; i++) {
+        const v = raw[i];
+        if (typeof v === "number" && v >= 0) out[i] = v;
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("pp-log", JSON.stringify(log)); } catch {}
+  }, [log]);
 
   const met = useMetronomePanel();
 
@@ -1262,13 +1137,81 @@ export function PentatonicPractice() {
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           <MetronomePanel met={met} />
-          <Timer />
+          <Timer
+            storageKey="pp-timer-sec"
+            onSecond={() => setLog((l) => ({ ...l, [step]: (l[step] ?? 0) + 1 }))}
+          />
         </div>
+
+        {/* ── Session log: time logged per section ── */}
+        <SessionLog log={log} step={step} onPick={goStep} onReset={() => setLog({})} />
 
         {/* Footer hint */}
         <div className="mt-3 text-[0.6rem]" style={{ color: "var(--muted)" }}>
           ← → keys · m = metronome · d = drone
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Session log ─────────────────────────────────────────────────────────────
+// Accumulated practice time per routine step. Active step is highlighted; time is
+// credited to whichever step is selected while the timer runs (see `onSecond`).
+
+function SessionLog({
+  log,
+  step,
+  onPick,
+  onReset,
+}: {
+  log: Record<number, number>;
+  step: number;
+  onPick: (i: number) => void;
+  onReset: () => void;
+}) {
+  const total = STEPS.reduce((sum, _, i) => sum + (log[i] ?? 0), 0);
+  return (
+    <div
+      className="mt-4 p-5 max-[700px]:p-4"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+    >
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <div className="text-[0.5rem] tracking-[0.18em] uppercase" style={{ color: "var(--muted)" }}>
+          Session Log
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[0.7rem] tabular-nums" style={{ color: "var(--muted)" }}>
+            Total {fmtClock(total)}
+          </span>
+          <CtrlButton label="Reset" active={false} onClick={onReset} small normalCase disabled={total === 0} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 max-[560px]:grid-cols-1 gap-x-6 gap-y-1">
+        {STEPS.map((s, i) => {
+          const on = i === step;
+          return (
+            <button
+              key={i}
+              onClick={() => onPick(i)}
+              className="flex items-center justify-between gap-2 px-2 py-[0.4rem] max-[700px]:py-[0.55rem] border-b transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <span
+                className="font-display text-[0.72rem] tracking-[0.04em] truncate"
+                style={{ color: on ? "var(--accent)" : "var(--text)", fontWeight: on ? 600 : 400 }}
+              >
+                {i + 1}. {s.title}
+              </span>
+              <span
+                className="font-mono text-[0.72rem] tabular-nums flex-shrink-0"
+                style={{ color: (log[i] ?? 0) > 0 ? "var(--text)" : "var(--faint)" }}
+              >
+                {fmtClock(log[i] ?? 0)}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
