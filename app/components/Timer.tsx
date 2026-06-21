@@ -8,6 +8,8 @@ import { CtrlButton } from "./CtrlButton";
 
 const TIMER_PRESETS = [1, 2, 3, 5, 10];
 const TIMER_MAX_MIN = 180;
+// Don't log practice runs shorter than this (accidental start/stop blips).
+const MIN_LOG_SEC = 5;
 
 function readSec(key: string, fallback: number, min: number, max: number) {
   if (typeof window === "undefined") return fallback;
@@ -26,25 +28,51 @@ export function Timer({
   presets = TIMER_PRESETS,
   maxMin = TIMER_MAX_MIN,
   onSecond,
+  onLogSession,
+  onDiscardSession,
+  defaultLabel = "",
 }: {
   storageKey: string;
   presets?: number[];
   maxMin?: number;
-  /** Called once per counted-down second while running (for time attribution). */
+  /** Called once per counted-down second while running (for live attribution). */
   onSecond?: () => void;
+  /** Save an elapsed sitting to the practice log with the user's (optional) label. */
+  onLogSession?: (elapsedSec: number, label: string) => void;
+  /** The user dismissed the review bar without saving. */
+  onDiscardSession?: () => void;
+  /** Prefill for the review bar's label field (e.g. the active section). */
+  defaultLabel?: string;
 }) {
   const maxSec = maxMin * 60;
   const [target, setTarget] = useState<number>(() => readSec(storageKey, 180, 10, maxSec));
   const [remaining, setRemaining] = useState<number>(() => readSec(storageKey, 180, 10, maxSec));
   const [running, setRunning] = useState(false);
   const [customMin, setCustomMin] = useState("");
+  // A finished sitting awaiting the user's save/discard decision.
+  const [pending, setPending] = useState<{ sec: number } | null>(null);
+  const [label, setLabel] = useState("");
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
 
-  // Keep the latest onSecond in a ref so the interval below stays stable while
-  // always invoking the current callback (which closes over the active section).
+  // Keep the latest onSecond / defaultLabel in refs so the interval and finishRun
+  // stay stable while always reading the current values.
   const onSecondRef = useRef(onSecond);
   onSecondRef.current = onSecond;
+  const defaultLabelRef = useRef(defaultLabel);
+  defaultLabelRef.current = defaultLabel;
+
+  // Seconds elapsed in the current contiguous sitting (accrues across pauses);
+  // flushed by finishRun() on reset / completion / length change.
+  const runElapsedRef = useRef(0);
+  const finishRun = useCallback(() => {
+    const sec = runElapsedRef.current;
+    runElapsedRef.current = 0;
+    if (sec >= MIN_LOG_SEC) {
+      setPending({ sec });
+      setLabel(defaultLabelRef.current);
+    }
+  }, []);
 
   const chime = useCallback(() => {
     try {
@@ -80,15 +108,18 @@ export function Timer({
           if (tickRef.current) clearInterval(tickRef.current);
           setRunning(false);
           onSecondRef.current?.();
+          runElapsedRef.current += 1;
+          finishRun();
           chime();
           return 0;
         }
         onSecondRef.current?.();
+        runElapsedRef.current += 1;
         return r - 1;
       });
     }, 1000);
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
-  }, [running, chime]);
+  }, [running, chime, finishRun]);
 
   useEffect(() => () => { ctxRef.current?.close(); }, []);
 
@@ -98,6 +129,7 @@ export function Timer({
 
   const setPreset = (mins: number) => {
     const s = mins * 60;
+    finishRun(); // changing length ends the current sitting
     setTarget(s);
     setRemaining(s);
     setRunning(false);
@@ -109,6 +141,7 @@ export function Timer({
     const n = parseInt(raw, 10);
     if (!isNaN(n) && n >= 1 && n <= maxMin) {
       const s = n * 60;
+      finishRun();
       setTarget(s);
       setRemaining(s);
       setRunning(false);
@@ -131,11 +164,21 @@ export function Timer({
       setRunning(true);
       return;
     }
-    setRunning((v) => !v);
+    setRunning((v) => !v); // pause just suspends — the sitting keeps accruing
   };
   const reset = () => {
+    finishRun();
     setRunning(false);
     setRemaining(target);
+  };
+
+  const saveSession = () => {
+    if (pending) onLogSession?.(pending.sec, label.trim());
+    setPending(null);
+  };
+  const discardSession = () => {
+    onDiscardSession?.();
+    setPending(null);
   };
 
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
@@ -236,6 +279,37 @@ export function Timer({
           ↺
         </button>
       </div>
+
+      {/* Review bar — opt-in save of a finished sitting */}
+      {pending && (
+        <div
+          className="mt-3 p-3 flex flex-col gap-2"
+          style={{ background: "var(--bg)", border: "1px solid var(--accent)" }}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="font-display text-[0.6rem] tracking-[0.14em] uppercase" style={{ color: "var(--muted)" }}>
+              Practiced
+            </span>
+            <span className="font-mono font-semibold tabular-nums text-[0.95rem]" style={{ color: "var(--text)" }}>
+              {fmtClock(pending.sec)}
+            </span>
+          </div>
+          <input
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") saveSession(); }}
+            placeholder="Label (optional)"
+            aria-label="Session label"
+            className="font-mono text-[0.75rem] border px-2 py-[0.4rem] bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            style={{ borderColor: "var(--border)", color: "var(--text)" }}
+          />
+          <div className="flex gap-2">
+            <CtrlButton label="Save" active onClick={saveSession} small normalCase />
+            <CtrlButton label="Discard" active={false} onClick={discardSession} small normalCase />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

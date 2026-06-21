@@ -3,6 +3,7 @@ import { Nav } from "./Nav";
 import { CtrlButton } from "./CtrlButton";
 import { LIGHT_THEME, DARK_THEME } from "./theme";
 import { Timer } from "./Timer";
+import { addSession } from "./practiceLog.utils";
 import { useDrone, DronePanel } from "./Drone";
 import { CircleKeySelector } from "./CircleKeySelector";
 import { KEYS, NOTE_NAMES, mod12 } from "./pentatonicPractice.utils";
@@ -667,7 +668,18 @@ export function Metronome() {
             className="p-5 max-[700px]:p-4"
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
-            <Timer storageKey="met-timer-sec" />
+            <Timer
+              storageKey="met-timer-sec"
+              onLogSession={(sec, label) =>
+                addSession({
+                  startedAt: Date.now() - sec * 1000,
+                  durationSec: sec,
+                  source: "practice-station",
+                  bpm: met.bpm,
+                  label: label || undefined,
+                })
+              }
+            />
           </div>
         </div>
 

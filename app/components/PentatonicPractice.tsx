@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { Link } from "react-router";
 import { Nav } from "./Nav";
 import { CtrlButton } from "./CtrlButton";
 import { LIGHT_THEME, DARK_THEME } from "./theme";
 import { Timer, fmtClock } from "./Timer";
+import { addSession } from "./practiceLog.utils";
 import { useDrone, DronePanel } from "./Drone";
 import { CircleKeySelector } from "./CircleKeySelector";
 import { FRET_INLAYS, FRET_DOUBLE } from "./scalePositions.utils";
@@ -481,24 +483,10 @@ export function PentatonicPractice() {
   const [showHints, setShowHints] = useState(true);
   const [showDiagram, setShowDiagram] = useState(true);
 
-  // Per-section practice log: stepIndex → accumulated seconds, persisted to localStorage.
-  const [log, setLog] = useState<Record<number, number>>(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = JSON.parse(localStorage.getItem("pp-log") ?? "{}");
-      const out: Record<number, number> = {};
-      for (let i = 0; i < STEPS.length; i++) {
-        const v = raw[i];
-        if (typeof v === "number" && v >= 0) out[i] = v;
-      }
-      return out;
-    } catch {
-      return {};
-    }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("pp-log", JSON.stringify(log)); } catch {}
-  }, [log]);
+  // Live per-section tally for the current sitting (section title → seconds),
+  // accrued via the Timer's onSecond. Cleared when the sitting is logged or
+  // discarded. The durable record is one opt-in entry in the central log.
+  const [tally, setTally] = useState<Record<string, number>>({});
 
   const met = useMetronomePanel();
 
@@ -863,12 +851,27 @@ export function PentatonicPractice() {
           <MetronomePanel met={met} />
           <Timer
             storageKey="pp-timer-sec"
-            onSecond={() => setLog((l) => ({ ...l, [step]: (l[step] ?? 0) + 1 }))}
+            defaultLabel={STEPS[step].title}
+            onSecond={() =>
+              setTally((t) => ({ ...t, [STEPS[step].title]: (t[STEPS[step].title] ?? 0) + 1 }))
+            }
+            onLogSession={(sec, label) => {
+              addSession({
+                startedAt: Date.now() - sec * 1000,
+                durationSec: sec,
+                source: "pentatonic-practice",
+                section: STEPS[step].title,
+                bpm: met.bpm,
+                label: label || undefined,
+              });
+              setTally({});
+            }}
+            onDiscardSession={() => setTally({})}
           />
         </div>
 
-        {/* ── Session log: time logged per section ── */}
-        <SessionLog log={log} step={step} onPick={goStep} onReset={() => setLog({})} />
+        {/* ── This sitting: time per section ── */}
+        <SessionLog tally={tally} step={step} onPick={goStep} />
 
         {/* Footer hint */}
         <div className="mt-3 text-[0.6rem]" style={{ color: "var(--muted)" }}>
@@ -880,21 +883,22 @@ export function PentatonicPractice() {
 }
 
 // ─── Session log ─────────────────────────────────────────────────────────────
-// Accumulated practice time per routine step. Active step is highlighted; time is
-// credited to whichever step is selected while the timer runs (see `onSecond`).
+// Live per-section breakdown of the current sitting (from the Timer's onSecond).
+// Resets when the sitting is logged/discarded. Durable history lives on
+// /practice-log as one opt-in entry per sitting.
 
 function SessionLog({
-  log,
+  tally,
   step,
   onPick,
-  onReset,
 }: {
-  log: Record<number, number>;
+  tally: Record<string, number>;
   step: number;
   onPick: (i: number) => void;
-  onReset: () => void;
 }) {
-  const total = STEPS.reduce((sum, _, i) => sum + (log[i] ?? 0), 0);
+  const secFor = (i: number) => tally[STEPS[i].title] ?? 0;
+  const total = STEPS.reduce((sum, _, i) => sum + secFor(i), 0);
+
   return (
     <div
       className="mt-4 p-5 max-[700px]:p-4"
@@ -902,18 +906,25 @@ function SessionLog({
     >
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <div className="text-[0.5rem] tracking-[0.18em] uppercase" style={{ color: "var(--muted)" }}>
-          Session Log
+          This sitting · per section
         </div>
         <div className="flex items-center gap-3">
           <span className="font-mono text-[0.7rem] tabular-nums" style={{ color: "var(--muted)" }}>
             Total {fmtClock(total)}
           </span>
-          <CtrlButton label="Reset" active={false} onClick={onReset} small normalCase disabled={total === 0} />
+          <Link
+            to="/practice-log"
+            className="font-display text-[0.7rem] tracking-[0.08em] uppercase no-underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]"
+            style={{ color: "var(--accent)" }}
+          >
+            View log →
+          </Link>
         </div>
       </div>
       <div className="grid grid-cols-2 max-[560px]:grid-cols-1 gap-x-6 gap-y-1">
         {STEPS.map((s, i) => {
           const on = i === step;
+          const sec = secFor(i);
           return (
             <button
               key={i}
@@ -929,9 +940,9 @@ function SessionLog({
               </span>
               <span
                 className="font-mono text-[0.72rem] tabular-nums flex-shrink-0"
-                style={{ color: (log[i] ?? 0) > 0 ? "var(--text)" : "var(--faint)" }}
+                style={{ color: sec > 0 ? "var(--text)" : "var(--faint)" }}
               >
-                {fmtClock(log[i] ?? 0)}
+                {fmtClock(sec)}
               </span>
             </button>
           );

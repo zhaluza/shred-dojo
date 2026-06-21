@@ -21,4 +21,5 @@ export default [
   route("morning-coffee", "routes/morning-coffee.tsx"),
   route("pentatonic-practice", "routes/pentatonic-practice.tsx"),
   route("metronome", "routes/metronome.tsx"),
+  route("practice-log", "routes/practice-log.tsx"),
 ] satisfies RouteConfig;

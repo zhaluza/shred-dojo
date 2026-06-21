@@ -44,6 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/morning-coffee", label: "Morning Coffee" },
       { to: "/pentatonic-practice", label: "Pentatonic" },
       { to: "/metronome", label: "Metronome" },
+      { to: "/practice-log", label: "Practice Log" },
     ],
   },
   {

@@ -154,6 +154,11 @@ const TOOL_CATEGORIES: Array<{
         title: "Metronome",
         body: "A standalone practice station: a big beat-dial metronome with tap tempo, a tempo trainer that ramps speed for you, and a countdown timer. Just sit down and woodshed.",
       },
+      {
+        to: "/practice-log",
+        title: "Practice Log",
+        body: "A central history of your practice, filled in automatically as you run the timer on the Metronome and Pentatonic pages. See your time per day, per tool, and per section.",
+      },
     ],
   },
   {
