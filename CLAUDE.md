@@ -109,7 +109,7 @@ Built-in fretboard/quiz pages. Each has a `routes/<name>.tsx` wrapper + a `compo
 | `/morning-coffee` | Daily routine cycling drills across 12 keys; inline metronome; optional Cream & Sugar drills. |
 | `/pentatonic-practice` | Six-step pentatonic routine; inline metronome + countdown timer + key-following tonic drone (off by default). |
 | `/metronome` | Standalone "Practice Station": circular beat-dial metronome (tap tempo, subdivisions, tempo-trainer auto-ramp) + countdown timer (presets/custom length/+5 min) + a Key & Drone card (circle-of-fifths key picker driving an optional tonic drone). Two-column metronome/timer row above the fold, drone card below. |
-| `/practice-log` | Central practice history, auto-filled by the shared `Timer` on the Metronome + Pentatonic pages. Summary (Today / Last 7 days / All time) + sessions grouped by day. See the practice-log gotcha. |
+| `/practice-log` | Central practice history. The shared `Timer` (Metronome + Pentatonic pages) offers an opt-in Save/Discard review bar at the end of a sitting; this page lists sessions grouped by day (Today / Last 7 days / All time totals) and supports inline edit (label + bpm) + delete. See the practice-log gotcha. |
 | `/note-recognition` | Fretboard note-recognition quiz. |
 | `/staff-notes` | Treble-clef note-reading quiz. |
 | `/chord-tones` | Quiz identifying the degree of a highlighted note in a scale shape. |
