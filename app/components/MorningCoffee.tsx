@@ -950,6 +950,14 @@ export function MorningCoffee() {
     } catch { return false; }
   });
 
+  const [showTab, setShowTab] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const s = JSON.parse(localStorage.getItem("mc-state3") ?? "{}");
+      return typeof s.st === "boolean" ? s.st : false;
+    } catch { return false; }
+  });
+
   const [selectedCSDrills, setSelectedCSDrills] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -966,10 +974,10 @@ export function MorningCoffee() {
     try {
       localStorage.setItem(
         "mc-state3",
-        JSON.stringify({ d: drillIdx, k: keyIdx, sb: sidebarOpen, sh: showShape })
+        JSON.stringify({ d: drillIdx, k: keyIdx, sb: sidebarOpen, sh: showShape, st: showTab })
       );
     } catch {}
-  }, [drillIdx, keyIdx, sidebarOpen, showShape]);
+  }, [drillIdx, keyIdx, sidebarOpen, showShape, showTab]);
 
   useEffect(() => {
     try {
@@ -1280,17 +1288,27 @@ export function MorningCoffee() {
                   <div className="text-[0.5rem] tracking-[0.18em] uppercase" style={{ color: "var(--muted)" }}>
                     {keyIdx === 0 && ref ? ref.title : ""}
                   </div>
-                  <CtrlButton
-                    label={showShape ? "Hide shape" : "Scale shape"}
-                    active={showShape}
-                    onClick={() => setShowShape((s) => !s)}
-                    small
-                  />
+                  <div className="flex items-center gap-2">
+                    {keyIdx === 0 && ref?.tab && (
+                      <CtrlButton
+                        label={showTab ? "Hide tab" : "Show tab"}
+                        active={showTab}
+                        onClick={() => setShowTab((s) => !s)}
+                        small
+                      />
+                    )}
+                    <CtrlButton
+                      label={showShape ? "Hide shape" : "Scale shape"}
+                      active={showShape}
+                      onClick={() => setShowShape((s) => !s)}
+                      small
+                    />
+                  </div>
                 </div>
 
                 {keyIdx === 0 && ref ? (
                   <div className="flex flex-col gap-2">
-                    {ref.tab && (
+                    {ref.tab && showTab && (
                       <pre
                         className="font-mono overflow-x-auto whitespace-pre"
                         style={{ fontSize: "0.72rem", lineHeight: 1.6, color: "var(--muted)", margin: 0 }}
