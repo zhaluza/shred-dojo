@@ -55,6 +55,15 @@ export function Timer({
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
 
+  // Wall-clock state so the countdown stays accurate when the tab is backgrounded
+  // (browsers throttle/pause setInterval in inactive tabs). `deadlineRef` is the
+  // ms timestamp the countdown hits 0; elapsed is accrued from real time, not tick
+  // count, with `lastAccountRef` marking the last accounted instant and `fracRef`
+  // carrying the sub-second remainder.
+  const deadlineRef = useRef(0);
+  const lastAccountRef = useRef(0);
+  const fracRef = useRef(0);
+
   // Keep the latest onSecond / defaultLabel in refs so the interval and finishRun
   // stay stable while always reading the current values.
   const onSecondRef = useRef(onSecond);
@@ -68,6 +77,7 @@ export function Timer({
   const finishRun = useCallback(() => {
     const sec = runElapsedRef.current;
     runElapsedRef.current = 0;
+    fracRef.current = 0;
     if (sec >= MIN_LOG_SEC) {
       setPending({ sec });
       setLabel(defaultLabelRef.current);
@@ -102,23 +112,48 @@ export function Timer({
       if (tickRef.current) clearInterval(tickRef.current);
       return;
     }
-    tickRef.current = setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          if (tickRef.current) clearInterval(tickRef.current);
-          setRunning(false);
-          onSecondRef.current?.();
-          runElapsedRef.current += 1;
-          finishRun();
-          chime();
-          return 0;
-        }
-        onSecondRef.current?.();
+    // Begin a run segment from the current `remaining` (captured when running
+    // flipped true; `remaining` is intentionally not a dep so seconds ticking by
+    // don't restart the segment — addFive bumps deadlineRef directly instead).
+    const start = Date.now();
+    deadlineRef.current = start + remaining * 1000;
+    lastAccountRef.current = start;
+    let finished = false; // per-segment guard so completion fires once
+
+    const tick = () => {
+      if (finished) return;
+      const now = Date.now();
+      // Accrue real elapsed time (capped at the deadline) and pulse onSecond once
+      // per whole second — so a backgrounded gap is credited correctly on return.
+      const effNow = Math.min(now, deadlineRef.current);
+      const delta = Math.max(0, effNow - lastAccountRef.current);
+      lastAccountRef.current = effNow;
+      fracRef.current += delta / 1000;
+      while (fracRef.current >= 1) {
+        fracRef.current -= 1;
         runElapsedRef.current += 1;
-        return r - 1;
-      });
-    }, 1000);
-    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+        onSecondRef.current?.();
+      }
+      const rem = Math.max(0, Math.ceil((deadlineRef.current - now) / 1000));
+      setRemaining(rem);
+      if (now >= deadlineRef.current) {
+        finished = true;
+        if (tickRef.current) clearInterval(tickRef.current);
+        setRunning(false);
+        finishRun();
+        chime();
+      }
+    };
+
+    tickRef.current = setInterval(tick, 250);
+    // Resync immediately when returning to the tab (don't wait for the throttled tick).
+    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      if (tickRef.current) clearInterval(tickRef.current);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, chime, finishRun]);
 
   useEffect(() => () => { ctxRef.current?.close(); }, []);
@@ -155,6 +190,7 @@ export function Timer({
     const wasDone = remaining === 0;
     setTarget((t) => { const nt = t + 300; persistTarget(nt); return nt; });
     setRemaining((r) => r + 300);
+    deadlineRef.current += 300 * 1000; // extend the live deadline if a run is active
     setCustomMin("");
     if (wasDone) setRunning(true);
   };
