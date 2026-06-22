@@ -1,8 +1,9 @@
 import { Link, useLoaderData } from "react-router";
+import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
 import { LIGHT_THEME, DARK_THEME } from "~/components/theme";
 import { Nav } from "~/components/Nav";
-import { useState, useEffect } from "react";
+import { useDarkMode } from "~/components/useDarkMode";
 
 const DESCRIPTION =
   "Interactive fretboard tools for guitarists who want real scale command — scales, arpeggios, chord voicings, and note quizzes.";
@@ -31,168 +32,183 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 // ---------------------------------------------------------------------------
-// Home page
+// Information architecture — mirrors Nav (Scales / Pentatonic / Harmony /
+// Train / Drills). Each tool is a callout on the drawing.
 // ---------------------------------------------------------------------------
 
-const HERO_DECO_ROWS: Array<{
-  stringHeight: string;
-  stringColor: string;
-  dots: Array<{ left: string; root?: boolean }>;
-}> = [
-  {
-    stringHeight: "1.5px",
-    stringColor: "var(--border)",
-    dots: [{ left: "8%" }, { left: "22%" }, { left: "38%" }, { left: "55%" }, { left: "72%" }, { left: "89%" }],
-  },
-  {
-    stringHeight: "1px",
-    stringColor: "var(--border)",
-    dots: [{ left: "5%" }, { left: "15%", root: true }, { left: "31%" }, { left: "47%" }, { left: "62%" }, { left: "80%" }],
-  },
-  {
-    stringHeight: "1px",
-    stringColor: "var(--border)",
-    dots: [{ left: "12%" }, { left: "28%" }, { left: "44%", root: true }, { left: "60%" }, { left: "76%" }],
-  },
-  {
-    stringHeight: "1.5px",
-    stringColor: "var(--sys-caged)",
-    dots: [{ left: "3%" }, { left: "19%" }, { left: "35%" }, { left: "52%", root: true }, { left: "68%" }, { left: "85%" }],
-  },
-  {
-    stringHeight: "2px",
-    stringColor: "var(--border)",
-    dots: [{ left: "9%" }, { left: "25%" }, { left: "41%" }, { left: "57%", root: true }, { left: "74%" }, { left: "91%" }],
-  },
-  {
-    stringHeight: "2px",
-    stringColor: "var(--border)",
-    dots: [{ left: "6%", root: true }, { left: "22%" }, { left: "38%" }, { left: "54%" }, { left: "70%" }, { left: "87%" }],
-  },
-];
+type Tool = { to: string; title: string; body: string; featured?: true };
+type Category = { label: string; tag: string; tools: Tool[] };
 
-const TOOL_CATEGORIES: Array<{
-  label: string;
-  tools: Array<{ to: string; title: string; body: string; featured?: true }>;
-}> = [
+const TOOL_CATEGORIES: Category[] = [
   {
     label: "Scales",
+    tag: "Reference",
     tools: [
-      {
-        to: "/shape-explorer",
-        title: "Shape Explorer",
-        body: "Focus on one shape at a time or see all shapes in an overview grid. Pick your key and system — fret numbers reflect the real neck.",
-      },
-      {
-        to: "/scale-positions",
-        title: "Systems",
-        body: "See the full neck at once — all 7 positions across 3nps, CAGED, and symmetric systems, paired side by side or merged into a unified view. In any key.",
-      },
+      { to: "/shape-explorer", title: "Shape Explorer", body: "Focus on one shape or see them all in an overview grid. Pick a key and system — fret numbers reflect the real neck." },
+      { to: "/scale-positions", title: "Systems", body: "The whole neck at once: all 7 positions across 3nps, CAGED, and symmetric systems, paired or merged into one view." },
+      { to: "/wylde-scales", title: "Wylde", body: "Zakk Wylde's three-notes-per-string approach — each modal position paired with its pentatonic box." },
+      { to: "/yngwie-scales", title: "Yngwie", body: "Two harmonic-minor shapes built around the raised 7th, for neoclassical runs." },
+      { to: "/scale-builder", title: "Scale Builder", body: "Five scale formulas in any key — names or notation, with reference and exercise modes." },
     ],
   },
   {
     label: "Pentatonic",
+    tag: "Reference",
     tools: [
-      {
-        to: "/pentatonic-triads",
-        title: "Pentatonic Triads",
-        body: "Triad intervals (root, 3rd, 5th) mapped across all 5 pentatonic boxes — see how they connect across position boundaries.",
-      },
-      {
-        to: "/pentatonic-colors",
-        title: "Pentatonic Colors",
-        body: "Take Box 1 of the minor or major pentatonic and add color notes from modes like Aeolian, Dorian, Phrygian, Lydian, and more.",
-      },
-      {
-        to: "/interval-shapes",
-        title: "Interval Shapes",
-        body: "The recurring two-string shapes that make up every pentatonic position. Diagram and flashcard modes for major and minor.",
-      },
+      { to: "/pentatonic-triads", title: "Pentatonic Triads", body: "Triad intervals (root, 3rd, 5th) mapped across all 5 boxes — see how they connect over position boundaries." },
+      { to: "/pentatonic-colors", title: "Pentatonic Colors", body: "Box 1 of the minor or major pentatonic, layered with color notes from Aeolian, Dorian, Phrygian, Lydian, and more." },
+      { to: "/interval-shapes", title: "Interval Shapes", body: "The recurring two-string shapes inside every pentatonic position. Diagram and flashcard modes, major and minor." },
     ],
   },
   {
     label: "Harmony",
+    tag: "Reference",
     tools: [
-      {
-        to: "/chord-voicings",
-        title: "Chord Voicings",
-        body: "All 5 CAGED chord shapes for major, minor, and seventh chord types — root, 3rd, 5th, and 7th color-coded across every voicing.",
-      },
-      {
-        to: "/arpeggio-maps",
-        title: "Arpeggio Maps",
-        body: "Chord-tone positions for the 5 CAGED shapes — see exactly where root, 3rd, 5th, and 7th land for major, minor, and seventh arpeggios.",
-      },
+      { to: "/chord-voicings", title: "Chord Voicings", body: "All 5 CAGED shapes for major, minor, and seventh chords — root, 3rd, 5th, and 7th color-coded across every voicing." },
+      { to: "/arpeggio-maps", title: "Arpeggio Maps", body: "Chord-tone positions for the 5 CAGED shapes — exactly where root, 3rd, 5th, and 7th land for each arpeggio." },
+      { to: "/circle-of-fifths", title: "Circle of Fifths", body: "An interactive circle with diatonic chords for any key you land on." },
     ],
   },
   {
-    label: "Vocabulary",
+    label: "Train",
+    tag: "Metered practice",
     tools: [
-      {
-        to: "/lick-stash",
-        title: "Lick Stash",
-        body: "Curated lick packs organized by style and technique. Learn, loop, and internalize real vocabulary you can use on stage.",
-      },
+      { to: "/morning-coffee", title: "Morning Coffee", body: "Your daily routine: major scales, triads, pentatonics, and broken intervals across all 12 keys. Based on Alex Rockwell's method. Do it every day.", featured: true },
+      { to: "/pentatonic-practice", title: "Pentatonic Practice", body: "A six-step routine for total pentatonic command — memorize, place, transpose, connect, then improvise. With metronome, timer, and key drone." },
+      { to: "/metronome", title: "Metronome", body: "A standalone practice station: a big beat-dial metronome with tap tempo, a tempo trainer that ramps for you, a timer, and a key drone." },
+      { to: "/lick-stash", title: "Lick Stash", body: "Curated lick packs by style and technique. Learn, loop, and internalize real vocabulary you can use on stage." },
+      { to: "/practice-log", title: "Practice Log", body: "A running history of your practice, filled in automatically as the timer runs. Time per day, per tool, per section." },
     ],
   },
   {
-    label: "Routines",
+    label: "Drills",
+    tag: "Active recall",
     tools: [
-      {
-        to: "/morning-coffee",
-        title: "Morning Coffee",
-        body: "Your daily routine: major scales, triads, pentatonics, and broken intervals across all 12 keys. Based on Alex Rockwell's Morning Coffee method. Do it every day.",
-        featured: true,
-      },
-      {
-        to: "/pentatonic-practice",
-        title: "Pentatonic Practice",
-        body: "A six-step routine for total pentatonic command: memorize the 5 shapes, place them in any key, transpose on sight, find the lowest shape, run horizontal string sets, then improvise. With metronome and timer.",
-      },
-      {
-        to: "/metronome",
-        title: "Metronome",
-        body: "A standalone practice station: a big beat-dial metronome with tap tempo, a tempo trainer that ramps speed for you, and a countdown timer. Just sit down and woodshed.",
-      },
-      {
-        to: "/practice-log",
-        title: "Practice Log",
-        body: "A central history of your practice, filled in automatically as you run the timer on the Metronome and Pentatonic pages. See your time per day, per tool, and per section.",
-      },
-    ],
-  },
-  {
-    label: "Practice",
-    tools: [
-      {
-        to: "/note-recognition",
-        title: "Note Recognition",
-        body: "Identify the highlighted fretboard note. Build instant recall across any string, fret range, and note type.",
-      },
-      {
-        to: "/staff-notes",
-        title: "Staff Notes",
-        body: "Read treble clef notes on a music staff. Identify notes from C4 to B5 across naturals and accidentals.",
-      },
-      {
-        to: "/chord-tones",
-        title: "Chord Tones",
-        body: "Identify the interval of each highlighted note within a scale shape. Works across pentatonic boxes, blues scale, and diatonic 3nps/CAGED positions.",
-      },
+      { to: "/note-recognition", title: "Note Recognition", body: "Name the highlighted fretboard note. Build instant recall across any string, fret range, and note type." },
+      { to: "/staff-notes", title: "Staff Notes", body: "Read treble-clef notes on the staff, from C4 to B5 across naturals and accidentals." },
+      { to: "/chord-tones", title: "Chord Tones", body: "Name the degree of each highlighted note in a scale shape — pentatonic boxes, blues, and diatonic positions." },
     ],
   },
 ];
 
 const COMING_SOON_TOOLS = [
-  {
-    title: "Fretboard Fluency",
-    body: "A structured course for internalizing the neck from the ground up — notes, intervals, and positions as a single connected map.",
-  },
-  {
-    title: "Ear Training",
-    body: "Interval recognition and melodic dictation exercises calibrated to your current level.",
-  },
+  { title: "Fretboard Fluency", body: "A structured course for internalizing the neck from the ground up — notes, intervals, and positions as one connected map." },
+  { title: "Ear Training", body: "Interval recognition and melodic dictation, calibrated to your current level." },
 ];
+
+// ---------------------------------------------------------------------------
+// Neck blueprint — the signature. A measured drawing of the neck with
+// logarithmically-spaced frets and inlay positions labeled (3·5·7·9·12).
+// ---------------------------------------------------------------------------
+
+const NUT_X = 46;
+const END_X = 968;
+const SCALE_LEN = 2 * (END_X - NUT_X); // so fret 12 lands at END_X
+const fretX = (n: number) => NUT_X + SCALE_LEN * (1 - Math.pow(2, -n / 12));
+const STRING_Y = [34, 52, 70, 88, 106, 124]; // high e → low E (top → bottom)
+const STRING_W = [0.6, 0.8, 1, 1.3, 1.6, 2];
+const INLAYS = [3, 5, 7, 9]; // single-dot positions
+const inlayMid = (n: number) => (fretX(n - 1) + fretX(n)) / 2;
+const DIM_Y = 152;
+
+function NeckBlueprint({ shown, reduced }: { shown: boolean; reduced: boolean }) {
+  const ease = reduced ? "none" : "opacity 700ms ease, transform 700ms ease";
+  return (
+    <svg
+      viewBox="0 0 1000 188"
+      width="100%"
+      aria-hidden="true"
+      style={{ display: "block" }}
+    >
+      <g
+        style={{
+          opacity: shown ? 1 : 0,
+          transform: shown ? "translateY(0)" : "translateY(10px)",
+          transition: ease,
+        }}
+      >
+        {/* nut */}
+        <line x1={NUT_X} y1={28} x2={NUT_X} y2={130} stroke="var(--muted)" strokeWidth={3} />
+        {/* frets */}
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+          <line key={n} x1={fretX(n)} y1={28} x2={fretX(n)} y2={130} stroke="var(--fret-bar)" strokeWidth={1} />
+        ))}
+        {/* strings */}
+        {STRING_Y.map((y, s) => (
+          <line key={s} x1={NUT_X} y1={y} x2={END_X} y2={y} stroke="var(--border)" strokeWidth={STRING_W[s]} />
+        ))}
+        {/* single inlays — fret 5 is the cyan "you are here" */}
+        {INLAYS.map((n, i) => (
+          <circle
+            key={n}
+            cx={inlayMid(n)}
+            cy={79}
+            r={5.5}
+            fill={n === 5 ? "var(--accent)" : "var(--muted)"}
+            style={{
+              opacity: shown ? (n === 5 ? 1 : 0.55) : 0,
+              transform: shown ? "scale(1)" : "scale(0)",
+              transformBox: "fill-box",
+              transformOrigin: "center",
+              transition: reduced ? "none" : `opacity 300ms ease ${220 + i * 80}ms, transform 320ms cubic-bezier(.34,1.56,.64,1) ${220 + i * 80}ms`,
+            }}
+          />
+        ))}
+        {/* 12th-fret double inlay */}
+        {[52, 106].map((cy, i) => (
+          <circle
+            key={cy}
+            cx={inlayMid(12)}
+            cy={cy}
+            r={5.5}
+            fill="var(--muted)"
+            style={{
+              opacity: shown ? 0.55 : 0,
+              transform: shown ? "scale(1)" : "scale(0)",
+              transformBox: "fill-box",
+              transformOrigin: "center",
+              transition: reduced ? "none" : `opacity 300ms ease ${540 + i * 80}ms, transform 320ms cubic-bezier(.34,1.56,.64,1) ${540 + i * 80}ms`,
+            }}
+          />
+        ))}
+        {/* dimension line + fret-number callouts */}
+        <line x1={NUT_X} y1={DIM_Y} x2={fretX(12)} y2={DIM_Y} stroke="var(--border)" strokeWidth={1} />
+        {[3, 5, 7, 9, 12].map((n) => (
+          <g key={n}>
+            <line x1={inlayMid(n)} y1={DIM_Y - 4} x2={inlayMid(n)} y2={DIM_Y + 4} stroke="var(--border)" strokeWidth={1} />
+            <text
+              x={inlayMid(n)}
+              y={DIM_Y + 18}
+              textAnchor="middle"
+              fontFamily="'IBM Plex Mono', monospace"
+              fontSize={11}
+              fill={n === 5 ? "var(--accent)" : "var(--muted)"}
+            >
+              {n}
+            </text>
+          </g>
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Home page
+// ---------------------------------------------------------------------------
+
+function useIntro() {
+  const [shown, setShown] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    if (mq.matches) { setShown(true); return; }
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return { shown, reduced };
+}
 
 function HomePage({
   isDark,
@@ -208,200 +224,156 @@ function HomePage({
   }, [preview]);
 
   const theme = isDark ? DARK_THEME : LIGHT_THEME;
+  const { shown, reduced } = useIntro();
+  const introStyle = (delay: number) => ({
+    opacity: shown ? 1 : 0,
+    transform: shown ? "translateY(0)" : "translateY(8px)",
+    transition: reduced ? "none" : `opacity 600ms ease ${delay}ms, transform 600ms ease ${delay}ms`,
+  });
 
   return (
     <div
-      className="min-h-screen flex flex-col font-mono bg-[var(--bg)] text-[var(--text)]"
+      className="min-h-screen flex flex-col font-mono bg-[var(--bg)] text-[var(--text)] transition-[background,color] duration-200"
       style={theme}
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden">
-        {/* Gradient fade at bottom of hero — blends decorative fretboard into content */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-24 pointer-events-none z-[1]"
-          style={{ backgroundImage: "linear-gradient(to bottom, transparent, var(--bg))" }}
-          aria-hidden="true"
-        />
-        {/* Decorative fretboard — full width background */}
-        <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none select-none max-[600px]:hidden"
-          style={{ opacity: isDark ? 0.18 : 0.12 }}
-          aria-hidden="true"
-        >
-          {HERO_DECO_ROWS.map((row, i) => (
-            <div key={i} className="h-[26px] flex items-center relative">
-              <div
-                className="absolute inset-x-0 top-1/2 -translate-y-1/2"
-                style={{ height: row.stringHeight, backgroundColor: row.stringColor }}
-              />
-              <div
-                className="flex-1 h-full relative"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(to right, transparent 0px, transparent 7.69%, var(--border) 7.69%, var(--border) calc(7.69% + 1px))",
-                }}
-              >
-                {row.dots.map((dot, j) => (
-                  <div
-                    key={j}
-                    className="w-[16px] h-[16px] rounded-full absolute top-1/2 -translate-y-1/2 z-[2]"
-                    style={{
-                      left: dot.left,
-                      backgroundColor: dot.root ? "var(--accent)" : "var(--text)",
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Hero content */}
-        <div className="relative z-[1] max-w-[900px] mx-auto w-full px-5 md:px-8 pt-12 pb-16 md:pt-20 md:pb-24 [@media(max-height:500px)]:pt-4 [@media(max-height:500px)]:pb-6">
+        <div className="relative z-[1] max-w-[1080px] mx-auto w-full px-5 md:px-8 pt-14 pb-10 md:pt-20 md:pb-14 [@media(max-height:500px)]:pt-5 [@media(max-height:500px)]:pb-4">
           <p
-            className="text-[0.58rem] tracking-[0.24em] uppercase mb-7 [@media(max-height:500px)]:mb-3"
-            style={{ color: "var(--sys-caged)" }}
+            className="font-mono text-[0.58rem] tracking-[0.28em] uppercase mb-6 [@media(max-height:500px)]:mb-3 flex items-center gap-2"
+            style={{ color: "var(--accent)", ...introStyle(0) }}
           >
-            Guitar Learning Platform
+            <span className="inline-block w-4 h-px" style={{ backgroundColor: "var(--accent)" }} aria-hidden="true" />
+            Fretboard atlas · electric guitar
           </p>
 
-          <h1 className="font-display font-semibold uppercase leading-[0.9] mb-10 [@media(max-height:500px)]:mb-4">
-            <span
-              className="block text-[clamp(4rem,11vw,8.5rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.5rem)] tracking-[0.02em]"
-            >
+          <h1
+            className="font-display font-semibold uppercase leading-[0.88] mb-7 [@media(max-height:500px)]:mb-3"
+            style={introStyle(80)}
+          >
+            <span className="block text-[clamp(3.4rem,10vw,7.6rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.2rem)] tracking-[0.01em]">
               Know
             </span>
             <span
-              className="block text-[clamp(4rem,11vw,8.5rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.5rem)] tracking-[0.02em]"
+              className="block text-[clamp(3.4rem,10vw,7.6rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.2rem)] tracking-[0.01em]"
               style={{ color: "var(--accent)" }}
             >
               Every
             </span>
-            <span
-              className="block text-[clamp(4rem,11vw,8.5rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.5rem)] tracking-[0.02em]"
-            >
+            <span className="block text-[clamp(3.4rem,10vw,7.6rem)] [@media(max-height:500px)]:text-[clamp(2rem,7vh,3.2rem)] tracking-[0.01em]">
               Note.
             </span>
           </h1>
 
-          {/* Rule */}
-          <div className="flex items-center mb-8 [@media(max-height:500px)]:mb-3 max-w-[460px]">
-            <div className="h-[2px] w-10 bg-[var(--accent)]" />
-            <div className="h-[2px] flex-1 bg-[var(--border)] ml-2" />
-          </div>
-
-          <p className="text-[0.8rem] leading-[1.95] text-[var(--muted)] mb-10 [@media(max-height:500px)]:hidden max-w-[480px]">
-            A focused platform for guitarists who want real fretboard command —
-            not just shapes to memorize, but a complete understanding of how scales,
-            positions, and vocabulary connect across the entire neck.
+          <p
+            className="text-[0.8rem] leading-[1.9] text-[var(--muted)] mb-8 [@media(max-height:500px)]:hidden max-w-[460px]"
+            style={introStyle(160)}
+          >
+            A draftsman's view of the neck. Scales, positions, and vocabulary drawn
+            as one connected map — then metered routines and recall drills to make
+            it second nature.
           </p>
 
-          <div className="flex items-center flex-wrap gap-3">
+          <div className="flex items-center flex-wrap gap-3" style={introStyle(240)}>
             <Link
               to="/scale-positions"
-              className="font-display text-[0.72rem] tracking-[0.1em] uppercase border border-[var(--text)] bg-[var(--text)] text-[var(--bg)] px-5 py-[0.6rem] no-underline hover:opacity-80 transition-opacity"
+              className="font-display text-[0.72rem] tracking-[0.1em] uppercase border border-[var(--accent)] bg-[var(--accent)] text-[var(--bg)] px-5 py-[0.6rem] no-underline hover:opacity-85 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
             >
               Explore Systems
             </Link>
-            {preview && (
-              <Link
-                to="/lick-stash"
-                className="font-display text-[0.72rem] tracking-[0.1em] uppercase border border-[var(--border)] text-[var(--text)] px-5 py-[0.6rem] no-underline hover:border-[var(--text)] transition-colors"
-              >
-                Browse Lick Stash
-              </Link>
-            )}
+            <Link
+              to="/morning-coffee"
+              className="font-display text-[0.72rem] tracking-[0.1em] uppercase border border-[var(--border)] text-[var(--text)] px-5 py-[0.6rem] no-underline hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+            >
+              Daily Routine
+            </Link>
           </div>
+        </div>
+
+        {/* Measured neck drawing */}
+        <div
+          className="max-w-[1080px] mx-auto w-full px-5 md:px-8 pb-6 [@media(max-height:500px)]:hidden"
+          style={{ opacity: isDark ? 0.9 : 0.8 }}
+        >
+          <NeckBlueprint shown={shown} reduced={reduced} />
         </div>
       </section>
 
-      {/* Thick accent bar — mimics a nut/fret marker */}
-      <div className="w-full h-[3px] bg-[var(--border)]">
-        <div className="h-full w-[3px] bg-[var(--accent)]" />
+      {/* Nut/marker rule between hero and index */}
+      <div className="w-full h-[2px] bg-[var(--border)]">
+        <div className="h-full w-16 bg-[var(--accent)]" />
       </div>
 
-      {/* ── Tools ── */}
-      <section className="max-w-[900px] mx-auto w-full px-5 md:px-8 pt-16 pb-4 flex flex-col gap-10">
+      {/* ── Tool index ── */}
+      <section className="max-w-[1080px] mx-auto w-full px-5 md:px-8 pt-14 pb-4 flex flex-col gap-9">
         {TOOL_CATEGORIES.map((cat) => (
           <div key={cat.label}>
-            {/* Category header */}
+            {/* Category callout */}
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-[0.52rem] tracking-[0.22em] uppercase text-[var(--muted)] shrink-0">
+              <span className="inline-block w-2.5 h-px shrink-0" style={{ backgroundColor: "var(--accent)" }} aria-hidden="true" />
+              <span className="font-display text-[0.7rem] font-semibold tracking-[0.18em] uppercase shrink-0">
                 {cat.label}
+              </span>
+              <span className="font-mono text-[0.5rem] tracking-[0.16em] uppercase shrink-0" style={{ color: "var(--muted)" }}>
+                {cat.tag}
               </span>
               <div className="flex-1 h-px bg-[var(--border)]" />
             </div>
 
-            {/* Tool cards */}
-            <div className={[
-              "border border-[var(--border)]",
-              cat.tools.length === 1 ? "" : "grid grid-cols-2 max-[600px]:grid-cols-1",
-            ].join(" ")}>
-              {cat.tools.map((tool, i) => {
+            {/* Callout cards — collapsed-border grid, featured spans full width */}
+            <div className="grid grid-cols-2 max-[600px]:grid-cols-1">
+              {cat.tools.map((tool) => {
                 const isFeatured = !!tool.featured;
-                const nonFeaturedTools = cat.tools.filter((t) => !t.featured);
-                const nonFeaturedIdx = nonFeaturedTools.indexOf(tool);
-                const isLeft = !isFeatured && nonFeaturedIdx % 2 === 0;
-                const hasRight = isLeft && nonFeaturedIdx + 1 < nonFeaturedTools.length;
-                const isLastNonFeatured = !isFeatured && nonFeaturedIdx === nonFeaturedTools.length - 1;
-                const hasBelowFeatured = isFeatured && nonFeaturedTools.length > 0;
-                const needsBottomBorder = hasBelowFeatured || (!isFeatured && !isLastNonFeatured && nonFeaturedTools.length > 2);
                 const isLocked = tool.to === "/lick-stash" && !preview;
-                const sharedClass = [
-                  "p-7 block",
-                  isFeatured ? "col-span-2 max-[600px]:col-span-1" : "",
-                  hasRight ? "border-r border-[var(--border)] max-[600px]:border-r-0 max-[600px]:border-b max-[600px]:border-[var(--border)]" : "",
-                  needsBottomBorder ? "border-b border-[var(--border)]" : "",
-                ].join(" ");
-                return isLocked ? (
-                  <div key={tool.to} className={sharedClass + " opacity-40 cursor-default"}>
-                    <div className="flex items-start justify-between mb-6">
-                      <span className="text-[0.48rem] tracking-[0.12em] uppercase" style={{ color: "var(--muted)" }}>
-                        Preview only
+                const base =
+                  "-mt-px -ml-px p-6 max-[700px]:p-5 border border-[var(--border)] flex flex-col relative " +
+                  (isFeatured ? "col-span-2 max-[600px]:col-span-1 " : "");
+
+                const Head = (
+                  <div className="flex items-start justify-between mb-5">
+                    <span
+                      className="font-mono text-[0.5rem] tracking-[0.16em] uppercase"
+                      style={{ color: isLocked ? "var(--muted)" : "var(--accent)" }}
+                    >
+                      {isLocked ? "Preview only" : isFeatured ? "Daily" : "Open"}
+                    </span>
+                    {!isLocked && (
+                      <span className="text-[0.9rem] leading-none text-[var(--faint)] group-hover:text-[var(--accent)] group-hover:translate-x-1 transition-all duration-200">
+                        →
                       </span>
-                    </div>
-                    <h2 className="font-display text-[1.05rem] tracking-[0.06em] uppercase leading-tight mb-3 text-[var(--text)]">
-                      {tool.title}
-                    </h2>
-                    <p className="text-[0.67rem] leading-[1.75] text-[var(--muted)]">
-                      {tool.body}
-                    </p>
+                    )}
                   </div>
-                ) : (
+                );
+                const Title = (
+                  <h2 className={["font-display tracking-[0.05em] uppercase leading-tight mb-2", isFeatured ? "text-[1.15rem]" : "text-[1.02rem]"].join(" ")}>
+                    {tool.title}
+                  </h2>
+                );
+                const Body = <p className="text-[0.67rem] leading-[1.7] text-[var(--muted)]">{tool.body}</p>;
+
+                if (isLocked) {
+                  return (
+                    <div key={tool.to} className={base + "opacity-40"} style={{ background: "var(--surface)" }}>
+                      {Head}{Title}{Body}
+                    </div>
+                  );
+                }
+                return (
                   <Link
                     key={tool.to}
                     to={tool.to}
                     className={[
-                      "no-underline text-[var(--text)] hover:bg-[var(--surface)] transition-all duration-200 group",
-                      isFeatured
-                        ? "border-l-[3px] border-l-[var(--accent)] hover:border-l-[var(--accent)]"
-                        : "border-l-2 border-l-transparent hover:border-l-[var(--accent)]",
+                      base,
+                      "group no-underline text-[var(--text)] z-[1] hover:z-[2]",
+                      "hover:bg-[var(--surface)] hover:border-[var(--accent)]",
+                      isFeatured ? "shadow-[inset_3px_0_0_0_var(--accent)]" : "hover:shadow-[inset_3px_0_0_0_var(--accent)]",
+                      "transition-all duration-150",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]",
-                      sharedClass,
                     ].join(" ")}
                   >
-                    <div className="flex items-start justify-between mb-6">
-                      <span
-                        className="text-[0.48rem] tracking-[0.12em] uppercase"
-                        style={{ color: "var(--accent)" }}
-                      >
-                        {isFeatured ? "Daily practice" : "Live"}
-                      </span>
-                      <span className="text-[0.9rem] text-[var(--faint)] group-hover:text-[var(--text)] group-hover:translate-x-1 transition-all duration-200 leading-none">
-                        →
-                      </span>
-                    </div>
-                    <h2 className={[
-                      "font-display tracking-[0.06em] uppercase leading-tight mb-3",
-                      isFeatured ? "text-[1.15rem]" : "text-[1.05rem]",
-                    ].join(" ")}>
-                      {tool.title}
-                    </h2>
-                    <p className="text-[0.67rem] leading-[1.75] text-[var(--muted)]">
-                      {tool.body}
-                    </p>
+                    {Head}{Title}{Body}
                   </Link>
                 );
               })}
@@ -410,35 +382,22 @@ function HomePage({
         ))}
       </section>
 
-      {/* ── Coming Soon ── */}
-      <section className="max-w-[900px] mx-auto w-full px-5 md:px-8 pt-4 pb-20">
-        <div className="border border-t-0 border-[var(--border)]">
-          <div
-            className="px-5 py-3 border-b border-[var(--border)]"
-            style={{ backgroundColor: "var(--surface)" }}
-          >
-            <p
-              className="text-[0.48rem] tracking-[0.16em] uppercase"
-              style={{ color: "var(--sys-caged)" }}
-            >
-              In Development
+      {/* ── In development ── */}
+      <section className="max-w-[1080px] mx-auto w-full px-5 md:px-8 pt-6 pb-20">
+        <div className="border border-[var(--border)]">
+          <div className="px-5 py-3 border-b border-[var(--border)] flex items-center gap-2" style={{ backgroundColor: "var(--surface)" }}>
+            <span className="inline-block w-2.5 h-px" style={{ backgroundColor: "var(--muted)" }} aria-hidden="true" />
+            <p className="font-mono text-[0.5rem] tracking-[0.18em] uppercase" style={{ color: "var(--muted)" }}>
+              On the drawing board
             </p>
           </div>
-
-          <div className="divide-y divide-[var(--border)] opacity-50">
+          <div className="divide-y divide-[var(--border)] opacity-60">
             {COMING_SOON_TOOLS.map((item) => (
-              <div key={item.title} className="px-7 py-5 flex items-baseline gap-5">
-                <div
-                  className="shrink-0 w-1.5 h-1.5 rounded-full mt-[0.3rem]"
-                  style={{ backgroundColor: "var(--border)" }}
-                />
+              <div key={item.title} className="px-6 py-5 flex items-baseline gap-4">
+                <div className="shrink-0 w-1.5 h-1.5 mt-[0.35rem]" style={{ backgroundColor: "var(--border)" }} />
                 <div>
-                  <p className="font-display text-[0.82rem] tracking-[0.06em] uppercase mb-1">
-                    {item.title}
-                  </p>
-                  <p className="text-[0.65rem] leading-[1.65] text-[var(--muted)]">
-                    {item.body}
-                  </p>
+                  <p className="font-display text-[0.82rem] tracking-[0.05em] uppercase mb-1">{item.title}</p>
+                  <p className="text-[0.65rem] leading-[1.6] text-[var(--muted)]">{item.body}</p>
                 </div>
               </div>
             ))}
@@ -448,24 +407,20 @@ function HomePage({
 
       {/* ── Footer ── */}
       <footer className="border-t border-[var(--border)] px-5 md:px-8 py-5 flex justify-between items-center flex-wrap gap-2">
-        <span className="text-[0.65rem] text-[var(--faint)] tracking-[0.1em] uppercase">
-          © Shred Dojo
-        </span>
-        <div className="flex items-center gap-4">
+        <span className="font-mono text-[0.6rem] text-[var(--faint)] tracking-[0.14em] uppercase">© Shred Dojo</span>
+        <div className="flex items-center gap-5">
           <Link
             to="/scale-positions"
-            className="text-[0.65rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity py-1"
+            className="text-[0.62rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity py-1"
           >
             Systems →
           </Link>
-          {preview && (
-            <Link
-              to="/lick-stash"
-              className="text-[0.65rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity py-1"
-            >
-              Lick Stash →
-            </Link>
-          )}
+          <Link
+            to="/metronome"
+            className="text-[0.62rem] text-[var(--accent)] tracking-[0.1em] uppercase no-underline border-b border-[var(--accent)] pb-px hover:opacity-80 transition-opacity py-1"
+          >
+            Practice Station →
+          </Link>
         </div>
       </footer>
     </div>
@@ -478,20 +433,6 @@ function HomePage({
 
 export default function Home() {
   const { preview } = useLoaderData<typeof loader>();
-
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("shred-dojo-dark");
-    if (stored === "true") setIsDark(true);
-  }, []);
-
-  const toggleDark = () => {
-    setIsDark((prev) => {
-      localStorage.setItem("shred-dojo-dark", String(!prev));
-      return !prev;
-    });
-  };
-
+  const { isDark, toggleDark } = useDarkMode();
   return <HomePage isDark={isDark} toggleDark={toggleDark} preview={preview} />;
 }

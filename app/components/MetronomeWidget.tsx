@@ -43,14 +43,16 @@ function scheduleClick(
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
+// Mirrors theme.ts chrome tokens. Hardcoded because this widget renders at the
+// App root, outside any page's themed div, so CSS variables don't resolve here.
 function getColors(isDark: boolean) {
   return {
-    bg:     isDark ? "#1e1a16" : "#ede8dc",
-    border: isDark ? "#352e24" : "#c8bfaa",
-    text:   isDark ? "#e8e0d0" : "#1a1612",
-    muted:  isDark ? "#6a6058" : "#8a8070",
-    accent: isDark ? "#c8604a" : "#8b1a1a",
-    faint:  isDark ? "#3a3228" : "#d8cebb",
+    bg:     isDark ? "#161d22" : "#e4eaec",
+    border: isDark ? "#2a363d" : "#c2ccd1",
+    text:   isDark ? "#e6eef2" : "#0e1316",
+    muted:  isDark ? "#7e8c94" : "#5e6a70",
+    accent: isDark ? "#4fd0e6" : "#0e7c96",
+    faint:  isDark ? "#1c262c" : "#d3dbde",
   };
 }
 
@@ -458,7 +460,7 @@ export function MetronomeWidget() {
             borderBottom: `1px solid ${C.faint}`,
           }}>
             <span style={{
-              fontFamily: "'Oswald', sans-serif",
+              fontFamily: "'Saira', sans-serif",
               fontSize: "0.57rem",
               letterSpacing: "0.18em",
               textTransform: "uppercase",
@@ -527,7 +529,7 @@ export function MetronomeWidget() {
                   if (e.key === "Escape") setEditingBpm(false);
                 }}
                 style={{
-                  fontFamily: "'Oswald', sans-serif",
+                  fontFamily: "'Saira', sans-serif",
                   fontSize: "3.6rem",
                   fontWeight: 600,
                   lineHeight: 1,
@@ -547,7 +549,7 @@ export function MetronomeWidget() {
                 onTouchStart={handleBpmTouchStart}
                 onWheel={handleWheel}
                 style={{
-                  fontFamily: "'Oswald', sans-serif",
+                  fontFamily: "'Saira', sans-serif",
                   fontSize: "3.6rem",
                   fontWeight: 600,
                   lineHeight: 1,
@@ -565,7 +567,7 @@ export function MetronomeWidget() {
               </div>
             )}
             <div style={{
-              fontFamily: "'Source Code Pro', monospace",
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: "0.44rem",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
@@ -580,7 +582,7 @@ export function MetronomeWidget() {
           {/* Subdivision */}
           <div style={{ padding: "0 12px 10px" }}>
             <div style={{
-              fontFamily: "'Source Code Pro', monospace",
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: "0.44rem",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
@@ -637,7 +639,7 @@ export function MetronomeWidget() {
                   onMouseLeave={() => setHoveredEl(null)}
                   style={{
                     flex: 1,
-                    fontFamily: "'Oswald', sans-serif",
+                    fontFamily: "'Saira', sans-serif",
                     fontSize: "0.58rem",
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
@@ -664,7 +666,7 @@ export function MetronomeWidget() {
               onMouseLeave={() => setHoveredEl(null)}
               style={{
                 flex: 1,
-                fontFamily: "'Oswald', sans-serif",
+                fontFamily: "'Saira', sans-serif",
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
@@ -683,7 +685,7 @@ export function MetronomeWidget() {
               onClick={togglePlay}
               style={{
                 flex: 1,
-                fontFamily: "'Oswald', sans-serif",
+                fontFamily: "'Saira', sans-serif",
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
@@ -703,7 +705,7 @@ export function MetronomeWidget() {
           {/* Drone section */}
           <div style={{ borderTop: `1px solid ${C.faint}`, padding: "10px 12px 13px" }}>
             <div style={{
-              fontFamily: "'Source Code Pro', monospace",
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: "0.44rem",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
@@ -728,7 +730,7 @@ export function MetronomeWidget() {
                     onMouseEnter={() => setHoveredEl(hk)}
                     onMouseLeave={() => setHoveredEl(null)}
                     style={{
-                      fontFamily: "'Oswald', sans-serif",
+                      fontFamily: "'Saira', sans-serif",
                       fontSize: "0.6rem",
                       letterSpacing: "0.04em",
                       textTransform: "uppercase",
@@ -755,7 +757,7 @@ export function MetronomeWidget() {
         onClick={() => setIsExpanded((x) => !x)}
         title="Metronome"
         style={{
-          fontFamily: "'Oswald', sans-serif",
+          fontFamily: "'Saira', sans-serif",
           fontSize: "0.68rem",
           letterSpacing: "0.1em",
           textTransform: "uppercase",

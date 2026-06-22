@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Nav } from "./Nav";
 import { CtrlButton } from "./CtrlButton";
-import { LIGHT_THEME, DARK_THEME } from "./theme";
+import { PageShell } from "./PageShell";
+import { PageHeader } from "./PageHeader";
 import { Timer } from "./Timer";
 import { addSession } from "./practiceLog.utils";
 import { useDrone, DronePanel } from "./Drone";
@@ -539,54 +539,33 @@ function KeyDrone() {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export function Metronome() {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("shred-dojo-dark");
-    if (stored !== null) {
-      setIsDark(stored === "true");
-    } else {
-      setIsDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
-    }
-  }, []);
-
-  const toggleDark = useCallback(() => {
-    setIsDark((prev) => {
-      const next = !prev;
-      try { localStorage.setItem("shred-dojo-dark", String(next)); } catch {}
-      return next;
-    });
-  }, []);
-
-  const theme = isDark ? DARK_THEME : LIGHT_THEME;
   const reduced = useReducedMotion();
   const met = useMetronome();
   const { bpm, setBpm, subdivision, setSubdivision, volume, setVolume, isPlaying, toggle, currentSlot, handleTap } = met;
   const volPct = Math.round(volume * 100);
+  const feel = subdivision === 1 ? "Quarter" : subdivision === 2 ? "Eighth" : "Triplet";
 
   return (
-    <div style={theme} className="bg-[var(--bg)] text-[var(--text)] min-h-screen">
-      <Nav isDark={isDark} toggleDark={toggleDark} />
+    <PageShell maxWidth={960}>
+      <PageHeader
+        eyebrow="Practice Station"
+        title="Metronome"
+        meta={[
+          { label: "Tempo", value: `${bpm} BPM` },
+          { label: "Feel", value: feel },
+          { label: "Status", value: isPlaying ? "Running" : "Stopped" },
+        ]}
+      />
 
-      <div className="max-w-[960px] mx-auto px-4 pt-6 max-[700px]:pt-5 pb-16 [@media(max-height:500px)]:pt-3">
-        <div className="mb-4">
-          <div className="text-[0.58rem] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--muted)" }}>
-            Practice Station
-          </div>
-          <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none m-0">
-            Metronome
-          </h1>
-        </div>
+      <span className="sr-only" aria-live="polite">Tempo {bpm} BPM</span>
 
-        <span className="sr-only" aria-live="polite">Tempo {bpm} BPM</span>
-
-        <div className="grid grid-cols-[1.25fr_1fr] max-[820px]:grid-cols-1 gap-4 items-start">
-          {/* ── Metronome ── */}
-          <div
-            className="p-5 max-[700px]:p-4 flex flex-col gap-4"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
-            <BeatDial
+      <div className="grid grid-cols-[1.25fr_1fr] max-[820px]:grid-cols-1 gap-4 items-start">
+        {/* ── Metronome (primary instrument — accent top-rule) ── */}
+        <div
+          className="p-5 max-[700px]:p-4 flex flex-col gap-4"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)", borderTop: "2px solid var(--accent)" }}
+        >
+          <BeatDial
               bpm={bpm}
               subdivision={subdivision}
               currentSlot={currentSlot}
@@ -602,7 +581,7 @@ export function Metronome() {
                 style={{
                   background: isPlaying ? "var(--accent)" : "transparent",
                   borderColor: isPlaying ? "var(--accent)" : "var(--border)",
-                  color: isPlaying ? "#fff" : "var(--text)",
+                  color: isPlaying ? "var(--bg)" : "var(--text)",
                 }}
               >
                 {isPlaying ? "Stop" : "Start"}
@@ -693,7 +672,6 @@ export function Metronome() {
           </div>
           <KeyDrone />
         </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }

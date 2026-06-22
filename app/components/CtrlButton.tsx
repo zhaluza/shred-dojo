@@ -23,7 +23,8 @@ export function CtrlButton({
       disabled={disabled}
       title={title}
       className={[
-        "font-display border transition-all duration-100 cursor-pointer",
+        // Blueprint control: hairline border, zero radius, cyan ink for active/hover.
+        "font-display border rounded-none transition-all duration-100 cursor-pointer",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]",
         normalCase ? "" : "uppercase",
         small
@@ -32,8 +33,8 @@ export function CtrlButton({
         disabled
           ? "bg-transparent text-[var(--muted)] border-[var(--border)] opacity-40 cursor-not-allowed"
           : active
-            ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-            : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
+            ? "bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]"
+            : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
         className ?? "",
       ]
         .filter(Boolean)

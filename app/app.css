@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Oswald", sans-serif;
-  --font-mono: "Source Code Pro", monospace;
+  --font-display: "Saira", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
 }

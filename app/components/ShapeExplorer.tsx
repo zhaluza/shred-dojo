@@ -3,6 +3,8 @@ import { Link } from "react-router";
 import { Nav } from "./Nav";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
+import { PageHeader } from "./PageHeader";
+import { useDarkMode } from "./useDarkMode";
 import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 import type {
   Degree,
@@ -568,23 +570,12 @@ export function ShapeExplorer() {
   const [viewMode, setViewMode] = useState<ViewMode>("focus");
   const [noteFilter, setNoteFilter] = useState<NoteFilter>("all");
   const [keyIdx, setKeyIdx] = useState(3); // Default: G (fret 3)
-  const [isDark, setIsDark] = useState(false);
+  const { isDark, toggleDark } = useDarkMode();
   const [bluesMode, setBluesMode] = useState(false);
   const [isHarmonicMinor, setIsHarmonicMinor] = useState(false);
   const [octaveShift, setOctaveShift] = useState<0 | 12>(0);
   const [neckOpen, setNeckOpen] = useState(false);
   const [showAllShapes, setShowAllShapes] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("shred-dojo-dark");
-    if (stored === "true") setIsDark(true);
-  }, []);
-
-  const toggleDark = () =>
-    setIsDark((prev) => {
-      localStorage.setItem("shred-dojo-dark", String(!prev));
-      return !prev;
-    });
 
   const theme = isDark ? DARK_THEME : LIGHT_THEME;
   const cfg = isHarmonicMinor && scaleMode === "minor" ? HARMONIC_MINOR_CFG : SCALES[scaleMode];
@@ -734,22 +725,35 @@ export function ShapeExplorer() {
 
       {/* ── Controls ── */}
       <div className="max-w-[1300px] mx-auto w-full px-6 pt-8 [@media(max-height:500px)]:pt-3 pb-2">
-        {/* Page heading */}
-        <div className="mb-7">
-          <p className="text-[0.5rem] tracking-[0.2em] uppercase text-[var(--muted)] mb-1">
-            Shape Explorer
-          </p>
-          <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none">
-            <span className="normal-case">{selectedKey.name}</span>{" "}
-            <span style={{ color: "var(--accent)" }}>
-              {scaleMode === "minor"
-              ? isHarmonicMinor
-                ? "Harmonic Minor"
-                : "Minor"
-              : "Major"}
-            </span>
-          </h1>
-        </div>
+        {/* Title block */}
+        <PageHeader
+          eyebrow="Shape Explorer"
+          title={
+            <>
+              <span className="normal-case">{selectedKey.name}</span>{" "}
+              <span style={{ color: "var(--accent)" }}>
+                {scaleMode === "minor"
+                  ? isHarmonicMinor
+                    ? "Harmonic Minor"
+                    : "Minor"
+                  : "Major"}
+              </span>
+            </>
+          }
+          meta={[
+            {
+              label: "System",
+              value:
+                system === "penta"
+                  ? "Pentatonic"
+                  : system === "3nps"
+                    ? "3 NPS"
+                    : system === "caged"
+                      ? "CAGED"
+                      : String(system).toUpperCase(),
+            },
+          ]}
+        />
 
         <div className="flex flex-wrap gap-x-7 gap-y-4 mb-7">
           {/* Scale mode */}

@@ -5,6 +5,9 @@ import { PickIcon } from "./Logo";
 type NavLink = { to: string; label: string; preview?: true };
 type NavGroup = { label: string; links: NavLink[] };
 
+// Grouped by mode of use: three reference families (Scales / Pentatonic /
+// Harmony), then Train (metered, guided practice + your record) and Drills
+// (active-recall quizzes).
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Scales",
@@ -33,22 +36,17 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Vocabulary",
-    links: [
-      { to: "/lick-stash", label: "Lick Stash", preview: true },
-    ],
-  },
-  {
-    label: "Routines",
+    label: "Train",
     links: [
       { to: "/morning-coffee", label: "Morning Coffee" },
       { to: "/pentatonic-practice", label: "Pentatonic" },
       { to: "/metronome", label: "Metronome" },
+      { to: "/lick-stash", label: "Lick Stash", preview: true },
       { to: "/practice-log", label: "Practice Log" },
     ],
   },
   {
-    label: "Practice",
+    label: "Drills",
     links: [
       { to: "/note-recognition", label: "Note Recognition" },
       { to: "/staff-notes", label: "Staff Notes" },
@@ -93,7 +91,14 @@ export function Nav({
   }
 
   return (
-    <header className="px-5 md:px-8 pt-5 md:pt-6 pb-4 md:pb-5 [@media(max-height:500px)]:py-2 [@media(max-height:500px)]:px-4 flex items-center justify-between border-b border-[var(--border)]">
+    <header
+      className="relative px-5 md:px-8 pt-5 md:pt-6 pb-4 md:pb-5 [@media(max-height:500px)]:py-2 [@media(max-height:500px)]:px-4 flex items-center justify-between border-b border-[var(--border)]"
+      style={{
+        // Faint fret-coordinate hairlines behind the header band (decorative).
+        backgroundImage:
+          "repeating-linear-gradient(90deg, var(--faint) 0 1px, transparent 1px 72px)",
+      }}
+    >
       <div className="flex items-center gap-7 md:gap-9">
         {/* Logo */}
         <Link
@@ -188,7 +193,7 @@ export function Nav({
           {/* Backdrop */}
           <div
             className="fixed inset-0 z-[100] min-[700px]:hidden"
-            style={{ backgroundColor: "rgba(10,8,6,0.82)", backdropFilter: "blur(4px)" }}
+            style={{ backgroundColor: "rgba(8,12,14,0.84)", backdropFilter: "blur(4px)" }}
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />

@@ -1,25 +1,35 @@
 import type { CSSProperties } from "react";
 import type { StringName } from "./scalePositions.types";
 
+// ─── Fretboard Blueprint palette ─────────────────────────────────────────────
+// Chrome tokens read like a draftsman's drawing: cool slate ground, hairline
+// ink lines, a single cyan accent. Functional tokens (degree / system / string
+// / feedback colors) carry meaning inside diagrams and are tuned to sit on the
+// new grounds without changing their semantics.
+
 export const LIGHT_THEME: CSSProperties = {
-  "--bg": "#fdf9f4",
-  "--surface": "#f5ede0",
-  "--border": "#ddd0bc",
-  "--text": "#100e0c",
-  "--muted": "#7a6e60",
-  "--accent": "#b84a1a",
-  "--root-col": "#c0392b",
-  "--faint": "#cec0a8",
-  "--fret-bar": "#dcd0bc",
-  "--sys-3nps": "#b84a1a",
+  // chrome — "ink on drafting bond"
+  "--bg": "#eef2f4",
+  "--surface": "#e4eaec",
+  "--border": "#c2ccd1",
+  "--text": "#0e1316",
+  "--muted": "#5e6a70",
+  "--accent": "#0e7c96", // blueprint cyan, deepened for contrast on paper
+  "--faint": "#d3dbde",
+  "--fret-bar": "#cad3d7",
+  // systems
+  "--sys-3nps": "#c2542a",
   "--sys-caged": "#9a7830",
-  "--sys-sym": "#4a7a5a",
-  "--str-E": "#8a7a58",
-  "--str-A": "#a09060",
-  "--str-D": "#b0a878",
-  "--str-G": "#c0b898",
-  "--str-Be": "#c8bfaa",
-  "--fifth-col": "#4a6a8a",
+  "--sys-sym": "#3f7a86",
+  // strings — cool steels (low E darkest → high e lightest)
+  "--str-E": "#8a96a0",
+  "--str-A": "#97a3ad",
+  "--str-D": "#a5b1ba",
+  "--str-G": "#b3bfc7",
+  "--str-Be": "#bcc7ce",
+  // degrees / feedback
+  "--root-col": "#c0392b",
+  "--fifth-col": "#3f6f96",
   "--seventh-col": "#6a4a7a",
   "--blues-col": "#4a3aa8",
   "--third-col": "#3a6a3a",
@@ -28,24 +38,28 @@ export const LIGHT_THEME: CSSProperties = {
 };
 
 export const DARK_THEME: CSSProperties = {
-  "--bg": "#141210",
-  "--surface": "#1e1a16",
-  "--border": "#352e24",
-  "--text": "#e8e0d0",
-  "--muted": "#6a6058",
-  "--accent": "#c8604a",
-  "--root-col": "#c0392b",
-  "--faint": "#3a3228",
-  "--fret-bar": "#2a2418",
-  "--sys-3nps": "#c8604a",
+  // chrome — "blueprint on slate"
+  "--bg": "#101619",
+  "--surface": "#161d22",
+  "--border": "#2a363d",
+  "--text": "#e6eef2",
+  "--muted": "#7e8c94",
+  "--accent": "#4fd0e6", // blueprint cyan
+  "--faint": "#1c262c",
+  "--fret-bar": "#222e34",
+  // systems
+  "--sys-3nps": "#d6705a",
   "--sys-caged": "#c8a060",
-  "--sys-sym": "#6aaa7a",
-  "--str-E": "#5a5040",
-  "--str-A": "#6a6048",
-  "--str-D": "#7a7058",
-  "--str-G": "#8a8068",
-  "--str-Be": "#6a6258",
-  "--fifth-col": "#6a9abf",
+  "--sys-sym": "#5fb6c2",
+  // strings — cool steels (low E darkest → high e lightest)
+  "--str-E": "#4a5560",
+  "--str-A": "#56626d",
+  "--str-D": "#63707b",
+  "--str-G": "#71808b",
+  "--str-Be": "#5d6a73",
+  // degrees / feedback
+  "--root-col": "#d2473a",
+  "--fifth-col": "#6f9ec4",
   "--seventh-col": "#9a6abf",
   "--blues-col": "#7a6ad8",
   "--third-col": "#5a9a5a",
