@@ -32,29 +32,35 @@ resources/       # Reference material (PDFs, source .gp files) — not served
 
 Use **Tailwind utility classes exclusively** in JSX/TSX. Do not add custom CSS classes to `app.css` or any stylesheet — `app.css` holds only the Tailwind import and `@theme { ... }` tokens.
 
-**Fonts** — `font-display` → Oswald (headings/labels/buttons); `font-mono` → Source Code Pro (body). Loaded in `root.tsx`, registered in `app.css` `@theme`.
+**Design identity — "Fretboard Blueprint"** — a draftsman's technical drawing of the neck: cool slate ground, hairline ink lines, a single **cyan** accent, zero border-radius, and measured-drawing devices (title blocks, dimension lines, registration ticks, fret/inlay-position numbering). Dark-first; a real cool-bond light variant is kept.
 
-**Theming** — CSS custom properties injected as inline `style` on each page's root `<div>`, cascading to children. The root div must **also** carry `bg-[var(--bg)] text-[var(--text)]` Tailwind classes (the `style` only defines variables, it doesn't apply bg/color). Dark mode is React state (not the `dark:` variant), toggled by swapping `LIGHT_THEME` / `DARK_THEME` from `theme.ts`. Each page owns its dark-mode state and persists it to localStorage (`"shred-dojo-dark"`).
+**Fonts** — `font-display` → **Saira** (headings/labels/buttons/spec stamps); `font-mono` → **IBM Plex Mono** (body + all numeric readouts). Loaded in `root.tsx`, registered in `app.css` `@theme`.
 
-**Color tokens** (defined in `theme.ts`):
+**Theming** — CSS custom properties injected as inline `style` on each page's root `<div>`, cascading to children. The root div must **also** carry `bg-[var(--bg)] text-[var(--text)]` Tailwind classes (the `style` only defines variables, it doesn't apply bg/color). Dark mode is React state (not the `dark:` variant), toggled by swapping `LIGHT_THEME` / `DARK_THEME` from `theme.ts`, persisted to localStorage (`"shred-dojo-dark"`). Prefer the shared `useDarkMode()` hook + `PageShell` (which owns the wrapper + Nav + container) for new/converted pages; older pages still inline the boilerplate. `MetronomeWidget` renders at the App root (outside any themed div) so it hardcodes the chrome hexes in `getColors` and polls localStorage for theme changes.
 
-| Token | Light | Dark | Usage |
+**Color tokens** (defined in `theme.ts`). Functional tokens (`--root-col`, `--third/fifth/seventh/blues-col`, `--sys-*`, `--str-*`, `--feedback-*`) carry meaning inside diagrams; the chrome tokens below define the blueprint shell:
+
+| Token | Light (bond) | Dark (slate) | Usage |
 |---|---|---|---|
-| `--bg` | `#fdf9f4` | `#141210` | Page background |
-| `--surface` | `#f5ede0` | `#1e1a16` | Card / panel backgrounds |
-| `--border` | `#ddd0bc` | `#352e24` | Borders, dividers |
-| `--text` | `#100e0c` | `#e8e0d0` | Primary text |
-| `--muted` | `#7a6e60` | `#6a6058` | Secondary / label text |
-| `--accent` | `#b84a1a` | `#c8604a` | Highlights, active states |
-| `--root-col` | `#c0392b` | `#c0392b` | Root note dots |
-| `--faint` | `#cec0a8` | `#3a3228` | Fret numbers, ghost elements |
-| `--fret-bar` | `#dcd0bc` | `#2a2418` | Fretboard bar lines |
-| `--fifth-col` | `#4a6a8a` | `#6a9abf` | 5th degree dots |
+| `--bg` | `#eef2f4` | `#101619` | Page background |
+| `--surface` | `#e4eaec` | `#161d22` | Card / panel backgrounds |
+| `--border` | `#c2ccd1` | `#2a363d` | Hairline borders, dividers |
+| `--text` | `#0e1316` | `#e6eef2` | Primary text (ink) |
+| `--muted` | `#5e6a70` | `#7e8c94` | Secondary / label text |
+| `--accent` | `#0e7c96` | `#4fd0e6` | Cyan ink: active states, links, focus |
+| `--faint` | `#d3dbde` | `#1c262c` | Ghost grid lines |
+| `--fret-bar` | `#cad3d7` | `#222e34` | Fret coordinate lines |
+| `--root-col` | `#c0392b` | `#d2473a` | Root note dots |
+| `--fifth-col` | `#3f6f96` | `#6f9ec4` | 5th degree dots (kept hue-distinct from cyan accent) |
 | `--seventh-col` | `#6a4a7a` | `#9a6abf` | 7th degree dots |
 | `--blues-col` | `#4a3aa8` | `#7a6ad8` | b5 "blue note" dots |
 | `--third-col` | `#3a6a3a` | `#5a9a5a` | 3rd degree dots |
 | `--feedback-correct` | `#2d8a40` | `#2d8a40` | Correct-answer quiz feedback |
 | `--feedback-wrong` | `#b03020` | `#b03020` | Wrong-answer quiz feedback |
+
+`--str-*` (string colors) are cool steels; `--sys-3nps/caged/sym` are the system colors (3nps is a warm coral, decoupled from `--accent`).
+
+**Shared shell** — `PageShell` (themed root + Nav + width-capped container; owns dark mode via `useDarkMode`) and `PageHeader` (the "title block" cartouche: eyebrow + H1 + optional labeled spec/meta cells). Adopted by Home, Metronome, and Shape Explorer; rolling them across the remaining pages is a pending sweep.
 
 **Typography scale** (Tailwind arbitrary values):
 - H1: `font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none`
@@ -63,8 +69,8 @@ Use **Tailwind utility classes exclusively** in JSX/TSX. Do not add custom CSS c
 - Cell labels: `font-display text-[0.68rem] tracking-[0.13em] uppercase text-[var(--muted)]`
 
 **Shared button** — `CtrlButton` (`app/components/CtrlButton.tsx`) is the single button used everywhere. Props: `label, active, onClick, small?, disabled?, title?, normalCase?, className?`. Never define local `CtrlBtn`/`ControlButton`/`Chip` variants. States:
-- Default: `bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]`
-- Active: `bg-[var(--text)] text-[var(--bg)] border-[var(--text)]`
+- Default: `bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]` (zero-radius hairline; cyan ink on hover)
+- Active: `bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]` (cyan fill)
 - Focus (built into `CtrlButton`; apply manually to standalone buttons/links): `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]`
 - Blues-mode active exception: `bg-[var(--blues-col)] border-[var(--blues-col)] text-white` (keep as standalone `<button>` with focus classes applied directly).
 
@@ -114,7 +120,7 @@ Built-in fretboard/quiz pages. Each has a `routes/<name>.tsx` wrapper + a `compo
 | `/staff-notes` | Treble-clef note-reading quiz. |
 | `/chord-tones` | Quiz identifying the degree of a highlighted note in a scale shape. |
 
-**Nav** (`Nav.tsx`) — 6 category groups: **Scales** (Shape Explorer, Systems, Wylde, Yngwie, Scale Builder), **Pentatonic** (Triads, Colors, Intervals), **Harmony** (Chords, Arpeggios, Circle of Fifths), **Vocabulary** (Lick Stash — preview-gated), **Routines** (Morning Coffee, Pentatonic, Metronome, Practice Log), **Practice** (Note Recognition, Staff Notes, Chord Tones). The Routines/Practice split is mirrored in `home.tsx` `TOOL_CATEGORIES`. Props: `isDark`, `toggleDark`.
+**Nav** (`Nav.tsx`) — 5 category groups, by mode of use: three reference families — **Scales** (Shape Explorer, Systems, Wylde, Yngwie, Scale Builder), **Pentatonic** (Triads, Colors, Intervals), **Harmony** (Chords, Arpeggios, Circle of Fifths) — plus **Train** (Morning Coffee, Pentatonic, Metronome, Lick Stash — preview-gated, Practice Log) and **Drills** (Note Recognition, Staff Notes, Chord Tones). Train = metered/guided practice + record; Drills = active-recall quizzes. The same grouping is mirrored in `home.tsx` `TOOL_CATEGORIES` (home now lists every tool, not a subset). Props: `isDark`, `toggleDark`.
 
 **Quiz UX (shared pattern)** — Note Recognition / Staff Notes / Chord Tones: correct → green flash, auto-advance ~550ms; wrong → red flash ~650ms, stay on same question. **Wrong answers are never revealed — active recall only.** High scores persisted under per-config localStorage keys.
 
