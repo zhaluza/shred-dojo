@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import type { Degree } from "./scalePositions.types";
 import {
   CHORD_LABELS,
@@ -20,7 +21,7 @@ const FRET_ROWS = 5;
 const CELL = 34; // px — square cell size
 const DIAGRAM_W = CELL * 6;
 
-function ChordDiagram({ voicing }: { voicing: ChordVoicingData }) {
+export function ChordDiagram({ voicing }: { voicing: ChordVoicingData }) {
   // Strings ordered low E → high e for iteration, but we render columns left→right
   const strings = voicing.strings; // index 0 = low E, index 5 = high e
   const STRING_NAMES = ["E", "A", "D", "G", "B", "e"];
@@ -261,18 +262,11 @@ export function ChordVoicings() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
       <div className="max-w-[1100px] mx-auto px-5 pt-8 [@media(max-height:500px)]:pt-3 pb-20">
-        {/* Header */}
-        <header className="mb-6 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-5">
-          <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none">
-            Chord{" "}
-            <span style={{ color: "var(--accent)" }}>Voicings</span>
-          </h1>
-          <div className="text-[0.58rem] text-[var(--muted)] tracking-[0.1em] uppercase text-right leading-[1.7]">
-            G root · 5 CAGED shapes
-            <br />
-            slide to any root
-          </div>
-        </header>
+        <PageHeader
+          eyebrow="Harmony"
+          title={<>Chord <span style={{ color: "var(--accent)" }}>Voicings</span></>}
+          subtitle="G root · 5 CAGED shapes — slide to any root."
+        />
 
         {/* Controls */}
         <div className="mb-6 flex gap-3 flex-wrap items-center border-b border-[var(--border)] pb-4">

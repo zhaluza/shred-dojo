@@ -60,7 +60,7 @@ Use **Tailwind utility classes exclusively** in JSX/TSX. Do not add custom CSS c
 
 `--str-*` (string colors) are cool steels; `--sys-3nps/caged/sym` are the system colors (3nps is a warm coral, decoupled from `--accent`).
 
-**Shared shell** — `PageShell` (themed root + Nav + width-capped container; owns dark mode via `useDarkMode`) and `PageHeader` (the "title block" cartouche: eyebrow + H1 + optional labeled spec/meta cells). Adopted by Home, Metronome, and Shape Explorer; rolling them across the remaining pages is a pending sweep.
+**Shared shell** — `PageShell` (themed root + Nav + width-capped container; owns dark mode via `useDarkMode`) and `PageHeader` (the "title block" cartouche: eyebrow + H1 + optional `subtitle` line + optional labeled spec/meta cells). `PageHeader` is adopted across essentially all pages for a consistent header; `PageShell` (the full wrapper) is used by Home, Metronome, and Shape Explorer — most other pages still keep their own inline themed wrapper + `<Nav>` (their layouts/max-widths vary), so rolling `PageShell` out further is the remaining cleanup. Morning Coffee and Pentatonic Practice keep bespoke dynamic headers (not `PageHeader`).
 
 **Typography scale** (Tailwind arbitrary values):
 - H1: `font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none`

@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router";
 import type { Route } from "./+types/lick-stash-pack";
 import { LIGHT_THEME, DARK_THEME } from "~/components/theme";
 import { Nav } from "~/components/Nav";
+import { PageHeader } from "~/components/PageHeader";
 import { LICK_PACKS } from "~/components/lickStash.data";
 import type { Lick } from "~/components/lickStash.types";
 import { useState, useEffect, useCallback } from "react";
@@ -218,21 +219,7 @@ export default function LickStashPack() {
           All Packs
         </Link>
 
-        {/* Pack header */}
-        <div className="mb-10">
-          <span
-            className="font-display text-[0.52rem] tracking-[0.18em] uppercase block mb-1.5"
-            style={{ color: "var(--accent)" }}
-          >
-            {pack.subtitle}
-          </span>
-          <h1 className="font-display font-semibold text-[clamp(1.6rem,3.5vw,2.6rem)] tracking-[0.04em] uppercase leading-none mb-3">
-            {pack.title}
-          </h1>
-          <p className="text-[0.72rem] leading-[1.75] max-w-[520px]" style={{ color: "var(--muted)" }}>
-            {pack.description}
-          </p>
-        </div>
+        <PageHeader eyebrow={pack.subtitle} title={pack.title} subtitle={pack.description} />
 
         {/* Lick list — full-bleed border treatment */}
         <div

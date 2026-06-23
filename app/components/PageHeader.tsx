@@ -8,11 +8,14 @@ type MetaCell = { label: string; value: ReactNode };
 export function PageHeader({
   eyebrow,
   title,
+  subtitle,
   meta,
   className = "",
 }: {
   eyebrow?: string;
   title: ReactNode;
+  /** Optional descriptive line under the title. */
+  subtitle?: ReactNode;
   /** Optional spec cells (key / system / tempo …) shown as a coordinate block. */
   meta?: MetaCell[];
   className?: string;
@@ -47,6 +50,11 @@ export function PageHeader({
           <h1 className="font-display font-semibold uppercase tracking-[0.03em] leading-none m-0 text-[clamp(1.7rem,4vw,2.6rem)]">
             {title}
           </h1>
+          {subtitle && (
+            <p className="mt-2 mb-0 font-mono text-[0.72rem] leading-[1.6] max-w-[62ch]" style={{ color: "var(--muted)" }}>
+              {subtitle}
+            </p>
+          )}
         </div>
 
         {meta && meta.length > 0 && (

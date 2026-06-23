@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME } from "./theme";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import {
   FIFTHS,
   keySigLabel,
@@ -445,15 +446,11 @@ export function CircleOfFifths() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
       <div className="px-6 md:px-8 py-8 md:py-10 [@media(max-height:500px)]:py-3 max-w-3xl mx-auto">
-        <header className="mb-8 md:mb-10">
-          <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none text-[var(--text)]">
-            Circle of Fifths
-          </h1>
-          <p className="mt-3 text-[0.82rem] text-[var(--muted)] leading-relaxed max-w-md">
-            Click any segment to see the key&apos;s scale, diatonic chords, and related keys.
-            Outer ring = major keys · Middle = key signature · Inner = relative minors.
-          </p>
-        </header>
+        <PageHeader
+          eyebrow="Harmony"
+          title="Circle of Fifths"
+          subtitle="Click any segment to see the key's scale, diatonic chords, and related keys. Outer ring = major keys · middle = key signature · inner = relative minors."
+        />
 
         <main className="flex flex-col items-center">
           <CircleDiagram

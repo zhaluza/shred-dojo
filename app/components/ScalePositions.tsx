@@ -6,6 +6,7 @@ import {
 } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import { FullNeckFretboard, type FullNeckLayer, type FullNeckNote } from "./FullNeckFretboard";
 import type {
   NoteFilter,
@@ -1205,21 +1206,17 @@ export function ScalePositions() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
       <div className="pt-8 [@media(max-height:500px)]:pt-3 px-6">
-      {/* Header */}
-      <header className="max-w-[1200px] mx-auto mb-10 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-6">
-        <h1 className="font-display font-semibold text-[clamp(2rem,5vw,3.2rem)] tracking-[0.04em] uppercase leading-none">
-          <span className="normal-case">{selectedKey.name}</span>{" "}
-          <em className="text-[var(--accent)] not-italic">
-            {cfg.title}
-          </em>
-          <br />
-          Scale Positions
-        </h1>
-        <div className="text-[0.63rem] text-[var(--muted)] tracking-[0.05em] leading-[1.7] max-w-[18rem] text-right">
-          Diatonic scale shapes across three systems: 3nps, CAGED, and
-          symmetric.
-        </div>
-      </header>
+      <PageHeader
+        className="max-w-[1200px] mx-auto"
+        eyebrow="Scale Positions"
+        title={
+          <>
+            <span className="normal-case">{selectedKey.name}</span>{" "}
+            <span style={{ color: "var(--accent)" }}>{cfg.title}</span>
+          </>
+        }
+        subtitle="Diatonic scale shapes across three systems: 3nps, CAGED, and symmetric."
+      />
 
       {/* Scale control row */}
       <div className="max-w-[1200px] mx-auto flex gap-3 flex-wrap items-center pb-3 mb-3">

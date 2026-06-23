@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import type { StringName } from "./scalePositions.types";
 import {
   buildBox,
@@ -263,17 +264,11 @@ export function PentatonicColors() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
       <div className="max-w-[1100px] mx-auto px-5 pt-8 [@media(max-height:500px)]:pt-3 pb-20">
-        {/* Header */}
-        <header className="mb-6 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-5">
-          <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none">
-            Pentatonic{" "}
-            <span style={{ color: "var(--accent)" }}>Colors</span>
-          </h1>
-          <div className="text-[0.58rem] text-[var(--muted)] tracking-[0.1em] uppercase text-right leading-[1.7]">
-            G root · Box 1<br />
-            add color notes from modes
-          </div>
-        </header>
+        <PageHeader
+          eyebrow="Pentatonic"
+          title={<>Pentatonic <span style={{ color: "var(--accent)" }}>Colors</span></>}
+          subtitle="G root · Box 1 — add color notes from related modes."
+        />
 
         {/* Scale controls */}
         <div className="mb-3 flex gap-3 flex-wrap items-center">

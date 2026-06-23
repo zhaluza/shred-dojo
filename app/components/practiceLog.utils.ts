@@ -3,7 +3,7 @@
 // localStorage today; the function API below is the seam for a future DB backend
 // (pages import these helpers and never touch localStorage directly).
 
-export type PracticeSource = "pentatonic-practice" | "practice-station";
+export type PracticeSource = "pentatonic-practice" | "practice-station" | "caged-immersion";
 
 export interface PracticeSession {
   id: string;
@@ -18,6 +18,7 @@ export interface PracticeSession {
 export const SOURCE_LABELS: Record<PracticeSource, string> = {
   "pentatonic-practice": "Pentatonic Practice",
   "practice-station": "Practice Station",
+  "caged-immersion": "CAGED Immersion",
 };
 
 const STORAGE_KEY = "shred-dojo-practice-log";
@@ -29,7 +30,9 @@ function isValidSession(s: unknown): s is PracticeSession {
     typeof o.id === "string" &&
     typeof o.startedAt === "number" &&
     typeof o.durationSec === "number" &&
-    (o.source === "pentatonic-practice" || o.source === "practice-station")
+    (o.source === "pentatonic-practice" ||
+      o.source === "practice-station" ||
+      o.source === "caged-immersion")
   );
 }
 

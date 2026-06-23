@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import type { Degree, ScaleString, StringName } from "./scalePositions.types";
@@ -256,12 +257,7 @@ export function YngwieScales() {
       <main className="px-4 md:px-8 py-8 [@media(max-height:500px)]:py-3 max-w-[1400px] mx-auto">
         {/* Page title */}
         <div className="mb-8">
-          <h1
-            className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none mb-1"
-            style={{ color: "var(--text)" }}
-          >
-            Yngwie Scales
-          </h1>
+          <PageHeader eyebrow="Scales" title="Yngwie Scales" />
           <p
             className="font-mono text-[0.78rem] mt-2 max-w-[580px]"
             style={{ color: "var(--muted)" }}

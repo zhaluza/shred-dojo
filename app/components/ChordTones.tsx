@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import type { StringName } from "./scalePositions.types";
 import {
   buildAllPositions,
@@ -564,14 +565,12 @@ export function ChordTones() {
       }} />
 
       <main className="flex-1 flex flex-col items-center px-4 py-8 [@media(max-height:500px)]:py-3 max-w-2xl mx-auto w-full">
-        <div className="w-full mb-6">
-          <h1 className="font-display font-semibold text-[clamp(1.8rem,5vw,2.6rem)] tracking-[0.04em] uppercase leading-none text-[var(--text)]">
-            Chord Tones
-          </h1>
-          <p className="font-mono text-[0.78rem] text-[var(--muted)] mt-1">
-            Identify each interval within the shape.
-          </p>
-        </div>
+        <PageHeader
+          className="w-full"
+          eyebrow="Drills"
+          title="Chord Tones"
+          subtitle="Identify each interval within the shape."
+        />
 
         {!active ? (
           /* ── Settings panel ── */

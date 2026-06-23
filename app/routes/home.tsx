@@ -75,6 +75,7 @@ const TOOL_CATEGORIES: Category[] = [
     tools: [
       { to: "/morning-coffee", title: "Morning Coffee", body: "Your daily routine: major scales, triads, pentatonics, and broken intervals across all 12 keys. Based on Alex Rockwell's method. Do it every day.", featured: true },
       { to: "/pentatonic-practice", title: "Pentatonic Practice", body: "A six-step routine for total pentatonic command — memorize, place, transpose, connect, then improvise. With metronome, timer, and key drone." },
+      { to: "/caged-immersion", title: "CAGED Immersion", body: "Guthrie Trapp's CAGED / 1-4-5 method in two modules: the core concepts and seven transposable exercises. Pick a key, turn on the drone, and play." },
       { to: "/metronome", title: "Metronome", body: "A standalone practice station: a big beat-dial metronome with tap tempo, a tempo trainer that ramps for you, a timer, and a key drone." },
       { to: "/lick-stash", title: "Lick Stash", body: "Curated lick packs by style and technique. Learn, loop, and internalize real vocabulary you can use on stage." },
       { to: "/practice-log", title: "Practice Log", body: "A running history of your practice, filled in automatically as the timer runs. Time per day, per tool, per section." },

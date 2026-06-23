@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAGED Exercise Trainer — Guthrie Trapp Course</title>
+<style>
+  :root{
+    --bg:#f4f2ec; --bg2:#fbfaf6; --panel:#ffffff; --panel2:#f1ede3;
+    --line:#e2dccd; --wood:#ecdfc6; --woodLine:#bfa77e; --nut:#7c6240;
+    --ink:#2b261d; --muted:#5f5848; --faint:#938975;
+    --red:#c2362b; --slate:#7c7160; --gold:#9c7726;
+    --accent:#1d7480; --accentInk:#ffffff; --shadow:rgba(40,33,20,.09);
+    --display:Georgia,'Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  }
+  :root[data-theme="dark"]{
+    --bg:#1b1712; --bg2:#221d16; --panel:#262017; --panel2:#2e2719;
+    --line:#3c332a; --wood:#e7d9bf; --woodLine:#b39b73; --nut:#6b5536;
+    --ink:#f3ecdf; --muted:#b6aa93; --faint:#867b68;
+    --red:#d6443a; --slate:#5f574a; --gold:#cba953;
+    --accent:#54bccb; --accentInk:#08252a; --shadow:rgba(0,0,0,.34);
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme]){
+    --bg:#1b1712; --bg2:#221d16; --panel:#262017; --panel2:#2e2719;
+    --line:#3c332a; --wood:#e7d9bf; --woodLine:#b39b73; --nut:#6b5536;
+    --ink:#f3ecdf; --muted:#b6aa93; --faint:#867b68;
+    --red:#d6443a; --slate:#5f574a; --gold:#cba953;
+    --accent:#54bccb; --accentInk:#08252a; --shadow:rgba(0,0,0,.34);
+  }}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;transition:background .2s,color .2s;}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px 80px;}
+
+  /* sticky bar */
+  .bar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 92%,transparent);
+    backdrop-filter:blur(9px);border-bottom:1px solid var(--line);}
+  .bar-inner{max-width:1000px;margin:0 auto;padding:9px 20px 10px;display:flex;flex-direction:column;gap:8px;}
+  .bar-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  .bar-top{justify-content:space-between;}
+  .brand{font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink);}
+  .brand small{font-family:var(--mono);font-weight:400;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);display:block;margin-top:1px;}
+  .backbtn{font-family:var(--sans);font-size:14px;background:transparent;border:1px solid var(--line);
+    border-radius:9px;padding:7px 13px;color:var(--ink);cursor:pointer;transition:.15s;}
+  .backbtn:hover{border-color:var(--accent);color:var(--accent);}
+  .iconbtn{font-family:var(--sans);font-size:13px;background:transparent;border:1px solid var(--line);
+    border-radius:9px;padding:7px 11px;color:var(--muted);cursor:pointer;transition:.15s;display:inline-flex;
+    gap:6px;align-items:center;}
+  .iconbtn:hover{border-color:var(--accent);color:var(--accent);}
+  .bar-label{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);width:34px;flex:none;}
+  .keys{display:flex;gap:5px;flex-wrap:wrap;}
+  .keybtn{font-family:var(--mono);font-size:14px;background:var(--bg2);color:var(--muted);
+    border:1px solid var(--line);border-radius:8px;padding:6px 9px;min-width:36px;cursor:pointer;transition:.13s;}
+  .keybtn:hover{border-color:var(--accent);color:var(--ink);}
+  .keybtn.active{background:var(--accent);border-color:var(--accent);color:var(--accentInk);font-weight:700;}
+  .keybtn:focus-visible,.expill:focus-visible,.exitem:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  /* hero / home */
+  .hero{padding:50px 0 8px;}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;}
+  h1{font-family:var(--display);font-weight:600;font-size:clamp(32px,5.4vw,52px);line-height:1.04;margin:0 0 16px;letter-spacing:-.01em;}
+  h1 em{font-style:italic;color:var(--red);}
+  .sub{color:var(--muted);max-width:64ch;font-size:16px;margin:0;}
+  .sub b{color:var(--ink);font-weight:600;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted);
+    font-family:var(--mono);margin:26px 0 0;}
+  .legend span{display:inline-flex;align-items:center;gap:7px;}
+  .swatch{width:15px;height:15px;border-radius:50%;display:inline-block;}
+  .sw-root{background:var(--red);box-shadow:0 0 0 1.6px var(--gold);}
+  .sw-tone{background:var(--red);}
+  .sw-pass{background:var(--slate);}
+  .inference{border-left:2px solid var(--gold);padding-left:13px;margin:22px 0 0;font-size:13.5px;color:var(--muted);max-width:70ch;}
+  .inference b{color:var(--gold);font-weight:600;font-family:var(--mono);font-size:11px;letter-spacing:.06em;}
+
+  section{padding:30px 0;border-top:1px solid var(--line);margin-top:30px;}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 8px;}
+  .ref-title{font-family:var(--display);font-size:25px;font-weight:600;margin:0 0 6px;}
+  .blurb{color:var(--muted);font-size:14.5px;margin:0;max-width:72ch;}
+  .toggle{display:inline-flex;gap:4px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:4px;margin:18px 0 20px;flex-wrap:wrap;}
+  .toggle button{font-family:var(--sans);font-size:13px;background:transparent;border:0;color:var(--muted);padding:7px 14px;border-radius:7px;cursor:pointer;transition:.13s;}
+  .toggle button.active{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px var(--shadow);}
+  .toggle button:hover{color:var(--ink);}
+  .neckwrap{overflow-x:auto;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);box-shadow:inset 0 1px 0 var(--shadow);}
+  .neckwrap svg{display:block;}
+  .formula{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin:12px 0 0;}
+
+  /* exercise menu (home) */
+  .menu{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+  .exitem{display:flex;align-items:center;gap:14px;text-align:left;width:100%;cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;transition:.14s;
+    box-shadow:0 1px 2px var(--shadow);}
+  .exitem:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 14px var(--shadow);}
+  .exitem-letter{font-family:var(--display);font-style:italic;font-weight:600;font-size:26px;color:var(--red);
+    width:30px;flex:none;text-align:center;}
+  .exitem-main{flex:1;min-width:0;}
+  .exitem-title{display:block;font-family:var(--display);font-size:17px;font-weight:600;color:var(--ink);}
+  .exitem-blurb{display:block;font-size:13px;color:var(--muted);margin-top:2px;}
+  .exitem-arrow{color:var(--faint);font-size:18px;flex:none;}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+    padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--muted);flex:none;}
+  .tag.major{color:#a9791f;border-color:#c9a85c;}
+  .tag.dom{color:#b9622f;border-color:#cf8a5c;}
+  .tag.minor{color:#2c6f86;border-color:#6fa6bb;}
+  :root[data-theme="dark"] .tag.major{color:#e6c06a;border-color:#5b4d2c;}
+  :root[data-theme="dark"] .tag.dom{color:#e8966a;border-color:#5c3e2c;}
+  :root[data-theme="dark"] .tag.minor{color:#8fc0d4;border-color:#2f4654;}
+  @media (prefers-color-scheme:dark){:root:not([data-theme]) .tag.major{color:#e6c06a;border-color:#5b4d2c;}
+    :root:not([data-theme]) .tag.dom{color:#e8966a;border-color:#5c3e2c;}
+    :root:not([data-theme]) .tag.minor{color:#8fc0d4;border-color:#2f4654;}}
+
+  /* exercise page */
+  .exswitch{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:18px 0 4px;}
+  .exselect{font-family:var(--sans);font-size:14px;background:var(--panel);color:var(--ink);
+    border:1px solid var(--line);border-radius:10px;padding:9px 12px;flex:1;min-width:200px;cursor:pointer;}
+  .stepbtn{font-family:var(--sans);font-size:13.5px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:9px 13px;color:var(--ink);cursor:pointer;transition:.14s;white-space:nowrap;}
+  .stepbtn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .exhead{padding:18px 0 0;}
+  .exhead-top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+  .exletter{font-family:var(--display);font-style:italic;font-weight:600;font-size:40px;color:var(--red);line-height:1;}
+  .exhead h2{font-family:var(--display);font-size:27px;font-weight:600;margin:0;flex:1;min-width:220px;line-height:1.1;}
+  .pages{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em;}
+  .harmony{font-family:var(--mono);font-size:16px;margin:18px 0 2px;color:var(--ink);}
+  .harmony b{color:var(--red);}
+  .whatplay{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:10px;padding:11px 14px;margin:18px 0 0;font-size:14.5px;color:var(--ink);}
+  .whatplay span{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--accent);display:block;margin-bottom:3px;}
+  .concept{color:var(--muted);font-size:15px;margin:10px 0 0;max-width:72ch;}
+  .concept b{color:var(--ink);font-weight:600;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin:22px 0;box-shadow:0 1px 2px var(--shadow);}
+  .panel-h{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 14px;}
+  .zone{margin:0 0 18px;}
+  .zone:last-child{margin-bottom:0;}
+  .zone-label{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.05em;margin:0 0 9px;}
+  .zone-label b{color:var(--accent);}
+  .grid-row{display:flex;gap:12px;flex-wrap:wrap;}
+  .chordcard{text-align:center;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:9px 7px 7px;}
+  .chordcard .cname{font-family:var(--mono);font-size:13px;color:var(--ink);margin:0 0 5px;}
+  .chordcard .crole{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase;margin:5px 0 0;}
+  .chordcard svg{display:block;margin:0 auto;}
+
+  .steps ol{margin:0;padding-left:20px;}
+  .steps li{font-size:14.5px;color:var(--muted);margin:0 0 8px;}
+  .steps li:last-child{margin-bottom:0;}
+  .steps li b{color:var(--ink);font-weight:600;}
+  .scaleref{font-family:var(--mono);font-size:12.5px;color:var(--accent);margin:0 0 14px;}
+
+  .ex-note{font-size:13px;color:var(--faint);font-style:italic;margin:14px 0 0;max-width:72ch;}
+  .ex-inference{border-left:2px solid var(--gold);padding-left:13px;margin:16px 0 0;font-size:13.5px;color:var(--muted);max-width:72ch;}
+  .ex-inference b{color:var(--gold);font-weight:600;font-family:var(--mono);font-size:11px;letter-spacing:.06em;}
+
+  .pager{display:flex;gap:12px;margin:26px 0 0;}
+  .pager button{flex:1;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;cursor:pointer;transition:.14s;color:var(--ink);box-shadow:0 1px 2px var(--shadow);}
+  .pager button:hover{border-color:var(--accent);box-shadow:0 4px 14px var(--shadow);}
+  .pager .dir{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;}
+  .pager .pn{display:block;font-family:var(--display);font-size:14.5px;font-weight:600;}
+  .pager .next{text-align:right;}
+
+  footer{padding:30px 0 0;color:var(--faint);font-size:13px;border-top:1px solid var(--line);margin-top:34px;}
+
+  @media (max-width:560px){
+    .wrap{padding:0 14px 60px;} .bar-inner{padding:9px 14px 10px;}
+    .hero{padding:34px 0 6px;} .panel{padding:17px 15px;}
+    .pager .pn{font-size:13px;} .exhead h2{font-size:23px;}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}.exitem:hover,.pager button:hover{transform:none;}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="bar-inner">
+    <div class="bar-row bar-top">
+      <div id="barNav"></div>
+      <button class="iconbtn" id="themeBtn" aria-label="Toggle light or dark theme"></button>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">Key</span>
+      <div class="keys" id="keys"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap"><main id="main"></main></div>
+
+<script>
+/* ============ MUSIC CORE (verified: 936 note checks, 0 failures) ============ */
+const OPEN=[4,9,2,7,11,4]; // string 0..5 = low E(6th)..high e(1st)
+const SHARP=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT =['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const FLATKEYS=new Set([5,10,3,8,1,6]);
+const DEG_SEMI={'R':0,'b3':3,'3':4,'5':7,'b7':10};
+const SHAPES={
+  Emaj:{anchor:0,s:[{off:0,deg:'R'},{off:2,deg:'5'},{off:2,deg:'R'},{off:1,deg:'3'},{off:0,deg:'5'},{off:0,deg:'R'}]},
+  Amaj:{anchor:1,s:[null,{off:0,deg:'R'},{off:2,deg:'5'},{off:2,deg:'R'},{off:2,deg:'3'},{off:0,deg:'5'}]},
+  Dmaj:{anchor:2,s:[null,null,{off:0,deg:'R'},{off:2,deg:'5'},{off:3,deg:'R'},{off:2,deg:'3'}]},
+  Gmaj:{anchor:0,s:[{off:0,deg:'R'},{off:-1,deg:'3'},{off:-3,deg:'5'},{off:-3,deg:'R'},{off:-3,deg:'3'},{off:0,deg:'R'}]},
+  Cmaj:{anchor:1,s:[null,{off:0,deg:'R'},{off:-1,deg:'3'},{off:-3,deg:'5'},{off:-2,deg:'R'},{off:-3,deg:'3'}]},
+  Emin:{anchor:0,s:[{off:0,deg:'R'},{off:2,deg:'5'},{off:2,deg:'R'},{off:0,deg:'b3'},{off:0,deg:'5'},{off:0,deg:'R'}]},
+  Amin:{anchor:1,s:[null,{off:0,deg:'R'},{off:2,deg:'5'},{off:2,deg:'R'},{off:1,deg:'b3'},{off:0,deg:'5'}]},
+  Dmin:{anchor:2,s:[null,null,{off:0,deg:'R'},{off:2,deg:'5'},{off:3,deg:'R'},{off:1,deg:'b3'}]},
+  Gmin:{anchor:0,s:[{off:0,deg:'R'},{off:-2,deg:'b3'},{off:-3,deg:'5'},{off:-3,deg:'R'},{off:-4,deg:'b3'},{off:0,deg:'R'}]},
+  Cmin:{anchor:1,s:[null,{off:0,deg:'R'},{off:-2,deg:'b3'},{off:-3,deg:'5'},{off:-2,deg:'R'},{off:-4,deg:'b3'}]},
+  E7:{anchor:0,s:[{off:0,deg:'R'},{off:2,deg:'5'},{off:0,deg:'b7'},{off:1,deg:'3'},{off:0,deg:'5'},{off:0,deg:'R'}]},
+  A7:{anchor:1,s:[null,{off:0,deg:'R'},{off:2,deg:'5'},{off:0,deg:'b7'},{off:2,deg:'3'},{off:0,deg:'5'}]},
+  D7:{anchor:2,s:[null,null,{off:0,deg:'R'},{off:2,deg:'5'},{off:1,deg:'b7'},{off:2,deg:'3'}]},
+  G7:{anchor:0,s:[{off:0,deg:'R'},{off:-1,deg:'3'},{off:-3,deg:'5'},{off:-3,deg:'R'},{off:-3,deg:'3'},{off:-2,deg:'b7'}]},
+  C7:{anchor:1,s:[null,{off:0,deg:'R'},{off:-1,deg:'3'},{off:0,deg:'b7'},{off:-2,deg:'R'},{off:-3,deg:'3'}]},
+};
+let KEY=7;
+function noteName(pc){return (FLATKEYS.has(KEY)?FLAT:SHARP)[((pc%12)+12)%12];}
+function chordName(pc,q){return noteName(pc)+(q==='min'?'m':q==='7'?'7':'');}
+function shapeKey(letter,q){return letter+(q==='maj'?'maj':q==='min'?'min':'7');}
+function offs(sh){return sh.s.filter(Boolean).map(c=>c.off);}
+function baseN(sh,R){return ((((R-OPEN[sh.anchor])%12)+12)%12);}
+function lowestN(sh,R){let n=baseN(sh,R);const mo=Math.min(...offs(sh));while(n+mo<0)n+=12;return n;}
+function startOf(sh,n){return n+Math.min(...offs(sh));}
+function chooseN(sh,R,target){const mo=Math.min(...offs(sh));let n=baseN(sh,R);while(n+mo<0)n+=12;
+  let best=n,bd=Math.abs((n+mo)-target);
+  for(let k=1;k<=3;k++){const nn=n+12*k;const d=Math.abs((nn+mo)-target);if(d<bd){bd=d;best=nn;}}return best;}
+function clusterNs(items){const lows=items.map(it=>startOf(SHAPES[it.shape],lowestN(SHAPES[it.shape],it.R)));
+  const target=Math.max(...lows);return items.map(it=>chooseN(SHAPES[it.shape],it.R,target));}
+
+function gridSVG(shapeName,R,n){
+  const sh=SHAPES[shapeName];
+  const SX=15,FY=19,PX=15,PT=22,PB=10,DOT=6.3;
+  const frets=sh.s.map(c=>c?(n+c.off):null);
+  const fretted=frets.filter(f=>f&&f>0);
+  const openPresent=frets.some(f=>f===0);
+  let winStart=openPresent?1:Math.min(...fretted); if(winStart<1)winStart=1;
+  const maxF=Math.max(...fretted,winStart+4);
+  const rows=Math.max(5,maxF-winStart+1);
+  const W=PX*2+5*SX,H=PT+rows*FY+PB;
+  let g=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
+  for(let r=0;r<=rows;r++){const y=PT+r*FY;const thick=(r===0&&winStart===1)?3:1;
+    const col=(r===0&&winStart===1)?'var(--nut)':'var(--woodLine)';
+    g+=`<line x1="${PX}" y1="${y}" x2="${PX+5*SX}" y2="${y}" stroke="${col}" stroke-width="${thick}"/>`;}
+  for(let i=0;i<6;i++){const x=PX+i*SX;
+    g+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+rows*FY}" stroke="var(--woodLine)" stroke-width="1"/>`;}
+  if(winStart>1)g+=`<text x="${PX-6}" y="${PT+FY*0.5+4}" text-anchor="end" font-family="var(--mono)" font-size="11" fill="var(--muted)">${winStart}</text>`;
+  for(let i=0;i<6;i++){const x=PX+i*SX,cell=sh.s[i];
+    if(cell===null){g+=`<text x="${x}" y="${PT-7}" text-anchor="middle" font-family="var(--sans)" font-size="11" fill="var(--faint)">✕</text>`;continue;}
+    const f=n+cell.off;
+    if(f===0){g+=`<circle cx="${x}" cy="${PT-10}" r="4.4" fill="none" stroke="var(--muted)" stroke-width="1.4"/>`;continue;}
+    const row=f-winStart,y=PT+(row+0.5)*FY,isRoot=cell.deg==='R';
+    g+=`<circle cx="${x}" cy="${y}" r="${DOT}" fill="var(--red)"${isRoot?' stroke="var(--gold)" stroke-width="1.6"':''}/>`;
+    const lab=cell.deg.replace('b','♭');
+    g+=`<text x="${x}" y="${y+3.2}" text-anchor="middle" font-family="var(--sans)" font-weight="700" font-size="${isRoot?9.5:8.5}" fill="#fff">${isRoot?'R':lab}</text>`;}
+  return g+`</svg>`;
+}
+function chordCard(role,letter,q,R,n){
+  return `<div class="chordcard"><p class="cname">${chordName(R,q)}</p>${gridSVG(shapeKey(letter,q),R,n)}<p class="crole">${role} · ${letter} shape</p></div>`;
+}
+function trio(items){const ns=clusterNs(items.map(it=>({shape:shapeKey(it.letter,it.q),R:it.R})));
+  return `<div class="grid-row">`+items.map((it,i)=>chordCard(it.role,it.letter,it.q,it.R,ns[i])).join('')+`</div>`;}
+function pair(a,b){const ns=clusterNs([{shape:shapeKey(a.letter,a.q),R:a.R},{shape:shapeKey(b.letter,b.q),R:b.R}]);
+  return `<div class="grid-row">${chordCard(a.role,a.letter,a.q,a.R,ns[0])}${chordCard(b.role,b.letter,b.q,b.R,ns[1])}</div>`;}
+
+const SCALES={
+  major:{name:'Major scale',degs:{0:'R',2:'2',4:'3',5:'4',7:'5',9:'6',11:'7'},chord:new Set([0,4,7]),
+    formula:'1 · 2 · 3 · 4 · 5 · 6 · 7  — chord tones 1 · 3 · 5'},
+  minor:{name:'Minor scale (no 6)',degs:{0:'R',2:'2',3:'♭3',5:'4',7:'5',10:'♭7'},chord:new Set([0,3,7,10]),
+    formula:'1 · 2 · ♭3 · 4 · 5 · ♭7  — chord tones 1 · ♭3 · 5 · ♭7  (minor pentatonic plus the 2)'},
+  mixo:{name:'Dominant 7 scale',degs:{0:'R',2:'2',4:'3',5:'4',7:'5',9:'6',10:'♭7'},chord:new Set([0,4,7,10]),
+    formula:'1 · 2 · 3 · 4 · 5 · 6 · ♭7  — chord tones 1 · 3 · 5 · ♭7'},
+};
+function neckSVG(mode){
+  const sc=SCALES[mode];
+  const FRETS=15,FW=42,SH=24,PX=30,PT=14,PB=24;
+  const W=PX+FRETS*FW+18,H=PT+6*SH+PB;
+  let g=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${sc.name} across the fretboard">`;
+  g+=`<rect x="${PX}" y="${PT}" width="${FRETS*FW}" height="${5*SH}" fill="var(--wood)" stroke="var(--woodLine)" stroke-width="1" rx="3"/>`;
+  g+=`<line x1="${PX}" y1="${PT}" x2="${PX}" y2="${PT+5*SH}" stroke="var(--nut)" stroke-width="4"/>`;
+  for(let f=1;f<=FRETS;f++){const x=PX+f*FW;g+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+5*SH}" stroke="var(--woodLine)" stroke-width="1.4"/>`;}
+  for(let i=0;i<6;i++){const y=PT+(5-i)*SH;g+=`<line x1="${PX}" y1="${y}" x2="${PX+FRETS*FW}" y2="${y}" stroke="var(--woodLine)" stroke-width="1"/>`;}
+  [3,5,7,9,15].forEach(f=>{const x=PX+(f-0.5)*FW;g+=`<circle cx="${x}" cy="${PT+5*SH+11}" r="3" fill="var(--faint)"/>`;});
+  {const x=PX+(12-0.5)*FW;g+=`<circle cx="${x-5}" cy="${PT+5*SH+11}" r="3" fill="var(--faint)"/><circle cx="${x+5}" cy="${PT+5*SH+11}" r="3" fill="var(--faint)"/>`;}
+  [3,5,7,9,12,15].forEach(f=>{const x=PX+(f-0.5)*FW;g+=`<text x="${x}" y="${PT+5*SH+22}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--faint)">${f}</text>`;});
+  for(let i=0;i<6;i++){const y=PT+(5-i)*SH;
+    for(let f=0;f<=FRETS;f++){const pc=(OPEN[i]+f)%12;const deg=((pc-KEY)%12+12)%12;
+      if(!(deg in sc.degs))continue;
+      const x=f===0?PX-13:PX+(f-0.5)*FW;const isChord=sc.chord.has(deg);const isRoot=deg===0;
+      g+=`<circle cx="${x}" cy="${y}" r="8.4" fill="${isChord?'var(--red)':'var(--slate)'}"${isRoot?' stroke="var(--gold)" stroke-width="1.7"':''}/>`;
+      g+=`<text x="${x}" y="${y+3}" text-anchor="middle" font-family="var(--sans)" font-weight="${isRoot?700:600}" font-size="9" fill="#fff">${sc.degs[deg]}</text>`;}}
+  return g+`</svg>`;
+}
+
+/* ============ ZONES + LESSONS ============ */
+const R_I=0,R_IV=5,R_V=7;
+const ZONES_MAJOR=[{I:'E',IV:'A',V:'C'},{I:'D',IV:'G',V:'A'},{I:'C',IV:'E',V:'G'},{I:'A',IV:'D',V:'E'},{I:'G',IV:'C',V:'D'}];
+const ZONES_MINOR=[{i:'E',iv:'A',V:'C'},{i:'C',iv:'E',V:'G'},{i:'A',iv:'D',V:'E'}];
+function majorZones(){return ZONES_MAJOR.map((z,idx)=>{
+  const body=trio([{role:'I',letter:z.I,q:'maj',R:(KEY+R_I)%12},{role:'IV',letter:z.IV,q:'maj',R:(KEY+R_IV)%12},{role:'V',letter:z.V,q:'maj',R:(KEY+R_V)%12}]);
+  return `<div class="zone"><p class="zone-label">Zone ${idx+1} &nbsp;·&nbsp; I <b>${z.I}</b> · IV <b>${z.IV}</b> · V <b>${z.V}</b></p>${body}</div>`;}).join('');}
+function minorZones(){return ZONES_MINOR.map((z,idx)=>{
+  const body=trio([{role:'i',letter:z.i,q:'min',R:(KEY+R_I)%12},{role:'iv',letter:z.iv,q:'min',R:(KEY+R_IV)%12},{role:'V7',letter:z.V,q:'7',R:(KEY+R_V)%12}]);
+  return `<div class="zone"><p class="zone-label">Exercise ${idx+1} &nbsp;·&nbsp; i <b>${z.i}</b> · iv <b>${z.iv}</b> · V7 <b>${z.V}</b></p>${body}</div>`;}).join('');}
+function iPositions(q){const order=['C','A','G','E','D'];
+  return `<div class="grid-row">`+order.map(l=>chordCard('I',l,q,(KEY)%12,lowestN(SHAPES[shapeKey(l,q)],(KEY)%12))).join('')+`</div>`;}
+function domZones(){const sel=[ZONES_MAJOR[0],ZONES_MAJOR[2],ZONES_MAJOR[4]];
+  return sel.map((z,i)=>{const idx=[1,3,5][i];
+    const body=trio([{role:'I7',letter:z.I,q:'7',R:(KEY+R_I)%12},{role:'IV7',letter:z.IV,q:'7',R:(KEY+R_IV)%12},{role:'V7',letter:z.V,q:'7',R:(KEY+R_V)%12}]);
+    return `<div class="zone"><p class="zone-label">Zone ${idx} &nbsp;·&nbsp; I7 <b>${z.I}</b> · IV7 <b>${z.IV}</b> · V7 <b>${z.V}</b></p>${body}</div>`;}).join('');}
+function ascendBlocks(){
+  const low=trio([{role:'I',letter:ZONES_MAJOR[0].I,q:'maj',R:(KEY+R_I)%12},{role:'IV',letter:ZONES_MAJOR[0].IV,q:'maj',R:(KEY+R_IV)%12},{role:'V',letter:ZONES_MAJOR[0].V,q:'maj',R:(KEY+R_V)%12}]);
+  const high=trio([{role:'I',letter:ZONES_MAJOR[4].I,q:'maj',R:(KEY+R_I)%12},{role:'IV',letter:ZONES_MAJOR[4].IV,q:'maj',R:(KEY+R_IV)%12},{role:'V',letter:ZONES_MAJOR[4].V,q:'maj',R:(KEY+R_V)%12}]);
+  return `<div class="zone"><p class="zone-label">Start low &nbsp;·&nbsp; Zone 1</p>${low}</div><div class="zone"><p class="zone-label">Travel up &nbsp;·&nbsp; Zone 5 (then keep climbing)</p>${high}</div>`;}
+
+const LESSONS=[
+  {id:'A',title:'1 to 5 Major Scale Ear Training',pages:'pp. 12–13',tag:'Major',tagClass:'major',sound:'major',
+   menu:'Improvise major-scale lines over a I–V vamp; resolve onto chord tones.',scaleref:'Major scale',
+   concept:'Improvise <b>major-scale lines</b> (the demo leans on triplets) over a I&ndash;V vamp, resolving phrases onto chord tones. It is "ear training" because the goal is hearing how scale notes pull toward the I and the V. The three examples are the same idea in three neck positions.',
+   whatYouPlay:'Continuous major-scale lines in triplets over I&ndash;V7, resolving onto chord tones.',
+   inference:'The leading "1" is clipped in the source title; given the I&ndash;V (G&rarr;D7) harmony I read it as "1 to 5."',
+   steps:['Loop a <b>I &rarr; V7</b> backing track in this key.','Play the major scale in <b>triplets</b>, landing on a chord tone (red) on each strong beat.','Over the V7, lean on its 3rd and the leading tone to create pull back to I.','Move the same lines up to the next CAGED zone, then change key.'],
+   diagram:()=>pair({role:'I',letter:'E',q:'maj',R:(KEY+R_I)%12},{role:'V7',letter:'A',q:'7',R:(KEY+R_V)%12})},
+  {id:'B',title:'Dom7 to 4 Dom7',pages:'p. 14',tag:'Dominant',tagClass:'dom',sound:'mixo',
+   menu:"Bluesy I7→IV7 lines targeting each chord's 3 and ♭7.",scaleref:'Dominant 7 scale',
+   concept:'Bluesy lines over the <b>I7 &rarr; IV7</b> move (the core blues change). The demo uses each chord\u2019s dominant 7 sound plus <b>chromatic approach notes</b> (the ♭3&rarr;3 slide) and slides into chord tones, targeting each dominant chord\u2019s <b>3 and ♭7</b>.',
+   whatYouPlay:'Bluesy dominant-7 lines with ♭3&rarr;3 chromatic slides, aimed at each chord\u2019s 3 and ♭7.',
+   steps:['Loop a <b>I7 &rarr; IV7</b> vamp in this key.','Over each chord use its dominant 7 scale / arpeggio.','Connect the two chords with chromatic approaches into the <b>3rds and ♭7ths</b>; add slides.','Shift up a CAGED zone, then change key.'],
+   diagram:()=>pair({role:'I7',letter:'E',q:'7',R:(KEY+R_I)%12},{role:'IV7',letter:'A',q:'7',R:(KEY+R_IV)%12})},
+  {id:'C',title:'Major CAGED Shapes and the 1-4-5',pages:'pp. 15–17',tag:'Major',tagClass:'major',sound:'major',
+   menu:'Play the I-IV-V as CAGED chord shapes, zone by zone up the neck.',
+   concept:'Play the <b>I&ndash;IV&ndash;V</b> staying inside one neck zone, where each chord falls under your fingers as a specific CAGED shape. Each exercise first states the four chords as <b>block chords</b>, then breaks each one into a <b>three-note major triad arpeggio &mdash; root&ndash;3rd&ndash;5th (1&ndash;3&ndash;5), ascending</b> &mdash; run I&rarr;IV&rarr;V&rarr;I, then repeated an octave higher in the same zone. (In G: the I is <b>G&ndash;B&ndash;D</b>, the IV <b>C&ndash;E&ndash;G</b>, the V <b>D&ndash;F♯&ndash;A</b>.) The diagrams below <b>are</b> that arpeggio &mdash; play each shape\u2019s R &rarr; 3 &rarr; 5. The five exercises walk the trio up the neck through all five CAGED zones.',
+   whatYouPlay:'Each chord = a 3-note major triad arpeggio, root&rarr;3rd&rarr;5th, in the CAGED shape shown.',
+   note:'Pattern behind the table (my derivation): in CAGED order C-A-G-E-D, the V uses the shape 2 steps ahead of the I\u2019s shape, the IV 3 ahead. You don\u2019t need the math — each zone just contains a I, IV and V shape clustered together.',
+   steps:['Pick a zone. Strum the three CAGED chord shapes shown (I, IV, V) to lock in the position.','Arpeggiate each chord as <b>root &rarr; 3rd &rarr; 5th</b>, ascending — that\u2019s the three labelled dots in each diagram, low string to high.','Run it <b>I &rarr; IV &rarr; V &rarr; I</b>; the demo then repeats the same triads an octave higher in the zone.','Move to the next zone (the shapes shift), then change key — the shapes are identical, only the starting fret moves.'],
+   diagram:()=>majorZones()},
+  {id:'D',title:'CAGED Scales, Arpeggios, 1-4-5',pages:'pp. 18–19',tag:'Major',tagClass:'major',sound:'major',
+   menu:'Run flowing scale & arpeggio lines through the I-IV-V in position.',scaleref:'Major scale',
+   concept:'The melodic step up from Lesson C. Where C <b>leapt</b> through bare three-note triads, here you run <b>flowing, mostly stepwise major-scale lines</b> through the same I&ndash;IV&ndash;V while <b>staying in one position</b>, bending toward each chord\u2019s tones as it arrives. (The odd 7/8 &amp; 3/4 groupings in the tab are just how the continuous runs are barred — the takeaway is the line.) Same five CAGED zones.',
+   whatYouPlay:'Continuous, mostly stepwise major-scale runs through I&ndash;IV&ndash;V, staying in one CAGED position.',
+   steps:['Loop a <b>I-IV-V</b> backing track.','In one zone, play continuous major-scale lines that bend toward the current chord\u2019s tones as it arrives.','Land on chord tones (red) at the change; pass through the rest.','Repeat zone by zone, then change key.'],
+   diagram:()=>`<p class="zone-label">The five positions you run scale lines through — here\u2019s the I chord (<b>${chordName((KEY+R_I)%12,'maj')}</b>) anchoring each CAGED zone:</p>`+iPositions('maj')},
+  {id:'E',title:'Horizontally Playing Through the 1-4-5',pages:'p. 20',tag:'Major',tagClass:'major',sound:'major',
+   menu:'Connect the I-IV-V horizontally, climbing up the neck.',
+   concept:'The same <b>root&ndash;3rd&ndash;5th triad arpeggios as Lesson C</b>, but played <b>horizontally</b> instead of inside a box. Each repetition climbs to the next position up the neck — in the demo, frets <b>3 &rarr; 5 &rarr; 7 &rarr; 10 &rarr; 12 &rarr; 15</b> — tracing the I&ndash;IV&ndash;V along the length of the strings. This trains you to connect the CAGED zones lengthwise rather than staying put.',
+   whatYouPlay:'The 1&ndash;3&ndash;5 triads of I&ndash;IV&ndash;V, climbing the neck position by position along the strings.',
+   steps:['Loop a <b>I-IV-V</b>. Play the low <b>root&ndash;3rd&ndash;5th triads</b> of each chord in the position shown.','On the repeat, shift the <b>same 1-3-5 triads up to the next position</b> on the neck; keep climbing each pass.','Travel from the bottom of the neck to the top in one sweep, then reverse back down.','Do it in several keys — only the starting fret changes.'],
+   diagram:()=>ascendBlocks()},
+  {id:'F',title:'Dominant Scales, Arpeggios, 1-4-5',pages:'pp. 21–23',tag:'Dominant',tagClass:'dom',sound:'mixo',
+   menu:'The dominant/blues version: I7-IV7-V7 through the zones.',scaleref:'Dominant 7 scale',
+   concept:'Lesson D applied to an <b>all-dominant</b> (blues) progression: every chord is a dom7. Use each chord\u2019s <b>dominant 7 scale and arpeggio</b> (watch the ♭7s), flowing through the changes in each CAGED zone.',
+   whatYouPlay:'Dominant-7 scale runs (using the ♭7) flowing through I7&ndash;IV7&ndash;V7 in position.',
+   inference:'The course doesn\u2019t label specific CAGED shapes for this lesson. The dom7 shapes below reuse the same zone logic as the major lesson — treat them as a suggested mapping, not a transcription.',
+   steps:['Loop a <b>I7-IV7-V7</b> vamp.','Over each chord switch to its dominant 7 scale / arpeggio.','Connect them in position, then move up a zone.','Change key — this is the dominant/blues counterpart to Lesson D.'],
+   diagram:()=>domZones()},
+  {id:'G',title:'Minor CAGED Shapes and the 1-4-5',pages:'pp. 24–26',tag:'Minor key',tagClass:'minor',sound:'minor',
+   menu:'Minor i-iv with a dominant V7 — raise the 7th over the V.',scaleref:'Minor (no 6) scale',
+   concept:'The minor-key parallel to Lesson C. Block chords first, then each chord as a <b>three-note triad arpeggio</b>: the i and iv are <b>minor triads — root&ndash;♭3rd&ndash;5th (1&ndash;♭3&ndash;5)</b>, but the <b>V is dominant</b> (a D7 in Gm), so its arpeggio uses the <b>major 3rd — the raised 7th / leading tone</b> that pulls back to the i. Run i&rarr;iv&rarr;V7&rarr;i in each CAGED shape. The diagrams show exactly these tones (♭3 on the minor chords; 3 and ♭7 on the V7).',
+   whatYouPlay:'Minor triads 1&ndash;♭3&ndash;5 for i and iv; a dominant arpeggio (major 3rd, raised 7th) for the V7.',
+   inference:'Only Exercises 1&ndash;3 are labeled with shapes on the page (shown below). Exercises 4 &amp; 5 are labeled i/iv/V only — additional position studies in the same i-iv-V7 framework — so I haven\u2019t assigned them shapes.',
+   steps:['Pick an exercise/zone. Strum the three shapes: <b>minor i, minor iv, dominant V7</b>.','Arpeggiate i and iv as <b>root &rarr; ♭3rd &rarr; 5th</b>; arpeggiate the V7 with its <b>major 3rd</b> (the raised 7th) to lead back.','Run <b>i &rarr; iv &rarr; V7 &rarr; i</b> — Minor (no 6) sound over i and iv, dominant sound over the V7.','Move zone by zone, then change key.'],
+   diagram:()=>minorZones()},
+];
+
+/* ============ STATE + ROUTER ============ */
+let view='home', ex=0, scaleMode='major';
+
+function noteNameForBtn(pc){return ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'][pc];}
+function renderKeys(){const c=document.getElementById('keys');c.innerHTML='';
+  for(let pc=0;pc<12;pc++){const b=document.createElement('button');
+    b.className='keybtn'+(pc===KEY?' active':'');b.textContent=noteNameForBtn(pc);
+    b.onclick=()=>{KEY=pc;renderKeys();renderMain(false);};c.appendChild(b);}}
+
+function renderBarNav(){
+  const el=document.getElementById('barNav');
+  if(view==='home'){
+    el.innerHTML=`<div class="brand">CAGED Exercise Trainer<small>Guthrie Trapp · 1-4-5</small></div>`;
+  }else{
+    el.innerHTML=`<button class="backbtn" id="backBtn">&lsaquo; All exercises</button>`;
+    document.getElementById('backBtn').onclick=()=>goHome();
+  }
+}
+
+function renderHome(){
+  const ref=neckSVG(scaleMode);
+  const menu=LESSONS.map((L,i)=>`<button class="exitem" data-i="${i}">
+      <span class="exitem-letter">${L.id}</span>
+      <span class="exitem-main"><span class="exitem-title">${L.title}</span><span class="exitem-blurb">${L.menu}</span></span>
+      <span class="tag ${L.tagClass}">${L.tag}</span>
+      <span class="exitem-arrow">&rarr;</span></button>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="hero">
+      <p class="eyebrow">Guthrie Trapp · CAGED Course — Pages 12–26</p>
+      <h1>CAGED <em>Exercise</em> Trainer</h1>
+      <p class="sub">The seven tabbed lessons from the course, reduced to their transposable concepts with
+        live <b>CAGED chord diagrams</b>. Pick any key in the bar above and pick an exercise below — every
+        shape, chord name and practice note re-maps to your key. The course demonstrates everything in G / Gm;
+        this takes it anywhere.</p>
+      <div class="legend">
+        <span><i class="swatch sw-root"></i> Root</span>
+        <span><i class="swatch sw-tone"></i> Chord tone</span>
+        <span><i class="swatch sw-pass"></i> Passing tone</span>
+        <span>○ open &nbsp; ✕ muted</span>
+      </div>
+      <p class="inference"><b>On confidence</b> &nbsp;Shape names, chord pairings and scale formulas are read
+        from the course pages; chord-shape note positions were verified in all 12 keys. The numbered
+        <b>practice steps are my suggested method</b> — the course doesn\u2019t spell one out. Inferred mappings
+        are flagged on each exercise.</p>
+    </div>
+
+    <section>
+      <p class="kicker">Reference</p>
+      <p class="ref-title">The scale across the neck</p>
+      <p class="blurb">Every exercise draws from one of these three sounds. Red = chord tones (your landing
+        notes — the course\u2019s "phrasing trick"); dark = passing tones.</p>
+      <div class="toggle" id="scaleToggle">
+        <button data-mode="major"${scaleMode==='major'?' class="active"':''}>Major scale</button>
+        <button data-mode="minor"${scaleMode==='minor'?' class="active"':''}>Minor (no 6)</button>
+        <button data-mode="mixo"${scaleMode==='mixo'?' class="active"':''}>Dominant 7</button>
+      </div>
+      <div class="neckwrap">${ref}</div>
+      <p class="formula">${SCALES[scaleMode].name}:  ${SCALES[scaleMode].formula}</p>
+    </section>
+
+    <section>
+      <p class="kicker">Choose an exercise</p>
+      <div class="menu">${menu}</div>
+    </section>
+
+    <footer>Built from the diagrammed shapes and tabbed exercises in the Guthrie Trapp / Brett Papa CAGED
+      course (pages 12–26). Pair with the written study guide for the page-by-page breakdown.</footer>`;
+
+  document.querySelectorAll('#scaleToggle button').forEach(btn=>btn.onclick=()=>{scaleMode=btn.dataset.mode;renderHome();});
+  document.querySelectorAll('.exitem').forEach(b=>b.onclick=()=>goEx(+b.dataset.i));
+}
+
+function renderExercise(){
+  const L=LESSONS[ex];
+  const Ipc=(KEY+R_I)%12,IVpc=(KEY+R_IV)%12,Vpc=(KEY+R_V)%12;
+  let harmony='';
+  if(L.id==='A')harmony=`<b>${chordName(Ipc,'maj')}</b> &rarr; <b>${chordName(Vpc,'7')}</b> &nbsp;(I &rarr; V7)`;
+  else if(L.id==='B')harmony=`<b>${chordName(Ipc,'7')}</b> &rarr; <b>${chordName(IVpc,'7')}</b> &nbsp;(I7 &rarr; IV7)`;
+  else if(L.id==='C')harmony=`<b>${chordName(Ipc,'maj')}</b> &rarr; <b>${chordName(IVpc,'maj')}</b> &rarr; <b>${chordName(Vpc,'maj')}</b> &rarr; <b>${chordName(Ipc,'maj')}</b>`;
+  else if(L.id==='D')harmony=`<b>${chordName(Ipc,'maj')}</b> &rarr; <b>${chordName(IVpc,'maj')}</b> &rarr; <b>${chordName(Vpc,'maj')}</b> &nbsp;(same five zones as Lesson C)`;
+  else if(L.id==='E')harmony=`<b>${chordName(Ipc,'maj')}</b> &rarr; <b>${chordName(IVpc,'maj')}</b> &rarr; <b>${chordName(Vpc,'maj')}</b> &nbsp;— climbing the neck`;
+  else if(L.id==='F')harmony=`<b>${chordName(Ipc,'7')}</b> &rarr; <b>${chordName(IVpc,'7')}</b> &rarr; <b>${chordName(Vpc,'7')}</b> &nbsp;(all dominant)`;
+  else if(L.id==='G')harmony=`<b>${chordName(Ipc,'min')}</b> &rarr; <b>${chordName(IVpc,'min')}</b> &rarr; <b>${chordName(Vpc,'7')}</b> &rarr; <b>${chordName(Ipc,'min')}</b> &nbsp;(i · iv · V7)`;
+
+  const opts=LESSONS.map((x,i)=>`<option value="${i}"${i===ex?' selected':''}>${x.id} · ${x.title}</option>`).join('');
+  const prev=(ex+LESSONS.length-1)%LESSONS.length, next=(ex+1)%LESSONS.length;
+  const steps=L.steps.map(s=>`<li>${s}</li>`).join('');
+
+  document.getElementById('main').innerHTML=`
+    <div class="exswitch">
+      <select class="exselect" id="exSelect" aria-label="Choose exercise">${opts}</select>
+      <button class="stepbtn" id="prevBtn">&lsaquo; ${LESSONS[prev].id}</button>
+      <button class="stepbtn" id="nextBtn">${LESSONS[next].id} &rsaquo;</button>
+    </div>
+
+    <div class="exhead">
+      <div class="exhead-top">
+        <span class="exletter">${L.id}</span>
+        <h2>${L.title}</h2>
+        <span class="pages">${L.pages}</span>
+      </div>
+      <span class="tag ${L.tagClass}" style="margin-top:8px">${L.tag}</span>
+      <p class="harmony">${harmony}</p>
+      <p class="concept">${L.concept}</p>
+      ${L.whatYouPlay?`<div class="whatplay"><span>What you play</span>${L.whatYouPlay}</div>`:''}
+      ${L.inference?`<p class="ex-inference"><b>My inference</b> ${L.inference}</p>`:''}
+    </div>
+
+    <div class="panel">
+      <p class="panel-h">CAGED diagrams — key of ${noteName(KEY)}</p>
+      ${L.diagram()}
+      ${L.note?`<p class="ex-note">${L.note}</p>`:''}
+    </div>
+
+    <div class="panel">
+      <p class="panel-h">The sound — ${SCALES[L.sound].name} of ${noteName(KEY)}</p>
+      <div class="neckwrap">${neckSVG(L.sound)}</div>
+      <p class="formula">${SCALES[L.sound].formula}</p>
+    </div>
+
+    <div class="panel steps">
+      <p class="panel-h">Practice — in the key of ${noteName(KEY)}</p>
+      ${L.scaleref?`<p class="scaleref">♪ Sound to use: ${L.scaleref}</p>`:''}
+      <ol>${steps}</ol>
+    </div>
+
+    <div class="pager">
+      <button id="pagePrev"><span class="dir">&lsaquo; Previous</span><span class="pn">${LESSONS[prev].id} · ${LESSONS[prev].title}</span></button>
+      <button class="next" id="pageNext"><span class="dir">Next &rsaquo;</span><span class="pn">${LESSONS[next].id} · ${LESSONS[next].title}</span></button>
+    </div>`;
+
+  document.getElementById('exSelect').onchange=e=>goEx(+e.target.value);
+  document.getElementById('prevBtn').onclick=()=>goEx(prev);
+  document.getElementById('nextBtn').onclick=()=>goEx(next);
+  document.getElementById('pagePrev').onclick=()=>goEx(prev);
+  document.getElementById('pageNext').onclick=()=>goEx(next);
+}
+
+function renderMain(scroll){renderBarNav();if(view==='home')renderHome();else renderExercise();
+  if(scroll)window.scrollTo({top:0,behavior:'auto'});}
+function goHome(){view='home';renderMain(true);}
+function goEx(i){view='exercise';ex=((i%LESSONS.length)+LESSONS.length)%LESSONS.length;renderMain(true);}
+
+/* theme */
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('themeBtn').innerHTML=(t==='dark'?'☀︎ Light':'☾ Dark');}
+let theme=(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+setTheme(theme);
+document.getElementById('themeBtn').onclick=()=>{theme=(theme==='dark'?'light':'dark');setTheme(theme);};
+
+renderKeys();
+renderMain(false);
+</script>
+</body>
+</html>

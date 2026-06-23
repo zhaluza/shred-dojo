@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import type { StringName } from "./scalePositions.types";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
@@ -408,19 +409,11 @@ export function FretboardNotes() {
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       <main className="flex-1 px-5 md:px-8 py-8 [@media(max-height:500px)]:py-3 max-w-[740px] mx-auto w-full">
-        {/* Header */}
-        <div className="mb-7">
-          <h1 className="font-display font-semibold text-[clamp(1.7rem,5vw,2.6rem)] tracking-[0.04em] uppercase leading-none">
-            Note{" "}
-            <span style={{ color: "var(--accent)" }}>Recognition</span>
-          </h1>
-          <p
-            className="mt-[6px] font-mono text-[0.8rem] leading-relaxed max-w-md"
-            style={{ color: "var(--muted)" }}
-          >
-            Identify the highlighted note. Build instant recognition one fret at a time.
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Drills"
+          title={<>Note <span style={{ color: "var(--accent)" }}>Recognition</span></>}
+          subtitle="Identify the highlighted note. Build instant recognition one fret at a time."
+        />
 
         {/* Score bar (quiz active) */}
         {active && (

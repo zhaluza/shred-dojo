@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState, useEffect, useRef } from "react";
 import { DARK_THEME, LIGHT_THEME } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import {
   KEY_NAMES,
   SCALE_TYPES,
@@ -390,9 +391,11 @@ export function ScaleBuilder() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
       <main className="flex-1 px-5 md:px-8 py-8 [@media(max-height:500px)]:py-3 max-w-[760px] mx-auto w-full">
-        <h1 className="font-display font-semibold text-[clamp(1.8rem,5vw,2.8rem)] tracking-[0.04em] uppercase leading-none mb-8">
-          Scale <span style={{ color: "var(--accent)" }}>Builder</span>
-        </h1>
+        <PageHeader
+          eyebrow="Scales"
+          title={<>Scale <span style={{ color: "var(--accent)" }}>Builder</span></>}
+          subtitle="Five scale formulas in any key — names or notation, with reference and exercise modes."
+        />
 
         <div className="flex flex-col gap-6">
           {/* Key selector */}

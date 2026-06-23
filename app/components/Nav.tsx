@@ -40,6 +40,7 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { to: "/morning-coffee", label: "Morning Coffee" },
       { to: "/pentatonic-practice", label: "Pentatonic" },
+      { to: "/caged-immersion", label: "CAGED Immersion" },
       { to: "/metronome", label: "Metronome" },
       { to: "/lick-stash", label: "Lick Stash", preview: true },
       { to: "/practice-log", label: "Practice Log" },

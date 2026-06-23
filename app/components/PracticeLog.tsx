@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import { CtrlButton } from "./CtrlButton";
 import { LIGHT_THEME, DARK_THEME } from "./theme";
 import { fmtClock } from "./Timer";
@@ -95,15 +96,8 @@ export function PracticeLog() {
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       <div className="max-w-[960px] mx-auto px-4 pt-6 max-[700px]:pt-5 pb-16">
-        <div className="mb-5 flex items-end justify-between gap-3 flex-wrap">
-          <div>
-            <div className="text-[0.58rem] tracking-[0.18em] uppercase mb-1" style={{ color: "var(--muted)" }}>
-              Routines
-            </div>
-            <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none m-0">
-              Practice Log
-            </h1>
-          </div>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <PageHeader className="flex-1 min-w-[240px]" eyebrow="Train" title="Practice Log" />
           <CtrlButton label="Clear log" active={false} onClick={clear} normalCase disabled={sessions.length === 0} />
         </div>
 

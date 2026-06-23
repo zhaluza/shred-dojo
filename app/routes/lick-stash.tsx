@@ -3,6 +3,7 @@ import type { Route } from "./+types/lick-stash";
 import { LIGHT_THEME, DARK_THEME } from "~/components/theme";
 import { LICK_PACKS } from "~/components/lickStash.data";
 import { Nav } from "~/components/Nav";
+import { PageHeader } from "~/components/PageHeader";
 import { useState, useEffect } from "react";
 
 export function meta({}: Route.MetaArgs) {
@@ -41,14 +42,11 @@ export default function LickStash() {
       <Nav isDark={isDark} toggleDark={toggleDark} />
 
       <main className="flex-1 max-w-[760px] mx-auto w-full px-8 pt-12 pb-16 [@media(max-height:500px)]:pt-4 [@media(max-height:500px)]:pb-6">
-        {/* Page title */}
-        <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none mb-2">
-          Lick Stash
-        </h1>
-        <p className="text-[0.72rem] leading-[1.7] text-[var(--muted)] mb-10 max-w-[520px]">
-          Curated packs of licks organized by style and technique. Learn them,
-          loop them, transpose them — build real vocabulary you can use on stage.
-        </p>
+        <PageHeader
+          eyebrow="Train"
+          title="Lick Stash"
+          subtitle="Curated packs of licks organized by style and technique. Learn them, loop them, transpose them — build real vocabulary you can use on stage."
+        />
 
         {/* Pack grid */}
         <div className="flex flex-col gap-0 border-t border-[var(--border)]">

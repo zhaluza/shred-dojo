@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { CtrlButton } from "./CtrlButton";
 import { Nav } from "./Nav";
+import { PageHeader } from "./PageHeader";
 import type {
   ScaleNote,
   ScalePosition,
@@ -271,18 +272,11 @@ export function ArpeggioMaps() {
     >
       <Nav isDark={isDark} toggleDark={toggleDark} />
       <div className="max-w-[1200px] mx-auto px-5 pt-8 [@media(max-height:500px)]:pt-3 pb-20">
-        {/* Header */}
-        <header className="mb-6 flex items-end justify-between flex-wrap gap-4 border-b-2 border-[var(--text)] pb-5">
-          <h1 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.8rem)] tracking-[0.04em] uppercase leading-none">
-            Arpeggio{" "}
-            <span style={{ color: "var(--accent)" }}>Maps</span>
-          </h1>
-          <div className="text-[0.58rem] text-[var(--muted)] tracking-[0.1em] uppercase text-right leading-[1.7]">
-            G root · {system === "caged" ? "5 CAGED" : "7 3nps"} positions
-            <br />
-            slide up the neck to transpose
-          </div>
-        </header>
+        <PageHeader
+          eyebrow="Harmony"
+          title={<>Arpeggio <span style={{ color: "var(--accent)" }}>Maps</span></>}
+          subtitle={`G root · ${system === "caged" ? "5 CAGED" : "7 3nps"} positions — slide up the neck to transpose.`}
+        />
 
         {/* Controls */}
         <div className="mb-6 flex gap-3 flex-wrap items-center border-b border-[var(--border)] pb-4">

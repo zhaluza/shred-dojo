@@ -12,6 +12,7 @@ export default [
   route("chord-voicings", "routes/chord-voicings.tsx"),
   route("arpeggio-maps", "routes/arpeggio-maps.tsx"),
   route("circle-of-fifths", "routes/circle-of-fifths.tsx"),
+  route("caged-immersion", "routes/caged-immersion.tsx"),
   route("wylde-scales", "routes/wylde-scales.tsx"),
   route("yngwie-scales", "routes/yngwie-scales.tsx"),
   route("scale-builder", "routes/scale-builder.tsx"),
