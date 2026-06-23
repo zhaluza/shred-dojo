@@ -76,10 +76,10 @@ export function addSession(s: Omit<PracticeSession, "id">): PracticeSession {
   return entry;
 }
 
-/** Patch an existing session's editable fields (label, bpm). */
+/** Patch an existing session's editable fields (label, bpm, durationSec). */
 export function updateSession(
   id: string,
-  patch: Partial<Pick<PracticeSession, "label" | "bpm">>,
+  patch: Partial<Pick<PracticeSession, "label" | "bpm" | "durationSec">>,
 ): void {
   writeRaw(readRaw().map((s) => (s.id === id ? { ...s, ...patch } : s)));
 }

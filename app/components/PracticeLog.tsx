@@ -147,17 +147,27 @@ function SessionRow({ session: s, onChanged }: { session: PracticeSession; onCha
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(s.label ?? "");
   const [bpm, setBpm] = useState(s.bpm != null ? String(s.bpm) : "");
+  const [mins, setMins] = useState(String(Math.floor(s.durationSec / 60)));
+  const [secs, setSecs] = useState(String(s.durationSec % 60));
 
   const startEdit = () => {
     setLabel(s.label ?? "");
     setBpm(s.bpm != null ? String(s.bpm) : "");
+    setMins(String(Math.floor(s.durationSec / 60)));
+    setSecs(String(s.durationSec % 60));
     setEditing(true);
   };
   const save = () => {
     const n = parseInt(bpm, 10);
+    const m = parseInt(mins, 10);
+    const sc = parseInt(secs, 10);
+    // Empty fields count as 0; keep the original duration only if both are blank.
+    const hasDur = mins.trim() !== "" || secs.trim() !== "";
+    const dur = Math.max(0, (isNaN(m) ? 0 : m) * 60 + (isNaN(sc) ? 0 : sc));
     updateSession(s.id, {
       label: label.trim() || undefined,
       bpm: bpm.trim() === "" || isNaN(n) ? undefined : n,
+      durationSec: hasDur ? dur : s.durationSec,
     });
     setEditing(false);
     onChanged();
@@ -184,6 +194,32 @@ function SessionRow({ session: s, onChanged }: { session: PracticeSession; onCha
           className="font-mono text-[0.72rem] border px-2 py-[0.3rem] bg-transparent flex-1 min-w-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
           style={{ borderColor: "var(--border)", color: "var(--text)" }}
         />
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <input
+            type="number"
+            min={0}
+            value={mins}
+            onChange={(e) => setMins(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+            placeholder="m"
+            aria-label="Duration minutes"
+            className="font-mono text-[0.72rem] tabular-nums border px-2 py-[0.3rem] bg-transparent w-[3rem] text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            style={{ borderColor: "var(--border)", color: "var(--text)" }}
+          />
+          <span className="font-mono text-[0.72rem]" style={{ color: "var(--muted)" }}>:</span>
+          <input
+            type="number"
+            min={0}
+            max={59}
+            value={secs}
+            onChange={(e) => setSecs(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+            placeholder="s"
+            aria-label="Duration seconds"
+            className="font-mono text-[0.72rem] tabular-nums border px-2 py-[0.3rem] bg-transparent w-[3rem] text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            style={{ borderColor: "var(--border)", color: "var(--text)" }}
+          />
+        </div>
         <input
           type="number"
           value={bpm}
