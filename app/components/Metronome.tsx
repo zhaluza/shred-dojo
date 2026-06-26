@@ -12,7 +12,6 @@ import { KEYS, NOTE_NAMES, mod12 } from "./pentatonicPractice.utils";
 // Same look-ahead Web Audio scheduler as MorningCoffee / PentatonicPractice,
 // with its own `met-*` persistence keys plus tap-tempo (from MetronomeWidget).
 
-const BEATS = 4;
 const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_S = 0.1;
 const MET_MIN_BPM = 30;
@@ -21,9 +20,43 @@ const DEFAULT_BPM = 100;
 const DEFAULT_VOLUME = 0.85; // 0–1 master level; louder than the old fixed gains
 // Peak gain per click tier at full volume (square wave). Pushed high so the
 // short click reads loud against an amp; the master volume scales these down.
-const TIER_GAIN = { downbeat: 0.95, beat: 0.7, sub: 0.42 };
+// `accent` marks the first pulse of an interior beat-group (e.g. beat 4 of 6/8).
+const TIER_GAIN = { downbeat: 0.95, accent: 0.82, beat: 0.7, sub: 0.42 };
 
 type Subdivision = 1 | 2 | 3;
+
+// ─── Time signatures ─────────────────────────────────────────────────────────
+// `num` = pulses per measure (the metronome clicks each one); `groups` = how
+// those pulses are accented — the first pulse of each group gets an accent, and
+// the very first is the downbeat. Subdivision layers extra clicks per beat.
+type TimeSig = { id: string; num: number; groups: number[]; starts: Set<number> };
+
+function makeSig(id: string, num: number, groups: number[]): TimeSig {
+  const starts = new Set<number>();
+  let acc = 0;
+  for (const g of groups) {
+    starts.add(acc);
+    acc += g;
+  }
+  return { id, num, groups, starts };
+}
+
+// Odd/compound meters use their conventional groupings (5→3+2, 7/8→2+2+3, …).
+const TIME_SIGS: TimeSig[] = [
+  makeSig("4/4", 4, [4]),
+  makeSig("3/4", 3, [3]),
+  makeSig("2/4", 2, [2]),
+  makeSig("5/4", 5, [3, 2]),
+  makeSig("6/8", 6, [3, 3]),
+  makeSig("9/8", 9, [3, 3, 3]),
+  makeSig("5/8", 5, [3, 2]),
+  makeSig("7/8", 7, [2, 2, 3]),
+];
+const DEFAULT_TIMESIG = "4/4";
+
+function sigById(id: string): TimeSig {
+  return TIME_SIGS.find((t) => t.id === id) ?? TIME_SIGS[0];
+}
 
 function useMetronome() {
   const [bpm, setBpmState] = useState<number>(() => {
@@ -35,6 +68,11 @@ function useMetronome() {
     if (typeof window === "undefined") return 1;
     const v = parseInt(localStorage.getItem("met-sub") ?? "", 10);
     return (v === 1 || v === 2 || v === 3 ? v : 1) as Subdivision;
+  });
+  const [timeSig, setTimeSigState] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_TIMESIG;
+    const v = localStorage.getItem("met-timesig") ?? "";
+    return TIME_SIGS.some((t) => t.id === v) ? v : DEFAULT_TIMESIG;
   });
   const [volume, setVolumeState] = useState<number>(() => {
     if (typeof window === "undefined") return DEFAULT_VOLUME;
@@ -48,6 +86,7 @@ function useMetronome() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bpmRef = useRef(bpm);
   const subRef = useRef(subdivision);
+  const sigRef = useRef<TimeSig>(sigById(timeSig));
   const volRef = useRef(volume);
   const nextNoteTimeRef = useRef(0);
   const beatCountRef = useRef(0);
@@ -56,6 +95,7 @@ function useMetronome() {
 
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
   useEffect(() => { subRef.current = subdivision; }, [subdivision]);
+  useEffect(() => { sigRef.current = sigById(timeSig); }, [timeSig]);
   useEffect(() => { volRef.current = volume; }, [volume]);
 
   const setVolume = useCallback((v: number) => {
@@ -73,6 +113,11 @@ function useMetronome() {
   const setSubdivision = useCallback((v: Subdivision) => {
     setSubdivisionState(v);
     try { localStorage.setItem("met-sub", String(v)); } catch {}
+  }, []);
+
+  const setTimeSig = useCallback((v: string) => {
+    setTimeSigState(v);
+    try { localStorage.setItem("met-timesig", v); } catch {}
   }, []);
 
   // Tap tempo — average of last 4 tap intervals (from MetronomeWidget).
@@ -100,10 +145,25 @@ function useMetronome() {
     osc.type = "square";
 
     const sub = subRef.current;
-    const isDownbeat = slot === 0;
+    const sig = sigRef.current;
     const isBeat = slot % sub === 0;
-    osc.frequency.value = isDownbeat ? 1500 : isBeat ? 1000 : 700;
-    const tier = isDownbeat ? TIER_GAIN.downbeat : isBeat ? TIER_GAIN.beat : TIER_GAIN.sub;
+    const beatIdx = slot / sub;
+    let freq: number;
+    let tier: number;
+    if (!isBeat) {
+      freq = 700;
+      tier = TIER_GAIN.sub;
+    } else if (beatIdx === 0) {
+      freq = 1500;
+      tier = TIER_GAIN.downbeat;
+    } else if (sig.starts.has(beatIdx)) {
+      freq = 1250;
+      tier = TIER_GAIN.accent;
+    } else {
+      freq = 1000;
+      tier = TIER_GAIN.beat;
+    }
+    osc.frequency.value = freq;
     // Floor at a tiny epsilon: exponential ramps can't target 0, and this keeps
     // volume 0% effectively silent without breaking the envelope.
     const vol = Math.max(0.0001, tier * volRef.current);
@@ -122,7 +182,7 @@ function useMetronome() {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
     const sub = subRef.current;
-    const totalSlots = BEATS * sub;
+    const totalSlots = sigRef.current.num * sub;
     const spSlot = 60.0 / bpmRef.current / sub;
     while (nextNoteTimeRef.current < ctx.currentTime + SCHEDULE_AHEAD_S) {
       scheduleClick(ctx, nextNoteTimeRef.current, beatCountRef.current);
@@ -161,7 +221,7 @@ function useMetronome() {
     audioCtxRef.current?.close();
   }, []);
 
-  return { bpm, setBpm, subdivision, setSubdivision, volume, setVolume, isPlaying, toggle, currentSlot, handleTap };
+  return { bpm, setBpm, subdivision, setSubdivision, timeSig, setTimeSig, volume, setVolume, isPlaying, toggle, currentSlot, handleTap };
 }
 
 // prefers-reduced-motion as reactive state.
@@ -203,17 +263,19 @@ function TripletIcon() {
 function BeatDial({
   bpm,
   subdivision,
+  timeSig,
   currentSlot,
   isPlaying,
   reduced,
 }: {
   bpm: number;
   subdivision: Subdivision;
+  timeSig: TimeSig;
   currentSlot: number;
   isPlaying: boolean;
   reduced: boolean;
 }) {
-  const totalSlots = BEATS * subdivision;
+  const totalSlots = timeSig.num * subdivision;
   const CX = 100;
   const CY = 100;
   const R = 80;
@@ -242,8 +304,11 @@ function BeatDial({
           const x = CX + R * Math.cos(angle);
           const y = CY + R * Math.sin(angle);
           const isBeat = i % subdivision === 0;
+          const beatIdx = i / subdivision;
+          const isDown = isBeat && beatIdx === 0;
+          const isAccent = isBeat && timeSig.starts.has(beatIdx);
           const isActive = isPlaying && i === currentSlot;
-          const r = isActive ? 8 : isBeat ? 5 : 3.5;
+          const r = isActive ? 8 : isDown ? 6 : isAccent ? 5.5 : isBeat ? 5 : 3.5;
           const fill = isActive
             ? "var(--accent)"
             : isBeat
@@ -329,6 +394,37 @@ function SubdivisionButtons({
           }}
         >
           {label ?? <TripletIcon />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Time signature selector ─────────────────────────────────────────────────
+
+function TimeSigButtons({
+  timeSig,
+  setTimeSig,
+}: {
+  timeSig: string;
+  setTimeSig: (v: string) => void;
+}) {
+  return (
+    <div className="flex gap-1 flex-wrap justify-center">
+      {TIME_SIGS.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => setTimeSig(t.id)}
+          aria-label={`Time signature ${t.id}`}
+          aria-pressed={timeSig === t.id}
+          className="font-display text-[0.7rem] tabular-nums px-[0.55rem] py-[0.35rem] max-[700px]:min-h-[44px] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          style={{
+            background: timeSig === t.id ? "var(--text)" : "transparent",
+            borderColor: timeSig === t.id ? "var(--text)" : "var(--border)",
+            color: timeSig === t.id ? "var(--bg)" : "var(--text)",
+          }}
+        >
+          {t.id}
         </button>
       ))}
     </div>
@@ -541,7 +637,8 @@ function KeyDrone() {
 export function Metronome() {
   const reduced = useReducedMotion();
   const met = useMetronome();
-  const { bpm, setBpm, subdivision, setSubdivision, volume, setVolume, isPlaying, toggle, currentSlot, handleTap } = met;
+  const { bpm, setBpm, subdivision, setSubdivision, timeSig, setTimeSig, volume, setVolume, isPlaying, toggle, currentSlot, handleTap } = met;
+  const sig = sigById(timeSig);
   const volPct = Math.round(volume * 100);
   const feel = subdivision === 1 ? "Quarter" : subdivision === 2 ? "Eighth" : "Triplet";
 
@@ -552,6 +649,7 @@ export function Metronome() {
         title="Metronome"
         meta={[
           { label: "Tempo", value: `${bpm} BPM` },
+          { label: "Meter", value: timeSig },
           { label: "Feel", value: feel },
           { label: "Status", value: isPlaying ? "Running" : "Stopped" },
         ]}
@@ -568,6 +666,7 @@ export function Metronome() {
           <BeatDial
               bpm={bpm}
               subdivision={subdivision}
+              timeSig={sig}
               currentSlot={currentSlot}
               isPlaying={isPlaying}
               reduced={reduced}
@@ -588,6 +687,14 @@ export function Metronome() {
               </button>
               <CtrlButton label="Tap" active={false} onClick={handleTap} />
               <SubdivisionButtons subdivision={subdivision} setSubdivision={setSubdivision} />
+            </div>
+
+            {/* Time signature */}
+            <div className="flex flex-col items-center gap-1.5">
+              <span className="text-[0.5rem] tracking-[0.16em] uppercase" style={{ color: "var(--muted)" }}>
+                Meter
+              </span>
+              <TimeSigButtons timeSig={timeSig} setTimeSig={setTimeSig} />
             </div>
 
             {/* BPM slider + fine steppers */}

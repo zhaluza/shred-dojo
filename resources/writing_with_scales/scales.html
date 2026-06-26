@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Writing Ideas with Scales — interactive lesson</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0f141b;
+        --panel: #1a222d;
+        --line: #28323f;
+        --text: #e9eef3;
+        --muted: #8b98a8;
+        --scale: #56c8c0;
+        --root: #f2b441;
+        --color: #ff6e92;
+        --violet: #9b8cff;
+        --disp: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        background: radial-gradient(
+            120% 80% at 50% -10%,
+            #1a2430 0%,
+            var(--bg) 55%
+          )
+          fixed;
+        color: var(--text);
+        font-family: var(--disp);
+        line-height: 1.55;
+        font-size: 16px;
+      }
+      .wrap {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 16px calc(56px + env(safe-area-inset-bottom));
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      header {
+        padding: 26px 0 4px;
+      }
+      h1 {
+        font-size: 1.95rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0.35rem 0 0.3rem;
+        line-height: 1.06;
+      }
+      h1 .glow {
+        color: var(--root);
+      }
+      .credit {
+        color: var(--muted);
+        font-size: 0.9rem;
+        max-width: 58ch;
+        margin: 0;
+      }
+      .credit b {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      /* sticky key bar */
+      .keybar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(15, 20, 27, 0.86);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--line);
+        margin: 18px -16px 0;
+        padding: 11px 16px;
+      }
+      .keybar .lab {
+        font-family: var(--mono);
+        font-size: 0.64rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 7px;
+      }
+      .row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .keys {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .keys::-webkit-scrollbar {
+        display: none;
+      }
+      .chip {
+        flex: none;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 0.84rem;
+        font-weight: 500;
+        padding: 7px 11px;
+        border-radius: 9px;
+        cursor: pointer;
+        transition: 0.14s;
+      }
+      .chip.on {
+        background: var(--root);
+        color: #1a1206;
+        border-color: var(--root);
+        font-weight: 700;
+      }
+      .toggle {
+        margin-left: auto;
+        display: flex;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        overflow: hidden;
+        flex: none;
+      }
+      .toggle button {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        padding: 7px 10px;
+        cursor: pointer;
+      }
+      .toggle button.on {
+        background: var(--line);
+        color: var(--text);
+      }
+
+      section {
+        padding: 30px 0 4px;
+        border-bottom: 1px solid rgba(40, 50, 63, 0.5);
+      }
+      .num {
+        font-family: var(--mono);
+        color: var(--root);
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+      }
+      h2 {
+        font-size: 1.32rem;
+        margin: 4px 0 0;
+        letter-spacing: -0.01em;
+      }
+      section p {
+        font-size: 0.97rem;
+        color: #cdd6e0;
+        margin: 11px 0 0;
+      }
+      section p.small {
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .board-wrap {
+        margin: 16px 0 4px;
+        background: linear-gradient(180deg, #171f29, #121922);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px 12px 8px;
+        box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.8);
+      }
+      .board-scroll {
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 9px;
+        padding: 2px 4px;
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--muted);
+      }
+      .legend .k {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .legend .sw {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .hint {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--muted);
+        margin: 7px 4px 0;
+      }
+
+      .seg {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 14px 0 2px;
+      }
+      .seg button {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.76rem;
+        padding: 8px 11px;
+        border-radius: 9px;
+        cursor: pointer;
+        transition: 0.13s;
+      }
+      .seg button.on {
+        border-color: var(--scale);
+        color: var(--scale);
+        background: rgba(86, 200, 192, 0.1);
+      }
+      .chordlabel {
+        font-family: var(--mono);
+        font-size: 0.84rem;
+        color: var(--text);
+        margin: 12px 0 2px;
+      }
+      .chordlabel b {
+        color: var(--root);
+      }
+      .chordlabel i {
+        color: var(--scale);
+        font-style: normal;
+      }
+
+      .spark {
+        background: linear-gradient(
+          135deg,
+          rgba(155, 140, 255, 0.14),
+          rgba(86, 200, 192, 0.08)
+        );
+        border: 1px solid #2f3a4a;
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 14px;
+      }
+      .spark .eyebrow {
+        color: var(--violet);
+      }
+      .spark-p {
+        font-size: 1.1rem;
+        margin: 7px 0 13px;
+        min-height: 2.2em;
+      }
+      .spark-p b {
+        color: var(--root);
+      }
+      .spark-p i {
+        color: var(--color);
+        font-style: normal;
+      }
+      .spark-p u {
+        color: var(--scale);
+        text-decoration: none;
+      }
+      .btn {
+        font-family: var(--disp);
+        font-weight: 600;
+        font-size: 0.92rem;
+        border: 0;
+        border-radius: 11px;
+        padding: 12px 16px;
+        cursor: pointer;
+        background: var(--violet);
+        color: #15102e;
+      }
+      footer {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        text-align: center;
+        margin-top: 30px;
+        line-height: 1.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="eyebrow">Interactive lesson</div>
+        <h1>Writing ideas <span class="glow">with scales</span></h1>
+        <p class="credit">
+          An interactive companion to
+          <b>Steve Hazel’s “Patreon Lesson #22”</b> — the method retold in my
+          own words, with my own examples and key-adaptive diagrams. Pick a key
+          once; every fretboard below follows it.
+        </p>
+      </header>
+
+      <div class="keybar">
+        <div class="lab">Your key</div>
+        <div class="row">
+          <div class="keys" id="keys"></div>
+          <div class="toggle" id="labtoggle">
+            <button data-l="deg" class="on">degrees</button
+            ><button data-l="note">notes</button>
+          </div>
+        </div>
+      </div>
+
+      <section>
+        <div class="num">01 · THE PROBLEM</div>
+        <h2>A whole scale at once is too much to see</h2>
+        <p>
+          Most players try to memorise a scale as one big two-octave block and
+          then can never find the note they want in the moment. Here’s the
+          major scale across the neck in your key — useful, but hard to
+          <em>use</em> for writing.
+        </p>
+        <div class="board-wrap">
+          <div class="board-scroll"><div id="b1"></div></div>
+          <div class="legend">
+            <span class="k"
+              ><span class="sw" style="background: var(--root)"></span>root
+              (1)</span
+            ><span class="k"
+              ><span class="sw" style="background: var(--scale)"></span>scale
+              tone</span
+            >
+          </div>
+          <div class="hint">Tap any note to hear it.</div>
+        </div>
+      </section>
+
+      <section>
+        <div class="num">02 · THE FIX</div>
+        <h2>See it as two octave chunks</h2>
+        <p>
+          Don’t memorise the whole block — learn one <b>position box</b>, then
+          split it into its two one-octave halves: the lower half lives on the
+          lower strings, the upper half on the higher strings. Same shape in
+          every key (here it’s anchored to the root on the low E string), and
+          labelled with interval names like the book — R, Δ3, p4, …
+        </p>
+        <div class="seg" id="seg2">
+          <button data-o="0" class="on">both halves</button>
+          <button data-o="1">lower octave</button>
+          <button data-o="2">upper octave</button>
+        </div>
+        <div class="board-wrap">
+          <div class="board-scroll"><div id="b2"></div></div>
+          <div class="hint">
+            One box, two octaves — isolate each half, and tap to hear.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="num">02b · FINDING YOUR PLACE</div>
+        <h2>Two shapes from any root — plus the octave map</h2>
+        <p>
+          From any root the scale runs two ways: a shape to the
+          <u>right</u> (ascending) and a shape to the <u>left</u> (descending).
+          Learn those two, plus where the root repeats across the strings — the
+          amber <b>octave map</b>, with the dashed lines showing the octave
+          jumps — and you can drop in anywhere and instantly know the scale
+          around you. Works the same for the full scale or the pentatonic.
+        </p>
+        <div class="seg" id="segNavScale">
+          <button data-s="Major" class="on">diatonic (major)</button>
+          <button data-s="MajPent">major pentatonic</button>
+          <button data-s="MinPent">minor pentatonic</button>
+        </div>
+        <div class="board-wrap">
+          <div class="board-scroll"><div id="bnav"></div></div>
+          <div class="legend">
+            <span class="k"
+              ><span class="sw" style="background: var(--root)"></span>root —
+              tap to move</span
+            >
+            <span class="k"
+              ><span class="sw" style="background: var(--scale)"></span>right
+              shape ↑</span
+            >
+            <span class="k"
+              ><span class="sw" style="background: var(--violet)"></span>left
+              shape ↓</span
+            >
+          </div>
+          <div class="hint">
+            Faint amber dots everywhere = the octave map. Tap any root to
+            anchor the two shapes there.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="num">03 · TARGET THE GOOD NOTES</div>
+        <h2>Aim at the chord tones</h2>
+        <p>
+          To write over a chord, land on its chord tones — the triad
+          <b>1·3·5</b> — and use the rest of the scale to colour around them.
+          Those are the notes that always sound “right” over the chord. Add the
+          7th and you get the lush <b>3·5·7</b> sound math rock loves.
+        </p>
+        <div class="seg" id="seg3">
+          <button data-m="triad" class="on">triad · 1 3 5</button>
+          <button data-m="seventh">7th · 3 5 7</button>
+        </div>
+        <div class="board-wrap">
+          <div class="board-scroll"><div id="b3"></div></div>
+          <div class="legend">
+            <span class="k"
+              ><span class="sw" style="background: var(--root)"></span>chord
+              root</span
+            ><span class="k"
+              ><span class="sw" style="background: var(--scale)"></span>target
+              tone</span
+            ><span class="k"
+              ><span class="sw" style="background: #3a4757"></span>colour
+              tone</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="num">04 · ANY CHORD IN THE KEY</div>
+        <h2>Each chord is a doorway to a mode</h2>
+        <p>
+          The same trick works for every chord in the key — pick one and target
+          its tones. And here’s the side-door: to nail a chord like the
+          <b>V</b>, think of <em>its</em> scale (e.g. play the major scale but
+          flatten the 7th — that’s Mixolydian), so its root, 3rd and 5th jump
+          out instantly.
+        </p>
+        <div class="seg" id="seg4"></div>
+        <div class="chordlabel" id="chordlabel"></div>
+        <div class="board-wrap">
+          <div class="board-scroll"><div id="b4"></div></div>
+          <div class="hint">
+            Amber = the chord’s root · aqua = its 3rd / 5th / 7th.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="num">05 · MODES IN ONE MOVE</div>
+        <h2>Once you know major, a mode is one note away</h2>
+        <p>
+          Because you know where every degree sits, you reach a mode by nudging
+          a single note. The brightest math-rock colour, <b>Lydian</b>, is just
+          the major scale with the <i>4th raised a fret</i> to a ♯4. Flip it
+          on, then deliberately target that ♯4 — over a maj7 it gives the
+          floating <b>maj7♯11 (a.k.a. maj7♭5)</b> sound.
+        </p>
+        <div class="seg" id="seg5">
+          <button data-m="Major" class="on">major</button>
+          <button data-m="Lydian">raise the 4th → Lydian</button>
+        </div>
+        <div class="board-wrap">
+          <div class="board-scroll"><div id="b5"></div></div>
+          <div class="legend">
+            <span class="k"
+              ><span class="sw" style="background: var(--root)"></span
+              >root</span
+            ><span class="k"
+              ><span class="sw" style="background: var(--scale)"></span>scale
+              tone</span
+            ><span class="k" id="charKey" style="display: none"
+              ><span class="sw" style="background: var(--color)"></span>♯4
+              colour note</span
+            >
+          </div>
+        </div>
+        <div
+          style="
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+          "
+        >
+          <div id="chordbox"></div>
+          <div class="small" style="max-width: 32ch">
+            <span class="chordlabel" id="chordname"></span><br />The chord that
+            ♯4 implies — play your Lydian ideas over this movable shape (it
+            shifts with your key).
+          </div>
+        </div>
+      </section>
+
+      <section style="border-bottom: 0">
+        <div class="num">06 · NOW WRITE ONE</div>
+        <h2>Put it together</h2>
+        <p class="small">
+          A complete idea = target a chord’s tones, then spice with a colour
+          note. Roll a starting point — it sets the key and lights up the
+          target tones below.
+        </p>
+        <div class="spark">
+          <div class="eyebrow">Writing prompt</div>
+          <div class="spark-p" id="spark">Roll one and chase it.</div>
+          <button class="btn" onclick="spark()">
+            Give me a starting point ↻
+          </button>
+        </div>
+        <div class="board-wrap">
+          <div class="board-scroll"><div id="b6"></div></div>
+          <div class="hint" id="b6hint">Your prompt will light up here.</div>
+        </div>
+      </section>
+
+      <footer>
+        Method: Steve Hazel, “Patreon Lesson #22.” Diagrams, wording &amp;
+        examples are my own.<br />Standard tuning · nothing saved.
+      </footer>
+    </div>
+
+    <script>
+      const NOTES = [
+        "C",
+        "C♯",
+        "D",
+        "D♯",
+        "E",
+        "F",
+        "F♯",
+        "G",
+        "G♯",
+        "A",
+        "A♯",
+        "B",
+      ];
+      const KEYS = [5, 0, 7, 2, 9, 4, 11, 1, 8, 3, 10, 6];
+      const STRINGS = [64, 59, 55, 50, 45, 40];
+      const FRETS = 12;
+      const SCALES = {
+        Major: {
+          iv: [0, 2, 4, 5, 7, 9, 11],
+          deg: ["1", "2", "3", "4", "5", "6", "7"],
+          char: -1,
+        },
+        Lydian: {
+          iv: [0, 2, 4, 6, 7, 9, 11],
+          deg: ["1", "2", "3", "♯4", "5", "6", "7"],
+          char: 3,
+        },
+      };
+      const MODES = [
+        "Ionian",
+        "Dorian",
+        "Phrygian",
+        "Lydian",
+        "Mixolydian",
+        "Aeolian",
+        "Locrian",
+      ];
+      const QUAL = ["maj7", "m7", "m7", "maj7", "7", "m7", "m7♭5"];
+      const RN = ["I", "ii", "iii", "IV", "V", "vi", "vii°"];
+      let st = { root: 5, labels: "deg" };
+      let s3 = "triad",
+        s4 = 0,
+        s5 = "Major",
+        s6 = null,
+        s2 = 0;
+
+      // audio
+      let actx = null;
+      function tone(midi) {
+        try {
+          if (!actx)
+            actx = new (window.AudioContext || window.webkitAudioContext)();
+          if (actx.state === "suspended") actx.resume();
+          const f = 440 * Math.pow(2, (midi - 69) / 12),
+            t = actx.currentTime,
+            o = actx.createOscillator(),
+            g = actx.createGain();
+          o.type = "triangle";
+          o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.22, t + 0.006);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+          o.connect(g).connect(actx.destination);
+          o.start(t);
+          o.stop(t + 0.75);
+        } catch (e) {}
+      }
+
+      const FW = 52,
+        SH = 29,
+        PADL = 40,
+        PADT = 24,
+        PADB = 20;
+      function renderBoard(el, cfg) {
+        if (!el) return;
+        const W = PADL + FRETS * FW + 20,
+          H = PADT + 5 * SH + PADB,
+          sc = SCALES[cfg.mode || "Major"],
+          charIdx = sc.char;
+        let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="var(--mono)"><defs><filter id="gl" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+        [3, 5, 7, 9].forEach((n) => {
+          const x = PADL + (n - 0.5) * FW;
+          s += `<circle cx="${x}" cy="${PADT + 2.5 * SH}" r="3.6" fill="#26303d"/>`;
+        });
+        {
+          const x = PADL + 11.5 * FW;
+          s += `<circle cx="${x}" cy="${PADT + 1.5 * SH}" r="3.6" fill="#26303d"/><circle cx="${x}" cy="${PADT + 3.5 * SH}" r="3.6" fill="#26303d"/>`;
+        }
+        for (let n = 0; n <= FRETS; n++) {
+          const x = PADL + n * FW;
+          s += `<line x1="${x}" y1="${PADT}" x2="${x}" y2="${PADT + 5 * SH}" stroke="${n === 0 ? "#6b7787" : "#2c3744"}" stroke-width="${n === 0 ? 4 : 1.3}"/>`;
+        }
+        for (let i = 0; i < 6; i++) {
+          const y = PADT + i * SH;
+          s += `<line x1="${PADL}" y1="${y}" x2="${PADL + FRETS * FW}" y2="${y}" stroke="#36424f" stroke-width="${1 + i * 0.3}"/>`;
+        }
+        for (let n = 1; n <= FRETS; n++) {
+          const x = PADL + (n - 0.5) * FW;
+          s += `<text x="${x}" y="${H - 6}" fill="#5d6a7a" font-size="9.5" text-anchor="middle">${n}</text>`;
+        }
+        for (let i = 0; i < 6; i++)
+          for (let n = 0; n <= FRETS; n++) {
+            const midi = STRINGS[i] + n,
+              pc = midi % 12,
+              rel = (((pc - st.root) % 12) + 12) % 12,
+              idx = sc.iv.indexOf(rel);
+            if (idx < 0) continue;
+            const y = PADT + i * SH,
+              x = n === 0 ? PADL - 19 : PADL + (n - 0.5) * FW;
+            let fill = "var(--scale)",
+              op = 1,
+              r = 10.5,
+              glow = "",
+              txt = "#06201e";
+            const isRoot = idx === 0;
+            if (cfg.target) {
+              const inT = cfg.target.includes(idx);
+              if (!inT) {
+                op = 0.2;
+                fill = "var(--scale)";
+              } else if (idx === (cfg.chordRoot ?? 0)) {
+                fill = "var(--root)";
+                txt = "#241803";
+                glow = ' filter="url(#gl)"';
+              } else {
+                fill = "var(--scale)";
+                glow = ' filter="url(#gl)"';
+              }
+            } else {
+              if (isRoot) {
+                fill = "var(--root)";
+                txt = "#241803";
+                if (cfg.emph) glow = ' filter="url(#gl)"';
+                if (cfg.emph) r = 12;
+              } else if (cfg.showChar && idx === charIdx) {
+                fill = "var(--color)";
+                txt = "#2a0a14";
+                glow = ' filter="url(#gl)"';
+              }
+            }
+            const lab = st.labels === "deg" ? sc.deg[idx] : NOTES[pc];
+            s += `<g opacity="${op}" style="cursor:pointer" onclick="hit(${midi},${x},${y},this)"><circle cx="${x}" cy="${y}" r="${r}" fill="${fill}"${glow}/><text x="${x}" y="${y + 3.3}" fill="${txt}" font-size="${lab.length > 1 ? 8.5 : 10}" font-weight="700" text-anchor="middle">${lab}</text></g>`;
+          }
+        s += `</svg>`;
+        el.innerHTML = s;
+      }
+      function hit(midi, x, y, g) {
+        tone(midi);
+        const svg = g.ownerSVGElement,
+          c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", x);
+        c.setAttribute("cy", y);
+        c.setAttribute("r", "10");
+        c.setAttribute("fill", "none");
+        c.setAttribute("stroke", "#fff");
+        c.setAttribute("stroke-width", "2");
+        c.style.transition = "all .5s ease-out";
+        svg.appendChild(c);
+        requestAnimationFrame(() => {
+          c.setAttribute("r", "24");
+          c.style.opacity = "0";
+        });
+        setTimeout(() => c.remove(), 520);
+      }
+
+      // ---- octave-chunk position box (section 2) ----
+      const IVMAJ = ["R", "Δ2", "Δ3", "p4", "p5", "Δ6", "Δ7"];
+      function renderBox(el, oct) {
+        if (!el) return;
+        const rf = (((st.root - 4) % 12) + 12) % 12,
+          lo = Math.max(0, rf - 1),
+          hi = rf + 4,
+          cells = hi - lo + 1,
+          root1 = 40 + rf;
+        const FWb = 58,
+          SHb = 30,
+          PL = 28,
+          PT = 22,
+          PB = 22,
+          W = PL + cells * FWb + 16,
+          H = PT + 5 * SHb + PB;
+        let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="var(--mono)"><defs><filter id="glb" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+        for (let j = 0; j <= cells; j++) {
+          const x = PL + j * FWb,
+            nut = lo === 0 && j === 0;
+          s += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT + 5 * SHb}" stroke="${nut ? "#6b7787" : "#2c3744"}" stroke-width="${nut ? 4 : 1.3}"/>`;
+        }
+        for (let i = 0; i < 6; i++) {
+          const y = PT + i * SHb;
+          s += `<line x1="${PL}" y1="${y}" x2="${PL + cells * FWb}" y2="${y}" stroke="#36424f" stroke-width="${1 + i * 0.3}"/>`;
+        }
+        for (let f = lo; f <= hi; f++) {
+          const x = PL + (f - lo + 0.5) * FWb;
+          s += `<text x="${x}" y="${H - 6}" fill="#5d6a7a" font-size="10" text-anchor="middle">${f}</text>`;
+        }
+        for (let i = 0; i < 6; i++)
+          for (let f = lo; f <= hi; f++) {
+            const midi = STRINGS[i] + f,
+              pc = midi % 12,
+              rel = (((pc - st.root) % 12) + 12) % 12,
+              idx = [0, 2, 4, 5, 7, 9, 11].indexOf(rel);
+            if (idx < 0) continue;
+            const o = midi < root1 + 12 ? 1 : 2,
+              dim = oct !== 0 && o !== oct,
+              y = PT + i * SHb,
+              x = PL + (f - lo + 0.5) * FWb,
+              isRoot = idx === 0;
+            const fill = isRoot ? "var(--root)" : "var(--scale)",
+              txt = isRoot ? "#241803" : "#06201e",
+              glow = isRoot && !dim ? ' filter="url(#glb)"' : "";
+            s += `<g opacity="${dim ? 0.16 : 1}" style="cursor:pointer" onclick="hit(${midi},${x},${y},this)"><circle cx="${x}" cy="${y}" r="11" fill="${fill}"${glow}/><text x="${x}" y="${y + 3.3}" fill="${txt}" font-size="${IVMAJ[idx].length > 1 ? 8.5 : 10}" font-weight="700" text-anchor="middle">${IVMAJ[idx]}</text></g>`;
+          }
+        s += `</svg>`;
+        el.innerHTML = s;
+      }
+
+      // ---- navigation: two shapes from any root + octave map (section 2b) ----
+      const NAVSC = {
+        Major: {
+          iv: [0, 2, 4, 5, 7, 9, 11],
+          deg: ["R", "2", "3", "4", "5", "6", "7"],
+        },
+        MajPent: { iv: [0, 2, 4, 7, 9], deg: ["R", "2", "3", "5", "6"] },
+        MinPent: { iv: [0, 3, 5, 7, 10], deg: ["R", "♭3", "4", "5", "♭7"] },
+      };
+      let navScale = "Major",
+        navRoot = { si: 4, fret: 3 };
+      function defaultNavRoot() {
+        navRoot = { si: 4, fret: (((st.root - 9) % 12) + 12) % 12 };
+      }
+      function selectNav(si, fret) {
+        navRoot = { si, fret };
+        tone(STRINGS[si] + fret);
+        renderNav(document.getElementById("bnav"));
+      }
+      function renderNav(el) {
+        if (!el) return;
+        const sc = NAVSC[navScale],
+          NF = 15,
+          FW = 44,
+          SH = 27,
+          PL = 34,
+          PT = 22,
+          PB = 20,
+          W = PL + NF * FW + 18,
+          H = PT + 5 * SH + PB;
+        const navMidi = STRINGS[navRoot.si] + navRoot.fret,
+          rf = navRoot.fret,
+          X = (n) => (n === 0 ? PL - 17 : PL + (n - 0.5) * FW),
+          Y = (i) => PT + i * SH;
+        let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="var(--mono)"><defs><filter id="gln" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+        [3, 5, 7, 9, 12, 15].forEach((n) => {
+          if (n > NF) return;
+          const x = PL + (n - 0.5) * FW,
+            dbl = n % 12 === 0;
+          s +=
+            `<circle cx="${x}" cy="${PT + (dbl ? 1.5 : 2.5) * SH}" r="3.3" fill="#26303d"/>` +
+            (dbl
+              ? `<circle cx="${x}" cy="${PT + 3.5 * SH}" r="3.3" fill="#26303d"/>`
+              : "");
+        });
+        for (let n = 0; n <= NF; n++) {
+          const x = PL + n * FW;
+          s += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT + 5 * SH}" stroke="${n === 0 ? "#6b7787" : "#2c3744"}" stroke-width="${n === 0 ? 4 : 1.2}"/>`;
+        }
+        for (let i = 0; i < 6; i++) {
+          const y = Y(i);
+          s += `<line x1="${PL}" y1="${y}" x2="${PL + NF * FW}" y2="${y}" stroke="#36424f" stroke-width="${1 + i * 0.3}"/>`;
+        }
+        for (let n = 1; n <= NF; n++) {
+          const x = PL + (n - 0.5) * FW;
+          s += `<text x="${x}" y="${H - 6}" fill="#5d6a7a" font-size="9" text-anchor="middle">${n}</text>`;
+        }
+        const xs = X(rf),
+          ys = Y(navRoot.si);
+        let up = null,
+          dn = null;
+        for (let i = 0; i < 6; i++)
+          for (let f = 0; f <= NF; f++) {
+            const m = STRINGS[i] + f;
+            if ((((m - st.root) % 12) + 12) % 12 !== 0) continue;
+            if (
+              m === navMidi + 12 &&
+              (!up || Math.abs(f - rf) < Math.abs(up.f - rf))
+            )
+              up = { i, f };
+            if (
+              m === navMidi - 12 &&
+              (!dn || Math.abs(f - rf) < Math.abs(dn.f - rf))
+            )
+              dn = { i, f };
+          }
+        [up, dn].forEach((b) => {
+          if (b)
+            s += `<line x1="${xs}" y1="${ys}" x2="${X(b.f)}" y2="${Y(b.i)}" stroke="var(--root)" stroke-width="1.4" stroke-dasharray="3 4" opacity="0.45"/>`;
+        });
+        for (let i = 0; i < 6; i++)
+          for (let n = 0; n <= NF; n++) {
+            const midi = STRINGS[i] + n,
+              pc = midi % 12,
+              rel = (((pc - st.root) % 12) + 12) % 12,
+              idx = sc.iv.indexOf(rel);
+            if (idx < 0) continue;
+            const isRoot = idx === 0,
+              isSel = i === navRoot.si && n === navRoot.fret,
+              near = Math.abs(n - rf) <= 5;
+            let fill,
+              op = 1,
+              r = 10,
+              txt = "#06201e",
+              glow = "",
+              clickRoot = false;
+            if (isSel) {
+              fill = "var(--root)";
+              txt = "#241803";
+              r = 12.5;
+              glow = ' filter="url(#gln)"';
+              clickRoot = true;
+            } else if (isRoot) {
+              fill = "var(--root)";
+              txt = "#241803";
+              op = near ? 0.95 : 0.34;
+              clickRoot = true;
+            } else if (near && midi > navMidi && midi <= navMidi + 12) {
+              fill = "var(--scale)";
+            } else if (near && midi < navMidi && midi >= navMidi - 12) {
+              fill = "var(--violet)";
+              txt = "#150f2e";
+            } else continue;
+            const lab = sc.deg[idx],
+              y = Y(i),
+              x = X(n),
+              oc = clickRoot
+                ? `selectNav(${i},${n})`
+                : `hit(${midi},${x},${y},this)`;
+            s += `<g opacity="${op}" style="cursor:pointer" onclick="${oc}"><circle cx="${x}" cy="${y}" r="${r}" fill="${fill}"${glow}/><text x="${x}" y="${y + 3.3}" fill="${txt}" font-size="${lab.length > 1 ? 8.5 : 10}" font-weight="700" text-anchor="middle">${lab}</text></g>`;
+          }
+        s += `</svg>`;
+        el.innerHTML = s;
+      }
+
+      // ---- movable maj7♭5 chord (section 5) ----
+      function renderChord(el) {
+        if (!el) return;
+        const base = (((st.root - 9) % 12) + 12) % 12;
+        const frets = [null, base, base + 1, base + 1, base + 2, null],
+          labs = ["", "R", "♭5", "7", "3", ""];
+        const played = frets.filter((f) => f !== null),
+          minF = Math.min(...played),
+          maxF = Math.max(...played);
+        const start = Math.max(1, minF),
+          span = Math.max(4, maxF - start + 1),
+          cols = 6,
+          FWc = 24,
+          SHc = 32,
+          PL = 16,
+          PT = 24,
+          W = PL + (cols - 1) * FWc + 26,
+          H = PT + span * SHc + 22;
+        let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="var(--mono)">`;
+        for (let c = 0; c < cols; c++) {
+          const x = PL + c * FWc;
+          s += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT + span * SHc}" stroke="#36424f" stroke-width="1.1"/>`;
+        }
+        for (let r = 0; r <= span; r++) {
+          const y = PT + r * SHc,
+            nut = r === 0 && start === 1;
+          s += `<line x1="${PL}" y1="${y}" x2="${PL + (cols - 1) * FWc}" y2="${y}" stroke="${nut ? "#6b7787" : "#2c3744"}" stroke-width="${nut ? 4 : 1.1}"/>`;
+        }
+        if (start > 1)
+          s += `<text x="${PL + (cols - 1) * FWc + 5}" y="${PT + 12}" fill="#8B98A8" font-size="10">${start}fr</text>`;
+        for (let i = 0; i < 6; i++) {
+          const f = frets[i],
+            x = PL + i * FWc;
+          if (f === null) {
+            s += `<text x="${x}" y="${PT - 7}" fill="#8B98A8" font-size="11" text-anchor="middle">×</text>`;
+            continue;
+          }
+          const y = PT + (f - start + 0.5) * SHc;
+          s += `<circle cx="${x}" cy="${y}" r="9.5" fill="var(--scale)"/><text x="${x}" y="${y + 3}" fill="#06201e" font-size="8" font-weight="700" text-anchor="middle">${labs[i]}</text>`;
+        }
+        s += `</svg>`;
+        el.innerHTML = s;
+      }
+
+      // board configs
+      function chordTarget(d) {
+        return [d, (d + 2) % 7, (d + 4) % 7, (d + 6) % 7];
+      }
+      const BOARDS = [
+        ["b1", () => ({ mode: "Major" })],
+        [
+          "b3",
+          () => ({
+            mode: "Major",
+            target: s3 === "triad" ? [0, 2, 4] : [2, 4, 6],
+            chordRoot: s3 === "triad" ? 0 : 2,
+          }),
+        ],
+        [
+          "b4",
+          () => ({ mode: "Major", target: chordTarget(s4), chordRoot: s4 }),
+        ],
+        ["b5", () => ({ mode: s5, showChar: s5 === "Lydian" })],
+        ["b6", () => s6 || { mode: "Major", target: [0, 2, 4], chordRoot: 0 }],
+      ];
+      function cfg(id) {
+        const e = BOARDS.find((b) => b[0] === id);
+        return e ? e[1]() : {};
+      }
+      function renderAll() {
+        BOARDS.forEach(([id, fn]) =>
+          renderBoard(document.getElementById(id), fn()),
+        );
+        renderBox(document.getElementById("b2"), s2);
+        renderNav(document.getElementById("bnav"));
+        renderChord(document.getElementById("chordbox"));
+        const cn = document.getElementById("chordname");
+        if (cn) cn.innerHTML = "<b>" + NOTES[st.root] + "maj7♭5</b>";
+        document.getElementById("charKey").style.display =
+          s5 === "Lydian" ? "inline-flex" : "none";
+      }
+
+      // controls
+      function buildKeys() {
+        document.getElementById("keys").innerHTML = KEYS.map(
+          (k) =>
+            `<button class="chip${k === st.root ? " on" : ""}" onclick="setKey(${k})">${NOTES[k]}</button>`,
+        ).join("");
+      }
+      function setKey(k) {
+        st.root = k;
+        defaultNavRoot();
+        buildKeys();
+        updateChordLabel();
+        renderAll();
+      }
+      document.getElementById("labtoggle").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        st.labels = b.dataset.l;
+        [...e.currentTarget.children].forEach((x) =>
+          x.classList.toggle("on", x === b),
+        );
+        renderAll();
+      });
+      document.getElementById("seg2").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        s2 = +b.dataset.o;
+        [...e.currentTarget.children].forEach((x) =>
+          x.classList.toggle("on", x === b),
+        );
+        renderBox(document.getElementById("b2"), s2);
+      });
+      document.getElementById("segNavScale").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        navScale = b.dataset.s;
+        [...e.currentTarget.children].forEach((x) =>
+          x.classList.toggle("on", x === b),
+        );
+        renderNav(document.getElementById("bnav"));
+      });
+      document.getElementById("seg3").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        s3 = b.dataset.m;
+        [...e.currentTarget.children].forEach((x) =>
+          x.classList.toggle("on", x === b),
+        );
+        renderBoard(document.getElementById("b3"), cfg("b3"));
+      });
+      document.getElementById("seg5").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        s5 = b.dataset.m;
+        [...e.currentTarget.children].forEach((x) =>
+          x.classList.toggle("on", x === b),
+        );
+        renderAll();
+      });
+
+      // section 4 chord chips
+      function buildSeg4() {
+        document.getElementById("seg4").innerHTML = RN.map(
+          (r, i) =>
+            `<button class="${i === s4 ? "on" : ""}" onclick="setChord(${i})">${r}</button>`,
+        ).join("");
+      }
+      function setChord(d) {
+        s4 = d;
+        buildSeg4();
+        updateChordLabel();
+        renderBoard(document.getElementById("b4"), cfg("b4"));
+      }
+      function updateChordLabel() {
+        const sc = SCALES.Major,
+          rootpc = (st.root + sc.iv[s4]) % 12;
+        document.getElementById("chordlabel").innerHTML =
+          `<b>${RN[s4]}</b> chord — <b>${NOTES[rootpc]}${QUAL[s4]}</b> — colour it with <i>${NOTES[rootpc]} ${MODES[s4]}</i>`;
+      }
+
+      // spark
+      const SHAPE = [
+        { t: "arpeggiate its 1·3·5 and let them ring", deg: null },
+        { t: "target the 3·5·7 for a lusher colour", deg: null },
+      ];
+      function spark() {
+        const k = KEYS[Math.floor(Math.random() * KEYS.length)];
+        const d = Math.floor(Math.random() * 7);
+        const lyd = Math.random() < 0.4;
+        st.root = k;
+        buildKeys();
+        updateChordLabel();
+        const sc = SCALES.Major,
+          rootpc = (k + sc.iv[d]) % 12;
+        s6 = {
+          mode: lyd ? "Lydian" : "Major",
+          target: chordTarget(d),
+          chordRoot: d,
+          showChar: lyd,
+        };
+        renderAll();
+        let p = `In <b>${NOTES[k]} major</b>, write over the <b>${RN[d]}</b> chord (<b>${NOTES[rootpc]}${QUAL[d]}</b>): <u>target its 1·3·5·7</u>`;
+        p += lyd
+          ? `, then brighten with the <i>♯4 (Lydian)</i>.`
+          : `, then colour with the nearby scale tones.`;
+        document.getElementById("spark").innerHTML = p;
+        document.getElementById("b6hint").textContent =
+          "Target tones lit — " + NOTES[rootpc] + QUAL[d];
+      }
+
+      defaultNavRoot();
+      buildKeys();
+      buildSeg4();
+      updateChordLabel();
+      renderAll();
+    </script>
+  </body>
+</html>
