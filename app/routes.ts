@@ -16,6 +16,7 @@ export default [
   route("wylde-scales", "routes/wylde-scales.tsx"),
   route("yngwie-scales", "routes/yngwie-scales.tsx"),
   route("scale-builder", "routes/scale-builder.tsx"),
+  route("writing-scales", "routes/writing-scales.tsx"),
   route("chord-tones", "routes/chord-tones.tsx"),
   route("note-recognition", "routes/note-recognition.tsx"),
   route("staff-notes", "routes/staff-notes.tsx"),
