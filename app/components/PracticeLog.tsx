@@ -38,7 +38,7 @@ function Stat({ label, value }: { label: string; value: string }) {
       className="flex-1 min-w-[120px] p-4"
       style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
-      <div className="font-mono text-[0.55rem] tracking-[0.14em] uppercase mb-1" style={{ color: "var(--faint)" }}>
+      <div className="font-mono text-[0.55rem] tracking-[0.14em] uppercase mb-1" style={{ color: "var(--muted)" }}>
         {label}
       </div>
       <div className="font-mono font-semibold tabular-nums text-[1.4rem] leading-none" style={{ color: "var(--text)" }}>
@@ -249,7 +249,7 @@ function SessionRow({ session: s, onChanged }: { session: PracticeSession; onCha
         {s.label ?? s.section ?? ""}
       </span>
       {s.bpm != null && (
-        <span className="font-mono text-[0.68rem] tabular-nums flex-shrink-0" style={{ color: "var(--faint)" }}>
+        <span className="font-mono text-[0.68rem] tabular-nums flex-shrink-0" style={{ color: "var(--muted)" }}>
           {s.bpm} bpm
         </span>
       )}

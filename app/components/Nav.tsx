@@ -96,8 +96,9 @@ export function Nav({
       className="relative px-5 md:px-8 pt-5 md:pt-6 pb-4 md:pb-5 [@media(max-height:500px)]:py-2 [@media(max-height:500px)]:px-4 flex items-center justify-between border-b border-[var(--border)]"
       style={{
         // Faint fret-coordinate hairlines behind the header band (decorative).
+        // A 5% ink tint keeps it a whisper in both themes, independent of --faint.
         backgroundImage:
-          "repeating-linear-gradient(90deg, var(--faint) 0 1px, transparent 1px 72px)",
+          "repeating-linear-gradient(90deg, color-mix(in srgb, var(--text) 5%, transparent) 0 1px, transparent 1px 72px)",
       }}
     >
       <div className="flex items-center gap-7 md:gap-9">

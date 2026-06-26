@@ -15,7 +15,7 @@ export const LIGHT_THEME: CSSProperties = {
   "--text": "#0e1316",
   "--muted": "#5e6a70",
   "--accent": "#0e7c96", // blueprint cyan, deepened for contrast on paper
-  "--faint": "#d3dbde",
+  "--faint": "#9aa4ab", // quiet but legible: fret numbers, inlay dots, faint labels
   "--fret-bar": "#cad3d7",
   // systems
   "--sys-3nps": "#c2542a",
@@ -45,7 +45,7 @@ export const DARK_THEME: CSSProperties = {
   "--text": "#e6eef2",
   "--muted": "#7e8c94",
   "--accent": "#4fd0e6", // blueprint cyan
-  "--faint": "#1c262c",
+  "--faint": "#4a5862", // quiet but legible: fret numbers, inlay dots, faint labels
   "--fret-bar": "#222e34",
   // systems
   "--sys-3nps": "#d6705a",
