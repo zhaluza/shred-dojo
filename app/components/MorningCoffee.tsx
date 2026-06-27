@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Nav } from "./Nav";
 import { CtrlButton } from "./CtrlButton";
+import { Timer } from "./Timer";
+import { DronePanel, useDrone } from "./Drone";
+import { addSession } from "./practiceLog.utils";
 import { LIGHT_THEME, DARK_THEME } from "./theme";
 import {
   buildCagedPositions,
@@ -17,6 +20,7 @@ import {
   REFS,
   CS_REFS,
   getKeyOffset,
+  getKeyPc,
   minorRootName,
   type Drill,
 } from "./morningCoffee.utils";
@@ -376,8 +380,9 @@ function MetronomePanel({
       className="rounded-sm p-4"
       style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
-      {/* BPM row */}
+      {/* BPM controls */}
       <div className="mb-3">
+        {/* Top row: start/stop, readout, subdivisions */}
         <div className="flex items-center gap-3">
           <button
             onClick={toggle}
@@ -402,6 +407,18 @@ function MetronomePanel({
             bpm
           </span>
 
+          {/* Subdivision buttons (right-aligned) */}
+          <div className="flex gap-1 flex-shrink-0 ml-auto">
+            {subButtons}
+          </div>
+        </div>
+
+        {/* Bottom row: slider flanked by ±1 / ±5 steppers */}
+        <div className="flex items-center gap-2 mt-3">
+          <div className="flex gap-1 flex-shrink-0">
+            <CtrlButton label="−5" active={false} onClick={() => setBpm(bpm - 5)} small />
+            <CtrlButton label="−1" active={false} onClick={() => setBpm(bpm - 1)} small />
+          </div>
           <input
             type="range"
             min={MET_MIN_BPM}
@@ -411,16 +428,10 @@ function MetronomePanel({
             className="flex-1 min-w-0 accent-[var(--accent)]"
             aria-label="BPM"
           />
-
-          {/* Subdivision buttons: inline on wider screens */}
-          <div className="hidden min-[460px]:flex gap-1 flex-shrink-0">
-            {subButtons}
+          <div className="flex gap-1 flex-shrink-0">
+            <CtrlButton label="+1" active={false} onClick={() => setBpm(bpm + 1)} small />
+            <CtrlButton label="+5" active={false} onClick={() => setBpm(bpm + 5)} small />
           </div>
-        </div>
-
-        {/* Subdivision buttons: own row on narrow screens */}
-        <div className="flex min-[460px]:hidden gap-2 mt-2 justify-end">
-          {subButtons}
         </div>
       </div>
 
@@ -1038,6 +1049,10 @@ export function MorningCoffee() {
   const majDisplayStart = MAJ_E_SHAPE.startFret + majKeyOffset;
   const minDisplayStart = MIN_E_SHAPE.startFret + minKeyOffset;
 
+  // Tonic drone follows the current drill's key (relative minor for minor drills)
+  const droneRootName = isMinorDrill ? relMinorRoot : key;
+  const drone = useDrone(getKeyPc(droneRootName), "mc-drone-vol");
+
   // Navigation handlers
   const nextKey = useCallback(() => {
     if (keyIdx < KEYS.length - 1) {
@@ -1085,11 +1100,14 @@ export function MorningCoffee() {
       } else if (e.key === "m" || e.key === "M") {
         e.preventDefault();
         met.toggle();
+      } else if (e.key === "d" || e.key === "D") {
+        e.preventDefault();
+        drone.toggle();
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [nextKey, prevKey, met.toggle]);
+  }, [nextKey, prevKey, met.toggle, drone.toggle]);
 
   const ref = allRefs[drill.id];
   const isLast = drillIdx === activeDrills.length - 1 && keyIdx === KEYS.length - 1;
@@ -1423,10 +1441,34 @@ export function MorningCoffee() {
             {/* Metronome */}
             <MetronomePanel met={met} />
 
+            {/* Practice timer */}
+            <Timer
+              storageKey="mc-timer-sec"
+              defaultLabel={label}
+              onLogSession={(sec, logLabel) =>
+                addSession({
+                  startedAt: Date.now() - sec * 1000,
+                  durationSec: sec,
+                  source: "morning-coffee",
+                  section: drill.name,
+                  bpm: met.bpm,
+                  label: logLabel || undefined,
+                })
+              }
+            />
+
+            {/* Tonic drone */}
+            <div
+              className="rounded-sm p-4"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+            >
+              <DronePanel drone={drone} rootNote={droneRootName} />
+            </div>
+
             {/* Footer hints */}
             <div className="flex justify-between items-center gap-3 flex-wrap">
               <span className="text-[0.6rem]" style={{ color: "var(--muted)" }}>
-                ← → keys · m = metronome
+                ← → keys · m = metronome · d = drone
               </span>
               <div className="flex items-center gap-3">
                 <button

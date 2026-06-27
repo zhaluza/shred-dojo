@@ -23,6 +23,11 @@ export function getKeyOffset(keyName: string): number {
   return (fret - ROOT_FRET + 12) % 12;
 }
 
+// Pitch class (0 = C) for a key/root name, via its low-E fret (open low E = pc 4).
+export function getKeyPc(keyName: string): number {
+  return ((KEY_FRETS[keyName] ?? 0) + 4) % 12;
+}
+
 // Strip the "m" suffix to get the root note name (e.g. "F#m" → "F#")
 export function minorRootName(relMinor: string): string {
   return relMinor.replace(/m$/, "");
