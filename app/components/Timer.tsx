@@ -192,7 +192,17 @@ export function Timer({
     setRemaining((r) => r + 300);
     deadlineRef.current += 300 * 1000; // extend the live deadline if a run is active
     setCustomMin("");
-    if (wasDone) setRunning(true);
+    if (wasDone) {
+      // Resuming a finished sitting: completion already ran finishRun(), which
+      // zeroed runElapsedRef and stashed the elapsed in `pending`. Fold that back
+      // in (and dismiss the review bar) so the continued run logs the *whole*
+      // period, not just the +5 extension.
+      if (pending) {
+        runElapsedRef.current = pending.sec;
+        setPending(null);
+      }
+      setRunning(true);
+    }
   };
   const toggle = () => {
     if (remaining === 0) {
