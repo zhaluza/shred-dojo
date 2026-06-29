@@ -58,6 +58,59 @@ function sigById(id: string): TimeSig {
   return TIME_SIGS.find((t) => t.id === id) ?? TIME_SIGS[0];
 }
 
+// ─── Math-rock groupings ───────────────────────────────────────────────────────
+// Odd meters can be felt with different accent groupings (5 = 3+2, 2+3, …). Each
+// grouping reshapes which pulses get the accent; the metronome's accent already
+// lands on each group's first pulse, so a grouping is just an alternate `groups`
+// array. Keyed by pulse count so it applies to any odd meter of that length
+// (5/8 and 5/4 share the 5-pulse set). `style`/`note` are the descriptive labels;
+// the "ONE-two-three / ONE-two" counting line is derived from the group sizes.
+type Grouping = { groups: number[]; style: string; note: string };
+
+const COUNT_WORDS = ["ONE", "two", "three", "four", "five", "six", "seven"];
+
+// "ONE-two-three / ONE-two" — first pulse of each group capitalised.
+function countString(groups: number[]): string {
+  return groups.map((g) => COUNT_WORDS.slice(0, g).join("-")).join(" / ");
+}
+
+function groupingKey(groups: number[]): string {
+  return groups.join("-");
+}
+
+// First entry per length is the conventional default (matches the TIME_SIGS groups).
+const GROUPINGS_BY_NUM: Record<number, Grouping[]> = {
+  5: [
+    { groups: [3, 2], style: "Long + Short", note: "Most common — Eastern-European folk, Tool, etc." },
+    { groups: [2, 3], style: "Short + Long", note: "Feels like an upbeat into a phrase." },
+    { groups: [2, 2, 1], style: "Even + Short", note: "Slightly syncopated feel." },
+    { groups: [2, 1, 2], style: "Symmetrical", note: "Creates tension and release." },
+    { groups: [1, 2, 2], style: "Short + Even", note: "Quirky and off-kilter." },
+    { groups: [1, 1, 3], style: "Short bursts", note: "Rare, used for effect." },
+    { groups: [1, 3, 1], style: "Long center", note: "Balanced but unusual." },
+    { groups: [5], style: "Straight", note: "Very uncommon — feels awkward to count evenly." },
+  ],
+  7: [
+    { groups: [2, 2, 3], style: "Even + Long", note: "The most common 7/8 grouping." },
+    { groups: [3, 2, 2], style: "Long + Even", note: "Driving, front-loaded feel." },
+    { groups: [2, 3, 2], style: "Symmetrical", note: "Centered, balanced phrasing." },
+    { groups: [3, 4], style: "Long + Longer", note: "Two broad beats — a half-time lean." },
+    { groups: [4, 3], style: "Longer + Long", note: "Spacious, then a quick turnaround." },
+  ],
+};
+
+function groupingsFor(num: number): Grouping[] | null {
+  return GROUPINGS_BY_NUM[num] ?? null;
+}
+
+// The sig actually driving the scheduler/dial: an odd meter's accents follow the
+// chosen grouping; everything else uses its conventional groups.
+function effectiveSig(timeSigId: string, grouping: number[]): TimeSig {
+  const base = sigById(timeSigId);
+  if (!groupingsFor(base.num)) return base;
+  return makeSig(base.id, base.num, grouping);
+}
+
 function useMetronome() {
   const [bpm, setBpmState] = useState<number>(() => {
     if (typeof window === "undefined") return DEFAULT_BPM;
@@ -79,6 +132,18 @@ function useMetronome() {
     const v = parseFloat(localStorage.getItem("met-vol") ?? "");
     return v >= 0 && v <= 1 ? v : DEFAULT_VOLUME;
   });
+  const [grouping, setGroupingState] = useState<number[]>(() => {
+    const sig = sigById(timeSig);
+    const options = groupingsFor(sig.num);
+    if (typeof window === "undefined" || !options) return sig.groups;
+    const stored = localStorage.getItem("met-grouping") ?? "";
+    const match = options.find((o) => groupingKey(o.groups) === stored);
+    return match ? match.groups : sig.groups;
+  });
+  const [accentsOnly, setAccentsOnlyState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("met-accents-only") === "true";
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSlot, setCurrentSlot] = useState(-1);
 
@@ -86,7 +151,9 @@ function useMetronome() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bpmRef = useRef(bpm);
   const subRef = useRef(subdivision);
-  const sigRef = useRef<TimeSig>(sigById(timeSig));
+  const sigRef = useRef<TimeSig>(effectiveSig(timeSig, grouping));
+  const groupingRef = useRef(grouping);
+  const accentsOnlyRef = useRef(accentsOnly);
   const volRef = useRef(volume);
   const nextNoteTimeRef = useRef(0);
   const beatCountRef = useRef(0);
@@ -95,7 +162,9 @@ function useMetronome() {
 
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
   useEffect(() => { subRef.current = subdivision; }, [subdivision]);
-  useEffect(() => { sigRef.current = sigById(timeSig); }, [timeSig]);
+  useEffect(() => { sigRef.current = effectiveSig(timeSig, grouping); }, [timeSig, grouping]);
+  useEffect(() => { groupingRef.current = grouping; }, [grouping]);
+  useEffect(() => { accentsOnlyRef.current = accentsOnly; }, [accentsOnly]);
   useEffect(() => { volRef.current = volume; }, [volume]);
 
   const setVolume = useCallback((v: number) => {
@@ -115,9 +184,29 @@ function useMetronome() {
     try { localStorage.setItem("met-sub", String(v)); } catch {}
   }, []);
 
+  const setGrouping = useCallback((groups: number[]) => {
+    groupingRef.current = groups;
+    setGroupingState(groups);
+    try { localStorage.setItem("met-grouping", groupingKey(groups)); } catch {}
+  }, []);
+
+  const setAccentsOnly = useCallback((v: boolean) => {
+    setAccentsOnlyState(v);
+    try { localStorage.setItem("met-accents-only", String(v)); } catch {}
+  }, []);
+
   const setTimeSig = useCallback((v: string) => {
     setTimeSigState(v);
     try { localStorage.setItem("met-timesig", v); } catch {}
+    // Reconcile the grouping with the new meter: keep the current one if it still
+    // sums to the new pulse count, otherwise fall back to the conventional groups.
+    const sig = sigById(v);
+    const prev = groupingRef.current;
+    const sum = prev.reduce((a, b) => a + b, 0);
+    const next = groupingsFor(sig.num) && sum === sig.num ? prev : sig.groups;
+    groupingRef.current = next;
+    setGroupingState(next);
+    try { localStorage.setItem("met-grouping", groupingKey(next)); } catch {}
   }, []);
 
   // Tap tempo — average of last 4 tap intervals (from MetronomeWidget).
@@ -138,41 +227,49 @@ function useMetronome() {
     time: number,
     slot: number,
   ) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "square";
-
     const sub = subRef.current;
     const sig = sigRef.current;
     const isBeat = slot % sub === 0;
     const beatIdx = slot / sub;
-    let freq: number;
-    let tier: number;
-    if (!isBeat) {
-      freq = 700;
-      tier = TIER_GAIN.sub;
-    } else if (beatIdx === 0) {
-      freq = 1500;
-      tier = TIER_GAIN.downbeat;
-    } else if (sig.starts.has(beatIdx)) {
-      freq = 1250;
-      tier = TIER_GAIN.accent;
-    } else {
-      freq = 1000;
-      tier = TIER_GAIN.beat;
-    }
-    osc.frequency.value = freq;
-    // Floor at a tiny epsilon: exponential ramps can't target 0, and this keeps
-    // volume 0% effectively silent without breaking the envelope.
-    const vol = Math.max(0.0001, tier * volRef.current);
+    const isGroupStart = isBeat && (beatIdx === 0 || sig.starts.has(beatIdx));
+    // Accents-only (math-rock practice): only the first pulse of each group
+    // sounds — the rest stay silent but still advance the dial. Limited to meters
+    // that expose groupings so it never silently mutes a normal meter.
+    const accentsOnly = accentsOnlyRef.current && !!groupingsFor(sig.num);
 
-    gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(vol, time + 0.001);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
-    osc.start(time);
-    osc.stop(time + 0.07);
+    if (!accentsOnly || isGroupStart) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "square";
+
+      let freq: number;
+      let tier: number;
+      if (!isBeat) {
+        freq = 700;
+        tier = TIER_GAIN.sub;
+      } else if (beatIdx === 0) {
+        freq = 1500;
+        tier = TIER_GAIN.downbeat;
+      } else if (sig.starts.has(beatIdx)) {
+        freq = 1250;
+        tier = TIER_GAIN.accent;
+      } else {
+        freq = 1000;
+        tier = TIER_GAIN.beat;
+      }
+      osc.frequency.value = freq;
+      // Floor at a tiny epsilon: exponential ramps can't target 0, and this keeps
+      // volume 0% effectively silent without breaking the envelope.
+      const vol = Math.max(0.0001, tier * volRef.current);
+
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(vol, time + 0.001);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
+      osc.start(time);
+      osc.stop(time + 0.07);
+    }
 
     const msFromNow = Math.max(0, (time - ctx.currentTime) * 1000);
     setTimeout(() => setCurrentSlot(slot), msFromNow);
@@ -221,7 +318,7 @@ function useMetronome() {
     audioCtxRef.current?.close();
   }, []);
 
-  return { bpm, setBpm, subdivision, setSubdivision, timeSig, setTimeSig, volume, setVolume, isPlaying, toggle, currentSlot, handleTap };
+  return { bpm, setBpm, subdivision, setSubdivision, timeSig, setTimeSig, grouping, setGrouping, accentsOnly, setAccentsOnly, volume, setVolume, isPlaying, toggle, currentSlot, handleTap };
 }
 
 // prefers-reduced-motion as reactive state.
@@ -267,6 +364,7 @@ function BeatDial({
   currentSlot,
   isPlaying,
   reduced,
+  accentsOnly,
 }: {
   bpm: number;
   subdivision: Subdivision;
@@ -274,6 +372,7 @@ function BeatDial({
   currentSlot: number;
   isPlaying: boolean;
   reduced: boolean;
+  accentsOnly: boolean;
 }) {
   const totalSlots = timeSig.num * subdivision;
   const CX = 100;
@@ -308,6 +407,10 @@ function BeatDial({
           const isDown = isBeat && beatIdx === 0;
           const isAccent = isBeat && timeSig.starts.has(beatIdx);
           const isActive = isPlaying && i === currentSlot;
+          const isGroupStart = isBeat && (isDown || isAccent);
+          // Accents-only: the silent pulses fade back so the eye locks onto the
+          // accented group-starts that actually sound.
+          const muted = accentsOnly && !isGroupStart;
           const r = isActive ? 8 : isDown ? 6 : isAccent ? 5.5 : isBeat ? 5 : 3.5;
           const fill = isActive
             ? "var(--accent)"
@@ -321,7 +424,7 @@ function BeatDial({
               cy={y}
               r={r}
               fill={fill}
-              style={{ transition: reduced ? "none" : "r 80ms ease-out, fill 120ms ease-out" }}
+              style={{ opacity: muted && !isActive ? 0.3 : 1, transition: reduced ? "none" : "r 80ms ease-out, fill 120ms ease-out, opacity 120ms ease-out" }}
             />
           );
         })}
@@ -427,6 +530,80 @@ function TimeSigButtons({
           {t.id}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ─── Math-rock grouping selector ─────────────────────────────────────────────
+// Shown only for odd meters that expose alternate accent groupings (5/8, 7/8…).
+// Picks how the bar is felt (3+2 vs 2+3 …) and offers an accents-only practice
+// mode (strum only on the accents — the "ONE two three FOUR five" exercise).
+
+function GroupingPanel({
+  num,
+  grouping,
+  setGrouping,
+  accentsOnly,
+  setAccentsOnly,
+}: {
+  num: number;
+  grouping: number[];
+  setGrouping: (g: number[]) => void;
+  accentsOnly: boolean;
+  setAccentsOnly: (v: boolean) => void;
+}) {
+  const options = groupingsFor(num);
+  if (!options) return null;
+  const activeKey = groupingKey(grouping);
+  const active = options.find((o) => groupingKey(o.groups) === activeKey) ?? options[0];
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center justify-center gap-3 flex-wrap">
+        <span className="text-[0.5rem] tracking-[0.16em] uppercase" style={{ color: "var(--muted)" }}>
+          Groupings
+        </span>
+        <CtrlButton
+          label="Accents only"
+          active={accentsOnly}
+          onClick={() => setAccentsOnly(!accentsOnly)}
+          title="Silence the in-between pulses — click only on the accent of each group"
+          small
+          normalCase
+        />
+      </div>
+
+      <div className="flex gap-1 flex-wrap justify-center">
+        {options.map((o) => {
+          const k = groupingKey(o.groups);
+          const on = k === activeKey;
+          return (
+            <button
+              key={k}
+              onClick={() => setGrouping(o.groups)}
+              aria-label={`Grouping ${o.groups.join(" plus ")}`}
+              aria-pressed={on}
+              className="font-display text-[0.7rem] tabular-nums px-[0.55rem] py-[0.35rem] max-[700px]:min-h-[44px] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              style={{
+                background: on ? "var(--text)" : "transparent",
+                borderColor: on ? "var(--text)" : "var(--border)",
+                color: on ? "var(--bg)" : "var(--text)",
+              }}
+            >
+              {o.groups.join("+")}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="text-center leading-snug">
+        <div className="font-mono text-[0.72rem]" style={{ color: "var(--accent)" }}>
+          {countString(active.groups)}
+        </div>
+        <div className="text-[0.6rem]" style={{ color: "var(--muted)" }}>
+          {active.style} — {active.note}
+        </div>
+      </div>
     </div>
   );
 }
@@ -637,8 +814,9 @@ function KeyDrone() {
 export function Metronome() {
   const reduced = useReducedMotion();
   const met = useMetronome();
-  const { bpm, setBpm, subdivision, setSubdivision, timeSig, setTimeSig, volume, setVolume, isPlaying, toggle, currentSlot, handleTap } = met;
-  const sig = sigById(timeSig);
+  const { bpm, setBpm, subdivision, setSubdivision, timeSig, setTimeSig, grouping, setGrouping, accentsOnly, setAccentsOnly, volume, setVolume, isPlaying, toggle, currentSlot, handleTap } = met;
+  const sig = effectiveSig(timeSig, grouping);
+  const hasGroupings = !!groupingsFor(sig.num);
   const volPct = Math.round(volume * 100);
   const feel = subdivision === 1 ? "Quarter" : subdivision === 2 ? "Eighth" : "Triplet";
 
@@ -649,7 +827,7 @@ export function Metronome() {
         title="Metronome"
         meta={[
           { label: "Tempo", value: `${bpm} BPM` },
-          { label: "Meter", value: timeSig },
+          { label: "Meter", value: hasGroupings ? `${timeSig} · ${grouping.join("+")}` : timeSig },
           { label: "Feel", value: feel },
           { label: "Status", value: isPlaying ? "Running" : "Stopped" },
         ]}
@@ -670,6 +848,7 @@ export function Metronome() {
               currentSlot={currentSlot}
               isPlaying={isPlaying}
               reduced={reduced}
+              accentsOnly={accentsOnly && hasGroupings}
             />
 
             <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -696,6 +875,16 @@ export function Metronome() {
               </span>
               <TimeSigButtons timeSig={timeSig} setTimeSig={setTimeSig} />
             </div>
+
+            {hasGroupings && (
+              <GroupingPanel
+                num={sig.num}
+                grouping={grouping}
+                setGrouping={setGrouping}
+                accentsOnly={accentsOnly}
+                setAccentsOnly={setAccentsOnly}
+              />
+            )}
 
             {/* BPM slider + fine steppers */}
             <div className="flex items-center gap-2">
