@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>MATHGRID — extended voicings for math rock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #14151d;
+        --ink2: #191b25;
+        --panel: #1e202c;
+        --panel2: #242636;
+        --line: #3b3f52;
+        --grid: rgba(126, 150, 190, 0.07);
+        --text: #ecebf2;
+        --dim: #9598ab;
+        --dimmer: #6a6d80;
+        --amber: #f3a85f; /* fingered chord tones */
+        --amber-soft: #f7c79a;
+        --teal: #63c4bd; /* the extension (9th) — the point of the app */
+        --rose: #e08a8a; /* muted string */
+        --shadow:
+          0 1px 0 rgba(255, 255, 255, 0.03),
+          0 8px 24px -12px rgba(0, 0, 0, 0.7);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--ink);
+        color: var(--text);
+        font-family: "Bricolage Grotesque", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        /* blueprint graph paper */
+        background-image:
+          linear-gradient(var(--grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+        background-size: 26px 26px;
+        background-position: center top;
+        min-height: 100vh;
+      }
+      .mono {
+        font-family: "Space Mono", ui-monospace, monospace;
+      }
+
+      /* ---------- shell ---------- */
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 16px 96px;
+      }
+      header {
+        padding: 30px 0 18px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 18px;
+      }
+      .brandrow {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      h1 {
+        font-size: clamp(34px, 8vw, 62px);
+        line-height: 0.92;
+        margin: 0;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      h1 .dot {
+        color: var(--amber);
+      }
+      .eyebrow {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+        color: var(--teal);
+        margin: 0 0 10px;
+        font-weight: 700;
+      }
+      .sub {
+        color: var(--dim);
+        font-size: 14px;
+        max-width: 46ch;
+        margin: 10px 2px 0;
+        line-height: 1.5;
+      }
+      .meter {
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        color: var(--dimmer);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 7px 10px;
+        white-space: nowrap;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 1.05;
+      }
+      .meter b {
+        color: var(--amber);
+        font-size: 17px;
+      }
+
+      /* ---------- tabs ---------- */
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin: 22px 0 20px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: linear-gradient(
+          var(--ink),
+          var(--ink) 70%,
+          rgba(20, 21, 29, 0)
+        );
+        padding: 8px 0 10px;
+      }
+      .tab {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--dim);
+        font-family: "Space Mono", monospace;
+        font-size: 12.5px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 11px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        flex: 0 0 auto;
+        font-weight: 700;
+        transition: 0.15s;
+      }
+      .tab[aria-selected="true"] {
+        background: var(--amber);
+        color: #241402;
+        border-color: var(--amber);
+      }
+      .tab:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+      }
+
+      /* ---------- generic controls ---------- */
+      .label {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--dimmer);
+        margin: 0 0 9px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+      .chip {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        padding: 8px 13px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 600;
+        transition: 0.13s;
+        font-family: "Space Mono", monospace;
+        letter-spacing: 0.02em;
+      }
+      .chip:hover {
+        border-color: var(--dim);
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--teal);
+        color: #04201d;
+        border-color: var(--teal);
+      }
+      .chip:focus-visible {
+        outline: 2px solid var(--amber);
+        outline-offset: 2px;
+      }
+      .qtab[aria-pressed="true"] {
+        background: var(--amber);
+        color: #241402;
+        border-color: var(--amber);
+      }
+
+      .block {
+        margin: 0 0 22px;
+      }
+
+      /* ---------- card grid ---------- */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 12px 10px;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        transition: 0.14s;
+      }
+      .card:hover {
+        border-color: var(--amber);
+        transform: translateY(-2px);
+      }
+      .card:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+      }
+      .card .cname {
+        font-family: "Space Mono", monospace;
+        font-weight: 700;
+        font-size: 15px;
+        align-self: flex-start;
+        letter-spacing: -0.01em;
+      }
+      .card .ctag {
+        font-family: "Space Mono", monospace;
+        font-size: 9.5px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--dimmer);
+        align-self: flex-start;
+        margin-top: 1px;
+      }
+      .card svg {
+        display: block;
+        margin: 6px 0 2px;
+      }
+      .readout {
+        font-family: "Space Mono", monospace;
+        font-size: 10.5px;
+        color: var(--teal);
+        letter-spacing: 0.06em;
+        text-align: center;
+        min-height: 13px;
+      }
+      .playhint {
+        position: absolute;
+        top: 9px;
+        right: 10px;
+        color: var(--dimmer);
+        font-size: 11px;
+        font-family: "Space Mono", monospace;
+      }
+      .card:hover .playhint {
+        color: var(--amber);
+      }
+
+      /* ---------- progression ---------- */
+      .keyselect {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .kbtn {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        width: 46px;
+        height: 40px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: "Space Mono", monospace;
+        font-weight: 700;
+        font-size: 14px;
+        transition: 0.12s;
+      }
+      .kbtn[aria-pressed="true"] {
+        background: var(--amber);
+        color: #241402;
+        border-color: var(--amber);
+      }
+      .kbtn:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+      }
+
+      .rail {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 4px 2px 12px;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+      }
+      .dia {
+        flex: 0 0 132px;
+        scroll-snap-align: start;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 11px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .dia .roman {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        color: var(--dimmer);
+        text-transform: uppercase;
+      }
+      .dia .dname {
+        font-family: "Space Mono", monospace;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1;
+        margin-top: -3px;
+      }
+      .seg {
+        display: flex;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 2px;
+      }
+      .seg button {
+        flex: 1;
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: var(--dim);
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 7px 0;
+        cursor: pointer;
+        transition: 0.1s;
+      }
+      .seg button[aria-pressed="true"] {
+        background: var(--teal);
+        color: #04201d;
+      }
+      .seg button:only-child {
+        cursor: default;
+      }
+      .add {
+        appearance: none;
+        margin-top: 2px;
+        border: 1px solid var(--amber);
+        background: transparent;
+        color: var(--amber);
+        font-family: "Space Mono", monospace;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        padding: 9px 0;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.12s;
+        text-transform: uppercase;
+      }
+      .add:hover {
+        background: var(--amber);
+        color: #241402;
+      }
+      .add:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+      }
+
+      /* progression staff */
+      .staffhead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 6px 0 12px;
+        flex-wrap: wrap;
+      }
+      .transport {
+        display: flex;
+        gap: 8px;
+      }
+      .tbtn {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--panel2);
+        color: var(--text);
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 9px 14px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.12s;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .tbtn:hover {
+        border-color: var(--amber);
+      }
+      .tbtn.primary {
+        background: var(--amber);
+        color: #241402;
+        border-color: var(--amber);
+      }
+      .tbtn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .tbtn:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+      }
+
+      .staff {
+        border: 1px dashed var(--line);
+        border-radius: 12px;
+        min-height: 150px;
+        padding: 14px;
+        background: repeating-linear-gradient(
+          90deg,
+          transparent 0 calc(25% - 1px),
+          var(--grid) calc(25% - 1px) 25%
+        );
+      }
+      .empty {
+        color: var(--dimmer);
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+        text-align: center;
+        padding: 34px 12px;
+        line-height: 1.7;
+      }
+      .prog {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .pslot {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        width: 150px;
+        position: relative;
+      }
+      .pslot.lit {
+        border-color: var(--amber);
+        box-shadow:
+          0 0 0 1px var(--amber),
+          0 0 22px -6px var(--amber);
+      }
+      .pslot .pidx {
+        position: absolute;
+        top: 8px;
+        left: 11px;
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        color: var(--dimmer);
+      }
+      .pslot .x {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        width: 22px;
+        height: 22px;
+        border: 0;
+        background: transparent;
+        color: var(--dimmer);
+        cursor: pointer;
+        font-size: 15px;
+        line-height: 1;
+        border-radius: 4px;
+      }
+      .pslot .x:hover {
+        color: var(--rose);
+      }
+      .pslot .ptop {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 4px;
+      }
+      .pslot .pname {
+        font-family: "Space Mono", monospace;
+        font-weight: 700;
+        font-size: 18px;
+        line-height: 1;
+      }
+      .pslot .pdeg {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        color: var(--dimmer);
+        letter-spacing: 0.12em;
+      }
+      .cyc {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      .cyc button {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--panel2);
+        color: var(--text);
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+        line-height: 1;
+      }
+      .cyc button:hover {
+        border-color: var(--amber);
+        color: var(--amber);
+      }
+      .cyc .vlab {
+        font-family: "Space Mono", monospace;
+        font-size: 9.5px;
+        color: var(--dimmer);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .pslot .readout {
+        margin-top: 2px;
+      }
+
+      .foot {
+        margin-top: 34px;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+        color: var(--dimmer);
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        line-height: 1.8;
+        letter-spacing: 0.02em;
+      }
+      .foot b {
+        color: var(--dim);
+        font-weight: 700;
+      }
+
+      @media (max-width: 560px) {
+        .grid {
+          grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+          gap: 9px;
+        }
+        .meter {
+          display: none;
+        }
+        h1 {
+          font-size: 46px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <p class="eyebrow">Extended voicing lab · written in 7/8</p>
+        <div class="brandrow">
+          <h1>MATH<span class="dot">·</span>GRID</h1>
+          <div class="meter">
+            <span
+              class="mono"
+              style="
+                font-size: 9px;
+                letter-spacing: 0.2em;
+                color: var(--dimmer);
+              "
+              >FEEL</span
+            ><b>7/8</b>
+          </div>
+        </div>
+        <p class="sub">
+          Movable maj7, m7, dom7, m7♭5 and the nine-chords from your practice
+          sheet — every shape transposes to any root, with the extension
+          highlighted in <span style="color: var(--teal)">teal</span>. Tap any
+          diagram to hear it.
+        </p>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="Sections">
+        <button
+          class="tab"
+          role="tab"
+          id="tab-voicings"
+          aria-selected="true"
+          aria-controls="panel-voicings"
+        >
+          Voicings
+        </button>
+        <button
+          class="tab"
+          role="tab"
+          id="tab-prog"
+          aria-selected="false"
+          aria-controls="panel-prog"
+        >
+          Progression
+        </button>
+      </div>
+
+      <!-- ===================== VOICINGS ===================== -->
+      <section
+        id="panel-voicings"
+        role="tabpanel"
+        aria-labelledby="tab-voicings"
+      >
+        <div class="block">
+          <p class="label">Root</p>
+          <div class="keyselect" id="rootSel"></div>
+        </div>
+        <div class="block">
+          <p class="label">Chord type</p>
+          <div class="chips" id="qualSel"></div>
+        </div>
+        <div class="grid" id="voiceGrid"></div>
+      </section>
+
+      <!-- ===================== PROGRESSION ===================== -->
+      <section
+        id="panel-prog"
+        role="tabpanel"
+        aria-labelledby="tab-prog"
+        hidden
+      >
+        <div class="block">
+          <p class="label">Key (major)</p>
+          <div class="keyselect" id="keySel"></div>
+        </div>
+        <div class="block">
+          <p class="label">In-key chords — pick an extension, then add</p>
+          <div class="rail" id="diatonicRail"></div>
+        </div>
+
+        <div class="staffhead">
+          <p class="label" style="margin: 0">Your progression</p>
+          <div class="transport">
+            <button class="tbtn primary" id="playProg" disabled>▶ Play</button>
+            <button class="tbtn" id="clearProg" disabled>Clear</button>
+          </div>
+        </div>
+        <div class="staff" id="staff">
+          <div class="empty" id="emptyMsg">
+            No chords yet.<br />Build a line from the in-key chords above —<br />try
+            <span style="color: var(--amber)"
+              >I&nbsp; vi&nbsp; IV&nbsp; V</span
+            >
+            or go modal with the ♭5.
+          </div>
+          <div class="prog" id="prog" hidden></div>
+        </div>
+      </section>
+
+      <p class="foot">
+        <b>Source:</b> shapes transcribed from your "Math Rock Chord Practice"
+        sheet, then verified note-by-note against each chord's tones.<br />
+        <b>Reading:</b> ◯ outline = chord tone · ● amber = root · ● teal = 9th
+        · ✕ = muted string. Degree printed in each node.<br />
+        <b>Heads up:</b> finger numbers from the sheet were hand-drawn and
+        ambiguous, so fret positions are exact but fingerings are my sensible
+        guess.
+      </p>
+    </div>
+
+    <script>
+      /* ============================================================
+   DATA — voicings transcribed from the sheet (all validated).
+   pat = [s6,s5,s4,s3,s2,s1] frets at the shape's native root.
+   null = muted. r = native root pitch-class (C=0).
+   ============================================================ */
+      const OPEN = [40, 45, 50, 55, 59, 64]; // s6..s1 MIDI (standard tuning)
+      const SHARP = [
+        "C",
+        "C#",
+        "D",
+        "D#",
+        "E",
+        "F",
+        "F#",
+        "G",
+        "G#",
+        "A",
+        "A#",
+        "B",
+      ];
+      const FLAT = [
+        "C",
+        "Db",
+        "D",
+        "Eb",
+        "E",
+        "F",
+        "Gb",
+        "G",
+        "Ab",
+        "A",
+        "Bb",
+        "B",
+      ];
+
+      const QUALS = [
+        {
+          id: "maj7",
+          sym: "maj7",
+          root: 9,
+          shapes: [
+            { pat: [5, null, 6, 6, 5, null], tag: "5fr · full" },
+            { pat: [null, 12, 14, 13, 14, null], tag: "12fr · full" },
+            { pat: [null, null, 7, 9, 9, 9], tag: "7fr · full" },
+            { pat: [5, 4, 6, null, null, null], tag: "4fr · shell" },
+            { pat: [null, 12, 11, 13, null, null], tag: "11fr · shell" },
+            { pat: [null, null, 7, 6, 9, null], tag: "6fr · shell" },
+          ],
+        },
+        {
+          id: "m7",
+          sym: "m7",
+          root: 6,
+          shapes: [
+            { pat: [2, null, 2, 2, 2, null], tag: "2fr · full", root: 6 },
+            { pat: [null, 9, 11, 9, 10, null], tag: "9fr · full", root: 6 },
+            { pat: [null, 9, 7, 9, 10, null], tag: "7fr · full", root: 6 },
+            { pat: [null, null, 4, 6, 5, 5], tag: "4fr · full", root: 6 },
+            { pat: [7, 5, 7, null, null, null], tag: "5fr · shell", root: 11 },
+            {
+              pat: [null, 14, 12, 14, null, null],
+              tag: "12fr · shell",
+              root: 11,
+            },
+            {
+              pat: [null, null, 9, 7, 10, null],
+              tag: "7fr · shell",
+              root: 11,
+            },
+          ],
+        },
+        {
+          id: "dom7",
+          sym: "7",
+          root: 7,
+          shapes: [
+            { pat: [3, null, 3, 4, 3, null], tag: "3fr · full" },
+            { pat: [null, 10, 12, 10, 12, null], tag: "10fr · full" },
+            { pat: [null, null, 5, 7, 6, 7], tag: "5fr · full" },
+            { pat: [3, 2, 3, null, null, null], tag: "2fr · shell" },
+            { pat: [null, 10, 9, 10, null, null], tag: "9fr · shell" },
+            { pat: [null, null, 5, 4, 6, null], tag: "4fr · shell" },
+          ],
+        },
+        {
+          id: "dom9",
+          sym: "9",
+          root: 7,
+          shapes: [{ pat: [null, 10, 9, 10, 10, null], tag: "9fr · full" }],
+        },
+        {
+          id: "m7b5",
+          sym: "m7♭5",
+          root: 8,
+          shapes: [
+            { pat: [4, null, 4, 4, 3, null], tag: "3fr" },
+            { pat: [null, 11, 12, 11, 12, null], tag: "10fr" },
+            { pat: [null, null, 6, 7, 7, 7], tag: "5fr" },
+          ],
+        },
+        {
+          id: "maj9",
+          sym: "maj9",
+          root: 9,
+          shapes: [
+            { pat: [5, 4, 6, 4, null, null], tag: "4fr" },
+            { pat: [null, 12, 11, 13, 12, null], tag: "11fr" },
+            { pat: [null, null, 7, 6, 9, 7], tag: "6fr" },
+          ],
+        },
+        {
+          id: "m9",
+          sym: "m9",
+          root: 11,
+          shapes: [
+            { pat: [7, 5, 7, 6, null, null], tag: "5fr" },
+            { pat: [null, 14, 12, 14, 14, null], tag: "12fr" },
+            { pat: [null, null, 9, 7, 10, 9], tag: "7fr" },
+          ],
+        },
+      ];
+      const QBYID = {};
+      QUALS.forEach((q) => (QBYID[q.id] = q));
+      const QLABEL = {
+        maj7: "Major 7",
+        m7: "Minor 7",
+        dom7: "Dominant 7",
+        dom9: "Dominant 9",
+        m7b5: "Minor 7♭5",
+        maj9: "Major 9",
+        m9: "Minor 9",
+      };
+
+      /* degree label from interval semitones */
+      const DEG = {
+        0: "R",
+        2: "9",
+        3: "♭3",
+        4: "3",
+        6: "♭5",
+        7: "5",
+        8: "♯5",
+        10: "♭7",
+        11: "7",
+        5: "11",
+        9: "13",
+        1: "♭9",
+      };
+
+      /* ---------- transpose a shape to a target root pc ---------- */
+      function transpose(shape, qRoot, targetPc) {
+        const native = shape.root !== undefined ? shape.root : qRoot;
+        let shift = (((targetPc - native) % 12) + 12) % 12;
+        let pat = shape.pat.map((f) => (f === null ? null : f + shift));
+        // keep lowest fingered note in a comfortable window
+        let fingered = pat.filter((f) => f !== null);
+        let lo = Math.min(...fingered);
+        while (lo > 12) {
+          pat = pat.map((f) => (f === null ? null : f - 12));
+          lo -= 12;
+        }
+        return pat;
+      }
+
+      /* ---------- render an SVG chord diagram ---------- */
+      function diagram(pat, rootPc, w = 128) {
+        const fingered = pat.filter((f) => f !== null);
+        const lo = Math.min(...fingered),
+          hi = Math.max(...fingered);
+        const NF = 5; // frets shown
+        let start = lo; // top fret of window
+        if (hi - lo > NF - 1) start = lo; // (spans never exceed window here)
+        const showNut = start === 1;
+        const W = w,
+          H = Math.round(w * 1.33);
+        const L = 14,
+          R = 28,
+          T = 26,
+          B = 20;
+        const gw = W - L - R,
+          gh = H - T - B;
+        const sx = (i) => L + i * (gw / 5);
+        const fy = (k) => T + k * (gh / NF);
+        const dotR = Math.min(8.6, (gw / 5) * 0.46);
+
+        // grid
+        let g = "";
+        for (let k = 0; k <= NF; k++) {
+          const sw = k === 0 && showNut ? 3 : 1;
+          g += `<line x1="${L}" y1="${fy(k)}" x2="${W - R}" y2="${fy(k)}" stroke="var(--line)" stroke-width="${sw}"/>`;
+        }
+        for (let i = 0; i < 6; i++) {
+          g += `<line x1="${sx(i)}" y1="${T}" x2="${sx(i)}" y2="${H - B}" stroke="var(--line)" stroke-width="1"/>`;
+        }
+        // base-fret label
+        let lab = "";
+        if (!showNut) {
+          lab = `<text x="${W - R + 3}" y="${fy(0) + 11}" font-family="Space Mono" font-size="9" fill="var(--dimmer)">${start}fr</text>`;
+        }
+        // markers + dots
+        let marks = "",
+          dots = "",
+          notes = [];
+        for (let i = 0; i < 6; i++) {
+          const f = pat[i];
+          if (f === null) {
+            marks += `<g stroke="var(--rose)" stroke-width="1.6" opacity=".85"><line x1="${sx(i) - 3.4}" y1="${T - 13}" x2="${sx(i) + 3.4}" y2="${T - 7}"/><line x1="${sx(i) + 3.4}" y1="${T - 13}" x2="${sx(i) - 3.4}" y2="${T - 7}"/></g>`;
+            continue;
+          }
+          const pc = (OPEN[i] + f) % 12;
+          const iv = (((pc - rootPc) % 12) + 12) % 12;
+          const deg = DEG[iv] || "?";
+          notes.push({ i, iv, pc, name: SHARP[pc] });
+          const cx = sx(i),
+            cy = fy(f - start) + gh / NF / 2,
+            r = dotR;
+          let fill, stroke, tcol;
+          if (iv === 0) {
+            fill = "var(--amber)";
+            stroke = "var(--amber)";
+            tcol = "#241402";
+          } // root
+          else if (iv === 2) {
+            fill = "var(--teal)";
+            stroke = "var(--teal)";
+            tcol = "#04201d";
+          } // 9th
+          else {
+            fill = "var(--ink)";
+            stroke = "var(--amber)";
+            tcol = "var(--amber-soft)";
+          } // other tones (hollow)
+          dots += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.6"/>`;
+          dots += `<text x="${cx}" y="${cy + 3.1}" text-anchor="middle" font-family="Space Mono" font-weight="700" font-size="8.5" fill="${tcol}">${deg}</text>`;
+        }
+        const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">${g}${lab}${marks}${dots}</svg>`;
+        return { svg, notes };
+      }
+
+      /* note-name readout, low->high */
+      function readout(notes) {
+        return notes.map((n) => n.name).join(" ");
+      }
+
+      /* ============================================================
+   AUDIO — Karplus-Strong pluck, strummed low->high
+   ============================================================ */
+      let AC = null;
+      function actx() {
+        if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === "suspended") AC.resume();
+        return AC;
+      }
+      function pluck(midi, when = 0, vol = 0.16) {
+        const ctx = actx(),
+          fs = ctx.sampleRate;
+        const freq = 440 * Math.pow(2, (midi - 69) / 12);
+        const N = Math.max(2, Math.round(fs / freq));
+        const dur = 1.9,
+          len = Math.floor(fs * dur);
+        const buf = ctx.createBuffer(1, len, fs),
+          out = buf.getChannelData(0);
+        const ring = new Float32Array(N);
+        for (let i = 0; i < N; i++) ring[i] = Math.random() * 2 - 1;
+        let p = 0;
+        const fb = 0.992;
+        for (let i = 0; i < len; i++) {
+          const cur = ring[p],
+            nxt = ring[(p + 1) % N];
+          out[i] = cur;
+          ring[p] = (cur + nxt) * 0.5 * fb;
+          p = (p + 1) % N;
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const lp = ctx.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 3200;
+        const g = ctx.createGain();
+        const t0 = ctx.currentTime + when;
+        g.gain.setValueAtTime(vol, t0);
+        g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+        src.connect(lp);
+        lp.connect(g);
+        g.connect(ctx.destination);
+        src.start(t0);
+        src.stop(t0 + dur);
+      }
+      function strum(pat, when = 0) {
+        const midis = [];
+        for (let i = 0; i < 6; i++)
+          if (pat[i] !== null) midis.push(OPEN[i] + pat[i]);
+        midis.forEach((m, k) => pluck(m, when + k * 0.021));
+        return when + midis.length * 0.021;
+      }
+
+      /* ============================================================
+   STATE + RENDER
+   ============================================================ */
+      const state = {
+        root: 9,
+        qual: "maj7",
+        key: 5 /*F? no -> set below*/,
+        prog: [],
+      };
+
+      /* ---- Voicings tab ---- */
+      const rootSel = document.getElementById("rootSel");
+      const qualSel = document.getElementById("qualSel");
+      const voiceGrid = document.getElementById("voiceGrid");
+
+      function buildRootSelector() {
+        rootSel.innerHTML = "";
+        for (let pc = 0; pc < 12; pc++) {
+          const b = document.createElement("button");
+          b.className = "kbtn";
+          b.textContent = SHARP[pc];
+          b.setAttribute("aria-pressed", pc === state.root);
+          b.onclick = () => {
+            state.root = pc;
+            refreshRootBtns();
+            renderVoicings();
+          };
+          rootSel.appendChild(b);
+        }
+      }
+      function refreshRootBtns() {
+        [...rootSel.children].forEach((b, pc) =>
+          b.setAttribute("aria-pressed", pc === state.root),
+        );
+      }
+
+      function buildQualSelector() {
+        qualSel.innerHTML = "";
+        QUALS.forEach((q) => {
+          const b = document.createElement("button");
+          b.className = "chip qtab";
+          b.textContent = QLABEL[q.id];
+          b.setAttribute("aria-pressed", q.id === state.qual);
+          b.onclick = () => {
+            state.qual = q.id;
+            [...qualSel.children].forEach((c) =>
+              c.setAttribute("aria-pressed", false),
+            );
+            b.setAttribute("aria-pressed", true);
+            renderVoicings();
+          };
+          qualSel.appendChild(b);
+        });
+      }
+      function renderVoicings() {
+        const q = QBYID[state.qual];
+        const name = SHARP[state.root] + q.sym;
+        voiceGrid.innerHTML = "";
+        q.shapes.forEach((sh, idx) => {
+          const pat = transpose(sh, q.root, state.root);
+          const d = diagram(pat, state.root);
+          const card = document.createElement("button");
+          card.className = "card";
+          card.innerHTML = `<span class="playhint">▶</span>
+      <span class="cname">${name}</span>
+      <span class="ctag">${sh.tag}</span>
+      ${d.svg}
+      <span class="readout">${readout(d.notes)}</span>`;
+          card.onclick = () => strum(pat);
+          voiceGrid.appendChild(card);
+        });
+      }
+
+      /* ---- Progression tab ---- */
+      const KEYS = [
+        // major keys, by tonic name; pc + flat preference
+        { n: "C", pc: 0, flat: false },
+        { n: "G", pc: 7, flat: false },
+        { n: "D", pc: 2, flat: false },
+        { n: "A", pc: 9, flat: false },
+        { n: "E", pc: 4, flat: false },
+        { n: "B", pc: 11, flat: false },
+        { n: "F#", pc: 6, flat: false },
+        { n: "Db", pc: 1, flat: true },
+        { n: "Ab", pc: 8, flat: true },
+        { n: "Eb", pc: 3, flat: true },
+        { n: "Bb", pc: 10, flat: true },
+        { n: "F", pc: 5, flat: true },
+      ];
+      state.key = 0; // default C
+      const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
+      const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+      function spellScale(tonic) {
+        const baseL = tonic[0],
+          acc = tonic.slice(1);
+        let pc =
+          (LETTER_PC[baseL] + (acc === "#" ? 1 : acc === "b" ? -1 : 0) + 12) %
+          12;
+        const steps = [2, 2, 1, 2, 2, 2, 1],
+          li = LETTERS.indexOf(baseL),
+          out = [];
+        for (let d = 0; d < 7; d++) {
+          const letter = LETTERS[(li + d) % 7],
+            nat = LETTER_PC[letter];
+          let diff = (((pc - nat) % 12) + 12) % 12;
+          if (diff > 6) diff -= 12;
+          const acc2 =
+            diff === 0 ? "" : diff > 0 ? "#".repeat(diff) : "b".repeat(-diff);
+          out.push({ name: letter + acc2, pc });
+          pc = (pc + steps[d]) % 12;
+        }
+        return out;
+      }
+      // diatonic chord plan for a major key
+      const ROMANS = ["I", "ii", "iii", "IV", "V", "vi", "vii°"];
+      const DEGQUAL = [
+        // [baseQualId, extQualId|null]
+        ["maj7", "maj9"],
+        ["m7", "m9"],
+        ["m7", "m9"],
+        ["maj7", "maj9"],
+        ["dom7", "dom9"],
+        ["m7", "m9"],
+        ["m7b5", null],
+      ];
+      // per-diatonic-slot UI state: chosen quality + chosen voicing index (for prog items)
+      let diaChoice = [0, 0, 0, 0, 0, 0, 0]; // 0=base,1=ext
+
+      const keySel = document.getElementById("keySel");
+      const rail = document.getElementById("diatonicRail");
+      function buildKeySelector() {
+        keySel.innerHTML = "";
+        KEYS.forEach((k, i) => {
+          const b = document.createElement("button");
+          b.className = "kbtn";
+          b.textContent = k.n;
+          b.style.width = "52px";
+          b.setAttribute("aria-pressed", i === state.key);
+          b.onclick = () => {
+            state.key = i;
+            [...keySel.children].forEach((c) =>
+              c.setAttribute("aria-pressed", false),
+            );
+            b.setAttribute("aria-pressed", true);
+            renderDiatonic();
+          };
+          keySel.appendChild(b);
+        });
+      }
+      function renderDiatonic() {
+        const key = KEYS[state.key];
+        const scale = spellScale(key.n);
+        rail.innerHTML = "";
+        scale.forEach((deg, di) => {
+          const [baseQ, extQ] = DEGQUAL[di];
+          const chosenQ = diaChoice[di] === 1 && extQ ? extQ : baseQ;
+          const q = QBYID[chosenQ];
+          const card = document.createElement("div");
+          card.className = "dia";
+          // segmented control
+          let seg = '<div class="seg">';
+          seg += `<button data-c="0" aria-pressed="${diaChoice[di] === 0}">${QBYID[baseQ].sym}</button>`;
+          if (extQ)
+            seg += `<button data-c="1" aria-pressed="${diaChoice[di] === 1}">${QBYID[extQ].sym}</button>`;
+          seg += "</div>";
+          card.innerHTML = `<div class="roman">${ROMANS[di]}</div>
+      <div class="dname">${deg.name}${q.sym}</div>
+      ${seg}
+      <button class="add">+ Add</button>`;
+          // seg handlers
+          card.querySelectorAll(".seg button").forEach((btn) => {
+            btn.onclick = () => {
+              diaChoice[di] = +btn.dataset.c;
+              renderDiatonic();
+            };
+          });
+          card.querySelector(".add").onclick = () => {
+            addToProg(deg.pc, deg.name, chosenQ);
+          };
+          rail.appendChild(card);
+        });
+      }
+
+      const progEl = document.getElementById("prog");
+      const emptyMsg = document.getElementById("emptyMsg");
+      const playBtn = document.getElementById("playProg");
+      const clearBtn = document.getElementById("clearProg");
+
+      function addToProg(rootPc, rootName, qid) {
+        state.prog.push({ rootPc, rootName, qid, v: 0 });
+        renderProg();
+      }
+      function renderProg() {
+        const has = state.prog.length > 0;
+        emptyMsg.hidden = has;
+        progEl.hidden = !has;
+        playBtn.disabled = !has;
+        clearBtn.disabled = !has;
+        progEl.innerHTML = "";
+        state.prog.forEach((item, idx) => {
+          const q = QBYID[item.qid];
+          const nV = q.shapes.length;
+          item.v = ((item.v % nV) + nV) % nV;
+          const sh = q.shapes[item.v];
+          const pat = transpose(sh, q.root, item.rootPc);
+          const d = diagram(pat, item.rootPc, 120);
+          const slot = document.createElement("div");
+          slot.className = "pslot";
+          slot.dataset.idx = idx;
+          slot.innerHTML = `<span class="pidx mono">${String(idx + 1).padStart(2, "0")}</span>
+      <button class="x" title="Remove">✕</button>
+      <div class="ptop"><span class="pname">${item.rootName}${q.sym}</span></div>
+      ${d.svg}
+      <div class="cyc">
+        <button class="prev" title="Previous voicing">‹</button>
+        <span class="vlab">${sh.tag}</span>
+        <button class="next" title="Next voicing">›</button>
+      </div>
+      <span class="readout">${readout(d.notes)}</span>`;
+          slot.querySelector(".x").onclick = (e) => {
+            e.stopPropagation();
+            state.prog.splice(idx, 1);
+            renderProg();
+          };
+          slot.querySelector(".prev").onclick = (e) => {
+            e.stopPropagation();
+            item.v--;
+            renderProg();
+          };
+          slot.querySelector(".next").onclick = (e) => {
+            e.stopPropagation();
+            item.v++;
+            renderProg();
+          };
+          slot.querySelector("svg").style.cursor = "pointer";
+          slot.querySelector("svg").onclick = () => strum(pat);
+          slot.onclick = () => strum(pat);
+          progEl.appendChild(slot);
+        });
+      }
+
+      let playing = false;
+      function playProgression() {
+        if (playing) return;
+        playing = true;
+        playBtn.textContent = "■ Stop";
+        const ctx = actx();
+        let when = 0;
+        const gap = 0.62;
+        const slots = [...progEl.children];
+        const timers = [];
+        state.prog.forEach((item, idx) => {
+          const q = QBYID[item.qid];
+          const sh = q.shapes[item.v];
+          const pat = transpose(sh, q.root, item.rootPc);
+          strum(pat, when);
+          const t = setTimeout(() => {
+            slots.forEach((s) => s.classList.remove("lit"));
+            if (slots[idx]) slots[idx].classList.add("lit");
+          }, when * 1000);
+          timers.push(t);
+          when += gap;
+        });
+        const tEnd = setTimeout(() => {
+          slots.forEach((s) => s.classList.remove("lit"));
+          playing = false;
+          playBtn.textContent = "▶ Play";
+        }, when * 1000);
+        timers.push(tEnd);
+        playBtn._timers = timers;
+        playBtn._stop = () => {
+          timers.forEach(clearTimeout);
+          slots.forEach((s) => s.classList.remove("lit"));
+          playing = false;
+          playBtn.textContent = "▶ Play";
+        };
+      }
+      playBtn.onclick = () => {
+        if (playing) {
+          playBtn._stop && playBtn._stop();
+        } else playProgression();
+      };
+      clearBtn.onclick = () => {
+        if (playing && playBtn._stop) playBtn._stop();
+        state.prog = [];
+        renderProg();
+      };
+
+      /* ---- tabs ---- */
+      const tabV = document.getElementById("tab-voicings");
+      const tabP = document.getElementById("tab-prog");
+      const panV = document.getElementById("panel-voicings");
+      const panP = document.getElementById("panel-prog");
+      function selectTab(which) {
+        const v = which === "v";
+        tabV.setAttribute("aria-selected", v);
+        tabP.setAttribute("aria-selected", !v);
+        panV.hidden = !v;
+        panP.hidden = v;
+      }
+      tabV.onclick = () => selectTab("v");
+      tabP.onclick = () => selectTab("p");
+
+      /* ---- init ---- */
+      buildRootSelector();
+      buildQualSelector();
+      renderVoicings();
+      buildKeySelector();
+      renderDiatonic();
+      renderProg();
+    </script>
+  </body>
+</html>

@@ -31,6 +31,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Harmony",
     links: [
       { to: "/chord-voicings", label: "Chords" },
+      { to: "/math-chords", label: "Math Chords" },
       { to: "/arpeggio-maps", label: "Arpeggios" },
       { to: "/circle-of-fifths", label: "Circle of Fifths" },
     ],

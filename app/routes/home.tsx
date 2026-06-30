@@ -65,6 +65,7 @@ const TOOL_CATEGORIES: Category[] = [
     tag: "Reference",
     tools: [
       { to: "/chord-voicings", title: "Chord Voicings", body: "All 5 CAGED shapes for major, minor, and seventh chords — root, 3rd, 5th, and 7th color-coded across every voicing." },
+      { to: "/math-chords", title: "Math Chords", body: "An extended-voicing lab for math rock: movable maj7, m7, dom7, m7♭5 and nine-chords in any key, plus a progression builder you can hear." },
       { to: "/arpeggio-maps", title: "Arpeggio Maps", body: "Chord-tone positions for the 5 CAGED shapes — exactly where root, 3rd, 5th, and 7th land for each arpeggio." },
       { to: "/circle-of-fifths", title: "Circle of Fifths", body: "An interactive circle with diatonic chords for any key you land on." },
     ],

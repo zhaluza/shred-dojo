@@ -10,6 +10,7 @@ export default [
   route("interval-shapes", "routes/interval-shapes.tsx"),
   route("shape-explorer", "routes/shape-explorer.tsx"),
   route("chord-voicings", "routes/chord-voicings.tsx"),
+  route("math-chords", "routes/math-chords.tsx"),
   route("arpeggio-maps", "routes/arpeggio-maps.tsx"),
   route("circle-of-fifths", "routes/circle-of-fifths.tsx"),
   route("caged-immersion", "routes/caged-immersion.tsx"),

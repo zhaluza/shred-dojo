@@ -68,7 +68,9 @@
       "Bash(npx --yes playwright --version)",
       "Bash(xargs sed -i '' 's|scalePositions\\\\.theme|theme|g')",
       "WebFetch(domain:www.reddit.com)",
-      "Bash(pkill -f \"react-router\")"
+      "Bash(pkill -f \"react-router\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/math-chords)",
+      "Bash(curl -s http://localhost:5173/math-chords)"
     ]
   }
 }
