@@ -274,9 +274,9 @@ function HomePage({
             className="text-[0.8rem] leading-[1.9] text-[var(--muted)] mb-8 [@media(max-height:500px)]:hidden max-w-[460px]"
             style={introStyle(160)}
           >
-            A draftsman's view of the neck. Scales, positions, and vocabulary drawn
-            as one connected map — then metered routines and recall drills to make
-            it second nature.
+            The whole neck as one connected map — scales, positions, and
+            vocabulary in one place. Then metered routines and recall drills to
+            make it second nature.
           </p>
 
           <div className="flex items-center flex-wrap gap-3" style={introStyle(240)}>

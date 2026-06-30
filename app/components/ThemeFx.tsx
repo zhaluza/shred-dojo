@@ -29,11 +29,11 @@ export function ThemeFx() {
             "radial-gradient(120% 70% at 50% -10%, rgba(255,93,143,0.14), rgba(84,224,214,0.05) 38%, transparent 64%)",
         }}
       />
-      {/* CRT scanlines */}
+      {/* CRT scanlines — kept light so they don't band over bright UI surfaces */}
       <div
         className="absolute inset-0"
         style={{
-          opacity: 0.35,
+          opacity: 0.22,
           backgroundImage:
             "repeating-linear-gradient(0deg, rgba(5,4,12,0.5) 0 1px, transparent 1px 3px)",
         }}

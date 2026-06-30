@@ -452,7 +452,7 @@ export function MetronomeWidget() {
             borderBottom: `1px solid ${C.faint}`,
           }}>
             <span style={{
-              fontFamily: "'Saira', sans-serif",
+              fontFamily: "'Space Grotesk', sans-serif",
               fontSize: "0.57rem",
               letterSpacing: "0.18em",
               textTransform: "uppercase",
@@ -521,7 +521,7 @@ export function MetronomeWidget() {
                   if (e.key === "Escape") setEditingBpm(false);
                 }}
                 style={{
-                  fontFamily: "'Saira', sans-serif",
+                  fontFamily: "'Space Grotesk', sans-serif",
                   fontSize: "3.6rem",
                   fontWeight: 600,
                   lineHeight: 1,
@@ -541,7 +541,7 @@ export function MetronomeWidget() {
                 onTouchStart={handleBpmTouchStart}
                 onWheel={handleWheel}
                 style={{
-                  fontFamily: "'Saira', sans-serif",
+                  fontFamily: "'Space Grotesk', sans-serif",
                   fontSize: "3.6rem",
                   fontWeight: 600,
                   lineHeight: 1,
@@ -631,7 +631,7 @@ export function MetronomeWidget() {
                   onMouseLeave={() => setHoveredEl(null)}
                   style={{
                     flex: 1,
-                    fontFamily: "'Saira', sans-serif",
+                    fontFamily: "'Space Grotesk', sans-serif",
                     fontSize: "0.58rem",
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
@@ -658,7 +658,7 @@ export function MetronomeWidget() {
               onMouseLeave={() => setHoveredEl(null)}
               style={{
                 flex: 1,
-                fontFamily: "'Saira', sans-serif",
+                fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
@@ -677,7 +677,7 @@ export function MetronomeWidget() {
               onClick={togglePlay}
               style={{
                 flex: 1,
-                fontFamily: "'Saira', sans-serif",
+                fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
@@ -722,7 +722,7 @@ export function MetronomeWidget() {
                     onMouseEnter={() => setHoveredEl(hk)}
                     onMouseLeave={() => setHoveredEl(null)}
                     style={{
-                      fontFamily: "'Saira', sans-serif",
+                      fontFamily: "'Space Grotesk', sans-serif",
                       fontSize: "0.6rem",
                       letterSpacing: "0.04em",
                       textTransform: "uppercase",
@@ -749,7 +749,7 @@ export function MetronomeWidget() {
         onClick={() => setIsExpanded((x) => !x)}
         title="Metronome"
         style={{
-          fontFamily: "'Saira', sans-serif",
+          fontFamily: "'Space Grotesk', sans-serif",
           fontSize: "0.68rem",
           letterSpacing: "0.1em",
           textTransform: "uppercase",
