@@ -491,9 +491,10 @@ function SubdivisionButtons({
           aria-pressed={subdivision === val}
           className="font-display text-[0.7rem] px-[0.6rem] py-[0.35rem] max-[700px]:min-h-[44px] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
           style={{
-            background: subdivision === val ? "var(--text)" : "transparent",
-            borderColor: subdivision === val ? "var(--text)" : "var(--border)",
+            background: subdivision === val ? "var(--accent)" : "transparent",
+            borderColor: subdivision === val ? "var(--accent)" : "var(--border)",
             color: subdivision === val ? "var(--bg)" : "var(--text)",
+            boxShadow: subdivision === val ? "var(--glow)" : undefined,
           }}
         >
           {label ?? <TripletIcon />}
@@ -522,9 +523,10 @@ function TimeSigButtons({
           aria-pressed={timeSig === t.id}
           className="font-display text-[0.7rem] tabular-nums px-[0.55rem] py-[0.35rem] max-[700px]:min-h-[44px] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
           style={{
-            background: timeSig === t.id ? "var(--text)" : "transparent",
-            borderColor: timeSig === t.id ? "var(--text)" : "var(--border)",
+            background: timeSig === t.id ? "var(--accent)" : "transparent",
+            borderColor: timeSig === t.id ? "var(--accent)" : "var(--border)",
             color: timeSig === t.id ? "var(--bg)" : "var(--text)",
+            boxShadow: timeSig === t.id ? "var(--glow)" : undefined,
           }}
         >
           {t.id}
@@ -585,9 +587,10 @@ function GroupingPanel({
               aria-pressed={on}
               className="font-display text-[0.7rem] tabular-nums px-[0.55rem] py-[0.35rem] max-[700px]:min-h-[44px] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               style={{
-                background: on ? "var(--text)" : "transparent",
-                borderColor: on ? "var(--text)" : "var(--border)",
+                background: on ? "var(--accent)" : "transparent",
+                borderColor: on ? "var(--accent)" : "var(--border)",
                 color: on ? "var(--bg)" : "var(--text)",
+                boxShadow: on ? "var(--glow)" : undefined,
               }}
             >
               {o.groups.join("+")}

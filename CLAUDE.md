@@ -85,6 +85,7 @@ Keep effects restrained and accessible: static (no animation), `prefers-reduced-
 - Active: `bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]` (accent fill) + `boxShadow: var(--glow)` (neon bloom in dark, none in light)
 - Focus (built into `CtrlButton`; apply manually to standalone buttons/links): `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)]`
 - Blues-mode active exception: `bg-[var(--blues-col)] border-[var(--blues-col)] text-white` (keep as standalone `<button>` with focus classes applied directly).
+- Standalone/inline toggles & primary CTAs (where `CtrlButton` isn't used — quiz config rows, the inline metronomes, `Timer` presets, the "Start Quiz" CTAs) must mirror the active treatment: `bg-[var(--accent)] … border-[var(--accent)]` + `boxShadow: var(--glow)` (or the `[box-shadow:var(--glow)]` class). **Never** fill an active/selected control with `--text` ("ink fill") — it reads washed in dark mode. (`--text` fills are reserved for diagram note-dots, not buttons.)
 
 **Mobile / responsive conventions:**
 - Touch targets: buttons add `max-[700px]:py-[0.55rem] max-[700px]:px-[1rem]` (small) or `max-[700px]:py-[0.6rem]` (normal); icon-only/narrow add `max-[700px]:min-h-[44px]`.

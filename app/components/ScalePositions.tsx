@@ -1374,7 +1374,7 @@ export function ScalePositions() {
                   <div className="flex-1 h-px bg-[var(--border)]" />
                   <button
                     onClick={() => handleUnifyToggle(scaletone)}
-                    className="font-display text-[0.55rem] px-[0.6rem] py-[0.15rem] tracking-[0.1em] uppercase border transition-all duration-100 cursor-pointer bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
+                    className="font-display text-[0.55rem] px-[0.6rem] py-[0.15rem] tracking-[0.1em] uppercase border transition-all duration-100 cursor-pointer bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)] [box-shadow:var(--glow)]"
                   >
                     Split
                   </button>

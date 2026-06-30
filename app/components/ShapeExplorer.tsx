@@ -1014,7 +1014,7 @@ export function ShapeExplorer() {
                       className={[
                         "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem] max-[700px]:px-[0.8rem] max-[700px]:py-[0.55rem]",
                         i === safeIdx
-                          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
+                          ? "bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)] [box-shadow:var(--glow)]"
                           : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]",
                       ].join(" ")}
                     >
@@ -1176,7 +1176,7 @@ export function ShapeExplorer() {
               className={[
                 "font-display text-[0.58rem] tracking-[0.1em] uppercase border transition-all duration-150 cursor-pointer px-[0.55rem] py-[0.18rem] max-[700px]:px-[0.8rem] max-[700px]:py-[0.55rem]",
                 i === safeIdx
-                  ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
+                  ? "bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)] [box-shadow:var(--glow)]"
                   : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]",
               ].join(" ")}
             >

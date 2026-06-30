@@ -204,9 +204,10 @@ export function AlphaTabPlayer({ file, loop, onToggleLoop }: AlphaTabPlayerProps
           aria-label={loop ? "Disable loop" : "Enable loop"}
           className="flex items-center gap-1.5 font-display text-[0.58rem] tracking-[0.1em] uppercase border px-2.5 py-1 transition-colors shrink-0"
           style={{
-            backgroundColor: loop ? "var(--text)" : "transparent",
+            backgroundColor: loop ? "var(--accent)" : "transparent",
             color: loop ? "var(--bg)" : "var(--muted)",
-            borderColor: loop ? "var(--text)" : "var(--border)",
+            borderColor: loop ? "var(--accent)" : "var(--border)",
+            boxShadow: loop ? "var(--glow)" : undefined,
           }}
         >
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5">

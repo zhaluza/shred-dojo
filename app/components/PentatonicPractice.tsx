@@ -180,9 +180,10 @@ function MetronomePanel({ met }: { met: ReturnType<typeof useMetronomePanel> }) 
       aria-label={ariaLabel}
       className="font-display text-[0.65rem] px-[0.5rem] py-[0.3rem] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       style={{
-        background: subdivision === val ? "var(--text)" : "transparent",
-        borderColor: subdivision === val ? "var(--text)" : "var(--border)",
+        background: subdivision === val ? "var(--accent)" : "transparent",
+        borderColor: subdivision === val ? "var(--accent)" : "var(--border)",
         color: subdivision === val ? "var(--bg)" : "var(--text)",
+        boxShadow: subdivision === val ? "var(--glow)" : undefined,
       }}
     >
       {label ?? <TripletIcon />}

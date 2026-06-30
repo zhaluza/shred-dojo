@@ -274,9 +274,10 @@ export function Timer({
               onClick={() => setPreset(m)}
               className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] min-w-[34px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               style={{
-                background: on ? "var(--text)" : "transparent",
-                borderColor: on ? "var(--text)" : "var(--border)",
+                background: on ? "var(--accent)" : "transparent",
+                borderColor: on ? "var(--accent)" : "var(--border)",
                 color: on ? "var(--bg)" : "var(--muted)",
+                boxShadow: on ? "var(--glow)" : undefined,
               }}
             >
               {m}m
@@ -294,7 +295,7 @@ export function Timer({
             aria-label="Custom length in minutes"
             className="font-mono text-[0.7rem] border px-2 py-[0.3rem] max-[700px]:py-[0.45rem] w-[3.6rem] text-center bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             style={{
-              borderColor: customMin !== "" && !isPresetActive ? "var(--text)" : "var(--border)",
+              borderColor: customMin !== "" && !isPresetActive ? "var(--accent)" : "var(--border)",
               color: "var(--text)",
             }}
           />

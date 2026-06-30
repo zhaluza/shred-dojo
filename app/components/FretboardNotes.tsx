@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME, STRING_LINE } from "./theme";
 import { Nav } from "./Nav";
 import { PageHeader } from "./PageHeader";
+import { CtrlButton } from "./CtrlButton";
 import type { StringName } from "./scalePositions.types";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
@@ -115,29 +116,6 @@ function playCorrectTone(ctx: AudioContext, string: StringName, fret: number) {
   gain.connect(ctx.destination);
   osc.start(now);
   osc.stop(now + 1.2);
-}
-
-// ─── Chip button ───────────────────────────────────────────────────────────────
-
-function Chip({
-  label, active, onClick, disabled,
-}: {
-  label: string; active: boolean; onClick: () => void; disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={[
-        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
 }
 
 // ─── Fretboard ─────────────────────────────────────────────────────────────────
@@ -499,11 +477,12 @@ export function FretboardNotes() {
               </div>
               <div className="flex gap-[6px] flex-wrap">
                 {(["e", "B", "G", "D", "A", "E"] as StringName[]).map(str => (
-                  <Chip
+                  <CtrlButton
                     key={str}
                     label={STR_DISPLAY[str]}
                     active={settings.strings.includes(str)}
                     onClick={() => toggleString(str)}
+                    small
                   />
                 ))}
               </div>
@@ -519,11 +498,12 @@ export function FretboardNotes() {
               </div>
               <div className="flex gap-[6px] flex-wrap">
                 {(["naturals", "accidentals", "both"] as NoteScope[]).map(s => (
-                  <Chip
+                  <CtrlButton
                     key={s}
                     label={s === "naturals" ? "Naturals" : s === "accidentals" ? "Accidentals" : "Both"}
                     active={settings.scope === s}
                     onClick={() => patchSettings({ scope: s })}
+                    small
                   />
                 ))}
               </div>
@@ -539,11 +519,12 @@ export function FretboardNotes() {
               </div>
               <div className="flex gap-[6px]">
                 {([12, 22] as const).map(mf => (
-                  <Chip
+                  <CtrlButton
                     key={mf}
                     label={`0 – ${mf}`}
                     active={settings.maxFret === mf}
                     onClick={() => patchSettings({ maxFret: mf })}
+                    small
                   />
                 ))}
               </div>
@@ -554,11 +535,12 @@ export function FretboardNotes() {
               <button
                 onClick={start}
                 disabled={pool.length === 0}
-                className="font-display text-[0.75rem] tracking-[0.1em] uppercase border px-6 py-[0.42rem] cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="font-display text-[0.75rem] tracking-[0.1em] uppercase border px-6 py-[0.42rem] max-[700px]:py-[0.6rem] cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
-                  background: "var(--text)",
-                  borderColor: "var(--text)",
+                  background: "var(--accent)",
+                  borderColor: "var(--accent)",
                   color: "var(--bg)",
+                  boxShadow: "var(--glow)",
                 }}
               >
                 Start Quiz

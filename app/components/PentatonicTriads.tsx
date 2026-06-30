@@ -675,7 +675,7 @@ function ShapeCard({
           className={[
             "font-display text-[0.62rem] tracking-[0.1em] uppercase border px-3 py-[0.25rem] max-[700px]:py-[0.55rem] max-[700px]:px-4 transition-all duration-100 cursor-pointer",
             expanded
-              ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
+              ? "bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)] [box-shadow:var(--glow)]"
               : "bg-transparent text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]",
           ].join(" ")}
         >

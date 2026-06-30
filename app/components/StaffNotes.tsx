@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { DARK_THEME, LIGHT_THEME } from "./theme";
 import { Nav } from "./Nav";
 import { PageHeader } from "./PageHeader";
+import { CtrlButton } from "./CtrlButton";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -122,28 +123,6 @@ function playNote(ctx: AudioContext, midi: number) {
   gain.connect(ctx.destination);
   osc.start(now);
   osc.stop(now + 1.2);
-}
-
-// ─── Chip button ───────────────────────────────────────────────────────────────
-
-function Chip({
-  label, active, onClick,
-}: {
-  label: string; active: boolean; onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "font-display text-[0.68rem] tracking-[0.1em] uppercase border px-[0.75rem] py-[0.28rem] max-[700px]:py-[0.55rem] max-[700px]:px-[1rem] cursor-pointer transition-all",
-        active
-          ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
-          : "bg-transparent text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
 }
 
 // ─── Staff display ─────────────────────────────────────────────────────────────
@@ -500,8 +479,8 @@ export function StaffNotes() {
                 Notes
               </div>
               <div className="flex gap-[6px] flex-wrap">
-                <Chip label="Naturals" active={settings.scope === "naturals"} onClick={() => patchSettings({ scope: "naturals" })} />
-                <Chip label="Naturals + Accidentals" active={settings.scope === "both"} onClick={() => patchSettings({ scope: "both" })} />
+                <CtrlButton small label="Naturals" active={settings.scope === "naturals"} onClick={() => patchSettings({ scope: "naturals" })} />
+                <CtrlButton small label="Naturals + Accidentals" active={settings.scope === "both"} onClick={() => patchSettings({ scope: "both" })} />
               </div>
             </div>
 
@@ -511,8 +490,8 @@ export function StaffNotes() {
                 Range
               </div>
               <div className="flex gap-[6px]">
-                <Chip label="C4 – B4" active={settings.range === 1} onClick={() => patchSettings({ range: 1 })} />
-                <Chip label="C4 – B5" active={settings.range === 2} onClick={() => patchSettings({ range: 2 })} />
+                <CtrlButton small label="C4 – B4" active={settings.range === 1} onClick={() => patchSettings({ range: 1 })} />
+                <CtrlButton small label="C4 – B5" active={settings.range === 2} onClick={() => patchSettings({ range: 2 })} />
               </div>
             </div>
 
@@ -522,8 +501,8 @@ export function StaffNotes() {
                 Note Style
               </div>
               <div className="flex gap-[6px]">
-                <Chip label="Standard" active={noteStyle === "standard"} onClick={() => setNoteStyleAndPersist("standard")} />
-                <Chip label="Color" active={noteStyle === "color"} onClick={() => setNoteStyleAndPersist("color")} />
+                <CtrlButton small label="Standard" active={noteStyle === "standard"} onClick={() => setNoteStyleAndPersist("standard")} />
+                <CtrlButton small label="Color" active={noteStyle === "color"} onClick={() => setNoteStyleAndPersist("color")} />
               </div>
             </div>
 
@@ -532,8 +511,8 @@ export function StaffNotes() {
               <button
                 onClick={start}
                 disabled={pool.length === 0}
-                className="font-display text-[0.75rem] tracking-[0.1em] uppercase border px-6 py-[0.42rem] cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: "var(--text)", borderColor: "var(--text)", color: "var(--bg)" }}
+                className="font-display text-[0.75rem] tracking-[0.1em] uppercase border px-6 py-[0.42rem] max-[700px]:py-[0.6rem] cursor-pointer transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: "var(--accent)", borderColor: "var(--accent)", color: "var(--bg)", boxShadow: "var(--glow)" }}
               >
                 Start Quiz
               </button>

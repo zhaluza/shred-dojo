@@ -366,9 +366,10 @@ function MetronomePanel({
       aria-label={ariaLabel}
       className="font-display text-[0.65rem] px-[0.5rem] py-[0.3rem] border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       style={{
-        background: subdivision === val ? "var(--text)" : "transparent",
-        borderColor: subdivision === val ? "var(--text)" : "var(--border)",
+        background: subdivision === val ? "var(--accent)" : "transparent",
+        borderColor: subdivision === val ? "var(--accent)" : "var(--border)",
         color: subdivision === val ? "var(--bg)" : "var(--text)",
+        boxShadow: subdivision === val ? "var(--glow)" : undefined,
       }}
     >
       {label ?? <TripletIcon />}
@@ -389,9 +390,10 @@ function MetronomePanel({
             aria-label={isPlaying ? "Stop metronome" : "Start metronome"}
             className="font-display text-[0.72rem] tracking-[0.08em] uppercase border px-3 py-[0.35rem] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] shrink-0"
             style={{
-              background: isPlaying ? "var(--text)" : "transparent",
-              borderColor: isPlaying ? "var(--text)" : "var(--border)",
+              background: isPlaying ? "var(--accent)" : "transparent",
+              borderColor: isPlaying ? "var(--accent)" : "var(--border)",
               color: isPlaying ? "var(--bg)" : "var(--text)",
+              boxShadow: isPlaying ? "var(--glow)" : undefined,
             }}
           >
             {isPlaying ? "Stop" : "Start"}
@@ -566,9 +568,10 @@ function CSPanel({
               onClick={() => onBulkChange(CS_DRILLS.map(d => d.id), true)}
               className="font-display text-[0.58rem] tracking-[0.1em] uppercase border px-2 py-[3px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
               style={{
-                background: selectedCount === totalCount ? "var(--text)" : "transparent",
-                borderColor: selectedCount === totalCount ? "var(--text)" : "var(--border)",
+                background: selectedCount === totalCount ? "var(--accent)" : "transparent",
+                borderColor: selectedCount === totalCount ? "var(--accent)" : "var(--border)",
                 color: selectedCount === totalCount ? "var(--bg)" : "var(--muted)",
+                boxShadow: selectedCount === totalCount ? "var(--glow)" : undefined,
               }}
             >
               All
@@ -1356,7 +1359,7 @@ export function MorningCoffee() {
                   aria-label={`Key ${k}`}
                   className={`font-display text-[0.6rem] tracking-[0.04em] border rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg)] flex items-center justify-center w-[26px] h-[26px] max-[700px]:w-[34px] max-[700px]:h-[34px] ${
                     ki === keyIdx
-                      ? "bg-[var(--text)] text-[var(--bg)] border-[var(--text)]"
+                      ? "bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)] [box-shadow:var(--glow)]"
                       : "text-[var(--muted)] border-[var(--border)] hover:border-[var(--text)] hover:text-[var(--text)]"
                   }`}
                 >

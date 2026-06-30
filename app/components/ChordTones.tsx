@@ -655,7 +655,7 @@ export function ChordTones() {
               <button
                 onClick={startQuiz}
                 disabled={pool.length === 0}
-                className="font-display text-[0.75rem] tracking-[0.08em] uppercase border px-5 py-2 cursor-pointer transition-all bg-[var(--text)] text-[var(--bg)] border-[var(--text)] hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="font-display text-[0.75rem] tracking-[0.08em] uppercase border px-5 py-2 max-[700px]:py-[0.6rem] cursor-pointer transition-all bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)] [box-shadow:var(--glow)] hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Start Quiz
               </button>
