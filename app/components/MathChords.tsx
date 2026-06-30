@@ -21,11 +21,12 @@ import {
 } from "./mathChords.utils";
 
 // ─── Diagram palette (blueprint functional tokens) ───────────────────────────
-// root → red ink; the 9th (the point of the lab) → cyan accent; other chord
-// tones → hollow ink outlines; muted strings → faint.
+// root → --root-col; the 9th (the point of the lab) → --accent-2 (the secondary
+// accent: aqua in dark, ink-black in light) so it stays distinct from the root;
+// other chord tones → hollow ink outlines; muted strings → faint.
 function dotStyle(iv: number): { fill: string; stroke: string; text: string } {
   if (iv === 0) return { fill: "var(--root-col)", stroke: "var(--root-col)", text: "#fff" };
-  if (iv === 2) return { fill: "var(--accent)", stroke: "var(--accent)", text: "var(--bg)" };
+  if (iv === 2) return { fill: "var(--accent-2)", stroke: "var(--accent-2)", text: "var(--bg)" };
   return { fill: "transparent", stroke: "var(--text)", text: "var(--text)" };
 }
 
@@ -277,9 +278,9 @@ export function MathChords() {
         subtitle={
           <>
             Movable maj7, m7, dom7, m7♭5 and the nine-chords — every shape
-            transposes to any root, with the extension highlighted in{" "}
-            <span className="text-[var(--accent)]">cyan</span>. Tap any diagram to
-            hear it.
+            transposes to any root, with the{" "}
+            <span className="text-[var(--accent-2)]">9th extension</span>{" "}
+            highlighted. Tap any diagram to hear it.
           </>
         }
         meta={[{ label: "Feel", value: "7/8" }]}
@@ -473,7 +474,7 @@ export function MathChords() {
       )}
 
       <p className="mt-8 border-t border-[var(--border)] pt-4 font-mono text-[0.62rem] leading-[1.8] text-[var(--faint)]">
-        <span className="text-[var(--muted)] font-bold">Reading:</span> ◯ outline = chord tone · ● red = root · ● cyan = 9th · ✕ = muted string. Degree printed in each node.<br />
+        <span className="text-[var(--muted)] font-bold">Reading:</span> ◯ outline = chord tone · ● root · ● 9th (the highlighted extension) · ✕ = muted string. Degree printed in each node.<br />
         <span className="text-[var(--muted)] font-bold">Heads up:</span> fret positions are exact; fingerings from the source sheet were hand-drawn, so those are a sensible guess.
       </p>
     </PageShell>

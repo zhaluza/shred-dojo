@@ -61,8 +61,8 @@ const ANSWER_DEGREES: Record<ScaleType, { all: string[]; chord_tones: string[] }
 
 const FULL_DEG_COLOR: Record<string, string> = {
   ...DEG_COLOR,
-  b6: "#7a5030",
-  "7": "#c07040",
+  b6: "#946038",
+  "7": "#cf824c",
 };
 
 const DEG_NAMES: Record<string, string> = {

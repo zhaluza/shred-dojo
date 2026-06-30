@@ -11,6 +11,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { MetronomeWidget } from "./components/MetronomeWidget";
+import { ThemeFx } from "./components/ThemeFx";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
@@ -57,6 +58,7 @@ export default function App() {
   return (
     <>
       <Outlet />
+      <ThemeFx />
       {pathname !== "/morning-coffee" &&
         pathname !== "/pentatonic-practice" &&
         pathname !== "/metronome" && <MetronomeWidget />}

@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>two figures · a day</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        background: #07060d;
+        overflow: hidden;
+      }
+      body {
+        font-family:
+          ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        -webkit-font-smoothing: none;
+        touch-action: none;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+      }
+      #screen {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+
+      /* --- title overlay (doansai-style minimal) --- */
+      #title {
+        position: absolute;
+        left: 50%;
+        top: 42%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+        transition: opacity 1.2s ease;
+        user-select: none;
+      }
+      #title h1 {
+        font-size: clamp(18px, 4.4vw, 40px);
+        font-weight: 700;
+        letter-spacing: 0.42em;
+        color: rgba(255, 255, 255, 0.86);
+        text-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
+        padding-left: 0.42em; /* optically center the tracked text */
+      }
+      #title .tag {
+        margin-top: 10px;
+        display: inline-block;
+        font-size: clamp(9px, 1.6vw, 12px);
+        letter-spacing: 0.12em;
+        color: #1c1830;
+        background: rgba(255, 255, 255, 0.82);
+        padding: 4px 9px;
+        border-radius: 3px;
+      }
+      #title .enter {
+        margin-top: 14px;
+        display: block;
+      }
+      #title .enter button {
+        pointer-events: auto;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        color: #e9e6ff;
+        background: #15131f;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 7px 20px;
+        border-radius: 4px;
+        transition:
+          background 0.2s,
+          transform 0.2s;
+      }
+      #title .enter button:hover {
+        background: #211d33;
+        transform: translateY(-1px);
+      }
+      #title .enter button:active {
+        transform: translateY(0);
+      }
+      body.entered #title {
+        opacity: 0;
+      }
+
+      /* --- control panel --- */
+      #panel {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(10, 9, 18, 0.62);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 8px;
+        padding: 10px 12px 12px;
+        color: #cfcae6;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        width: 196px;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        user-select: none;
+        z-index: 5;
+      }
+      body.entered #panel {
+        opacity: 1;
+      }
+      #panel:hover {
+        opacity: 1 !important;
+      }
+      #panel h2 {
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #8d86ad;
+        margin-bottom: 9px;
+        font-weight: 600;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 7px 0;
+        gap: 8px;
+      }
+      .row label {
+        flex: 1;
+        cursor: pointer;
+      }
+      .row .val {
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+        min-width: 38px;
+        text-align: right;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.16);
+        border-radius: 2px;
+        outline: none;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #efe9ff;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(239, 233, 255, 0.6);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border: none;
+        border-radius: 50%;
+        background: #efe9ff;
+        cursor: pointer;
+      }
+      .seg {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .seg button,
+      .toggle {
+        font-family: inherit;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        color: #b8b2d6;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        padding: 4px 7px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .seg button.on,
+      .toggle.on {
+        color: #15131f;
+        background: #cfc7f0;
+        border-color: #cfc7f0;
+      }
+      .toggles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+      }
+      .hint {
+        margin-top: 10px;
+        font-size: 9px;
+        color: #6f698c;
+        line-height: 1.5;
+        letter-spacing: 0;
+      }
+      #gear {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 6;
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        background: rgba(10, 9, 18, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #cfcae6;
+        font-size: 15px;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      body.entered #gear {
+        display: flex;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #title {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="screen"></canvas>
+    </div>
+
+    <div id="title">
+      <h1>NOCTILUCA</h1>
+      <span class="tag">two figures, one slow rotation</span>
+      <span class="enter"><button id="enterBtn">Enter</button></span>
+    </div>
+
+    <button id="gear" title="controls">⚙</button>
+
+    <div id="panel">
+      <h2>scene</h2>
+      <div class="row">
+        <label for="timeR">time of day</label>
+        <span class="val" id="timeV">—</span>
+      </div>
+      <input type="range" id="timeR" min="0" max="1000" value="740" />
+      <div class="row" style="margin-top: 10px">
+        <label>flow</label>
+        <div class="seg" id="flowSeg">
+          <button data-flow="0">hold</button>
+          <button data-flow="1" class="on">drift</button>
+          <button data-flow="2">fast</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 10px">
+        <label>palette</label>
+      </div>
+      <div class="seg" id="palSeg">
+        <button data-pal="dusk" class="on">dusk</button>
+        <button data-pal="cold">cold dawn</button>
+        <button data-pal="vapor">vapor</button>
+      </div>
+      <div class="row" style="margin-top: 10px"><label>retro fx</label></div>
+      <div class="toggles" id="fxRow">
+        <button class="toggle on" data-fx="dither">dither</button>
+        <button class="toggle on" data-fx="scan">scanlines</button>
+        <button class="toggle on" data-fx="grain">grain</button>
+        <button class="toggle on" data-fx="aberr">aberration</button>
+        <button class="toggle on" data-fx="vig">vignette</button>
+      </div>
+      <div class="row" style="margin-top: 10px">
+        <label>ambient pad</label>
+        <button class="toggle" id="audioBtn">off</button>
+      </div>
+      <div class="hint">
+        Drag the time slider to scrub the day. The pad is generated live in the
+        browser — no audio files.
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      (function () {
+        // ---------------------------------------------------------------------------
+        // canvases: low-res offscreen buffer -> upscaled (nearest neighbour) display
+        // ---------------------------------------------------------------------------
+        const screen = document.getElementById("screen");
+        const sctx = screen.getContext("2d");
+        sctx.imageSmoothingEnabled = false;
+
+        const buf = document.createElement("canvas");
+        const bctx = buf.getContext("2d", { willReadFrequently: true });
+
+        let BW = 0,
+          BH = 0; // buffer (low-res) dimensions
+        const TARGET_H = 224; // chunky-but-legible vertical resolution
+
+        function resize() {
+          const w = window.innerWidth,
+            h = window.innerHeight;
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          screen.width = Math.round(w * dpr);
+          screen.height = Math.round(h * dpr);
+          screen.style.width = w + "px";
+          screen.style.height = h + "px";
+          sctx.imageSmoothingEnabled = false;
+
+          BH = TARGET_H;
+          BW = Math.round(TARGET_H * (w / h));
+          BW = Math.max(160, Math.min(640, BW));
+          buf.width = BW;
+          buf.height = BH;
+          bctx.imageSmoothingEnabled = false;
+          stars = makeStars();
+          clouds = makeClouds();
+        }
+        window.addEventListener("resize", resize);
+
+        // ---------------------------------------------------------------------------
+        // colour helpers
+        // ---------------------------------------------------------------------------
+        function hex(h) {
+          const n = parseInt(h.slice(1), 16);
+          return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+        }
+        function lerp(a, b, t) {
+          return a + (b - a) * t;
+        }
+        function mix(c1, c2, t) {
+          return [
+            lerp(c1[0], c2[0], t),
+            lerp(c1[1], c2[1], t),
+            lerp(c1[2], c2[2], t),
+          ];
+        }
+        function clamp(x, a, b) {
+          return x < a ? a : x > b ? b : x;
+        }
+        function smooth(t) {
+          return t * t * (3 - 2 * t);
+        }
+
+        // sky keyframes per palette: [phase, topHex, midHex, horizonHex]
+        const PALETTES = {
+          dusk: [
+            [0.0, "#0a0820", "#171036", "#241a3e"],
+            [0.2, "#241a52", "#5b3b78", "#9a5170"],
+            [0.27, "#3a2a78", "#b65a78", "#f0a85a"],
+            [0.34, "#6f8fc4", "#f3c98a", "#fff2cf"],
+            [0.5, "#5f9ad4", "#a9d6e6", "#e7f4f4"],
+            [0.66, "#6f8fc4", "#f0cf9a", "#fbe6c0"],
+            [0.74, "#4a3a8e", "#e6664c", "#f4a85f"],
+            [0.81, "#2c1c66", "#a93a6a", "#e8744f"],
+            [0.9, "#181048", "#451456", "#67244a"],
+            [1.0, "#0a0820", "#171036", "#241a3e"],
+          ],
+          cold: [
+            [0.0, "#060914", "#101a30", "#1a2740"],
+            [0.22, "#16263f", "#3a5170", "#7a8fae"],
+            [0.3, "#3a5e86", "#9fc0d8", "#dcefff"],
+            [0.5, "#5a8fbf", "#bcd9ea", "#eef8ff"],
+            [0.7, "#3a5e86", "#9fb6d0", "#cfe0f0"],
+            [0.8, "#1d2c52", "#54618f", "#9a7fae"],
+            [0.9, "#0e1430", "#241a48", "#3a2452"],
+            [1.0, "#060914", "#101a30", "#1a2740"],
+          ],
+          vapor: [
+            [0.0, "#0d0426", "#2a0b46", "#46105e"],
+            [0.25, "#2a0b5e", "#7a1d8e", "#c23a86"],
+            [0.34, "#5a2a9e", "#d44a9a", "#ff9ec4"],
+            [0.5, "#3a6ad0", "#7ad4e6", "#c0f0ff"],
+            [0.66, "#5a2a9e", "#d44a9a", "#ffaad0"],
+            [0.78, "#3a0b6e", "#a01d8e", "#ff5a96"],
+            [0.9, "#160440", "#3a0b5e", "#5e105e"],
+            [1.0, "#0d0426", "#2a0b46", "#46105e"],
+          ],
+        };
+
+        function skyAt(frames, t) {
+          // t in [0,1); find surrounding keyframes (wrapping)
+          let a = frames[0],
+            b = frames[frames.length - 1];
+          for (let i = 0; i < frames.length - 1; i++) {
+            if (t >= frames[i][0] && t < frames[i + 1][0]) {
+              a = frames[i];
+              b = frames[i + 1];
+              break;
+            }
+          }
+          const span = b[0] - a[0] || 1;
+          const k = smooth(clamp((t - a[0]) / span, 0, 1));
+          return {
+            top: mix(hex(a[1]), hex(b[1]), k),
+            mid: mix(hex(a[2]), hex(b[2]), k),
+            hor: mix(hex(a[3]), hex(b[3]), k),
+          };
+        }
+
+        // ---------------------------------------------------------------------------
+        // procedural scene elements
+        // ---------------------------------------------------------------------------
+        let stars = [],
+          clouds = [];
+        function rng(seed) {
+          let s = seed >>> 0;
+          return () => {
+            s = (s * 1664525 + 1013904223) >>> 0;
+            return s / 4294967296;
+          };
+        }
+
+        function makeStars() {
+          const r = rng(20260628),
+            arr = [];
+          const n = Math.round((BW * BH) / 520);
+          for (let i = 0; i < n; i++) {
+            arr.push({
+              x: Math.floor(r() * BW),
+              y: Math.floor(r() * BH * 0.7),
+              b: 0.4 + r() * 0.6,
+              tw: r() * Math.PI * 2,
+              sp: 0.6 + r() * 1.8,
+            });
+          }
+          return arr;
+        }
+        function makeClouds() {
+          const r = rng(7777),
+            arr = [];
+          const n = 6;
+          for (let i = 0; i < n; i++) {
+            arr.push({
+              x: r(),
+              y: 0.12 + r() * 0.42,
+              w: 0.18 + r() * 0.3,
+              h: 0.012 + r() * 0.02,
+              sp: 0.004 + r() * 0.012,
+              a: 0.1 + r() * 0.16,
+            });
+          }
+          return arr;
+        }
+
+        // pixel figure: a small seated silhouette. variant 0/1 differ slightly.
+        function drawFigure(ctx, px, py, variant, bob) {
+          ctx.save();
+          ctx.translate(Math.round(px), Math.round(py + bob));
+          ctx.fillStyle = "#000";
+          // legs/base
+          ctx.fillRect(-4, 0, 9, 2);
+          // body (lean inward for variant 1)
+          const lean = variant ? 1 : 0;
+          ctx.fillRect(-3 + lean, -7, 6, 7);
+          ctx.fillRect(-3 + lean, -8, 6, 1);
+          // shoulders
+          ctx.fillRect(-4 + lean, -6, 8, 3);
+          // head
+          ctx.fillRect(-2 + lean, -12, 4, 4);
+          // a stray hair pixel / antenna of mood
+          ctx.fillRect(-2 + lean, -13, 1, 1);
+          ctx.restore();
+        }
+
+        // ---------------------------------------------------------------------------
+        // post-processing: ordered dither + scanlines + grain + vignette + aberration
+        // ---------------------------------------------------------------------------
+        const BAYER = [
+          0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5,
+        ].map((v) => v / 16 - 0.5);
+        let grainSeed = 1;
+        function post(img, fx) {
+          const d = img.data,
+            W = BW,
+            H = BH;
+          const levels = 26; // posterisation depth
+          const step = 255 / (levels - 1);
+          grainSeed = (grainSeed * 16807) % 2147483647;
+          let g = grainSeed;
+          const src = fx.aberr ? new Uint8ClampedArray(d) : null; // channel-split source
+          for (let y = 0; y < H; y++) {
+            const scan = fx.scan ? (y % 2 === 0 ? 0 : -16) : 0;
+            for (let x = 0; x < W; x++) {
+              const i = (y * W + x) * 4;
+              let r, gg, b;
+              if (fx.aberr) {
+                const xl = x > 0 ? x - 1 : 0,
+                  xr = x < W - 1 ? x + 1 : W - 1;
+                r = src[(y * W + xl) * 4]; // red sampled 1px left
+                gg = src[i + 1];
+                b = src[(y * W + xr) * 4 + 2]; // blue sampled 1px right
+              } else {
+                r = d[i];
+                gg = d[i + 1];
+                b = d[i + 2];
+              }
+              if (fx.dither) {
+                const dd = BAYER[(y & 3) * 4 + (x & 3)] * step;
+                r = Math.round((r + dd) / step) * step;
+                gg = Math.round((gg + dd) / step) * step;
+                b = Math.round((b + dd) / step) * step;
+              }
+              if (scan) {
+                r += scan;
+                gg += scan;
+                b += scan;
+              }
+              if (fx.grain) {
+                g = (g * 1103515245 + 12345) & 0x7fffffff;
+                const n = ((g >> 16) & 63) - 31;
+                r += n * 0.5;
+                gg += n * 0.5;
+                b += n * 0.5;
+              }
+              d[i] = r < 0 ? 0 : r > 255 ? 255 : r;
+              d[i + 1] = gg < 0 ? 0 : gg > 255 ? 255 : gg;
+              d[i + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
+            }
+          }
+          return img;
+        }
+
+        // ---------------------------------------------------------------------------
+        // main render
+        // ---------------------------------------------------------------------------
+        const state = {
+          t: 0.74, // normalised time of day [0,1)
+          flow: 1, // 0 hold, 1 drift, 2 fast
+          pal: "dusk",
+          fx: {
+            dither: true,
+            scan: true,
+            grain: true,
+            aberr: true,
+            vig: true,
+          },
+        };
+        const FLOW = [0, 1 / 240, 1 / 70]; // phase per second
+
+        let last = performance.now();
+        let breathe = 0;
+
+        function frame(now) {
+          const dt = Math.min(0.05, (now - last) / 1000);
+          last = now;
+          state.t = (state.t + FLOW[state.flow] * dt) % 1;
+          if (state.t < 0) state.t += 1;
+          breathe += dt;
+
+          render();
+          requestAnimationFrame(frame);
+        }
+
+        function render() {
+          const W = BW,
+            H = BH,
+            t = state.t;
+          const sky = skyAt(PALETTES[state.pal], t);
+          const horizonY = Math.round(H * 0.62);
+
+          // --- sky gradient ---
+          const grad = bctx.createLinearGradient(0, 0, 0, horizonY);
+          grad.addColorStop(0, `rgb(${sky.top.map(Math.round).join(",")})`);
+          grad.addColorStop(0.62, `rgb(${sky.mid.map(Math.round).join(",")})`);
+          grad.addColorStop(1, `rgb(${sky.hor.map(Math.round).join(",")})`);
+          bctx.fillStyle = grad;
+          bctx.fillRect(0, 0, W, horizonY);
+
+          // night factor (0 day .. 1 deep night) for stars & lamp
+          const dayLight = clamp(
+            Math.sin((t - 0.22) * Math.PI * 2) * 0.5 + 0.5,
+            0,
+            1,
+          ); // ~1 midday, ~0 midnight
+          const night = clamp(1 - dayLight * 1.5, 0, 1);
+
+          // --- stars ---
+          if (night > 0.01) {
+            for (const s of stars) {
+              const tw = Math.sin(breathe * s.sp + s.tw) * 0.5 + 0.5;
+              const a = night * s.b * (0.35 + 0.65 * tw);
+              if (a <= 0.02) continue;
+              bctx.fillStyle = `rgba(255,255,255,${a})`;
+              bctx.fillRect(s.x, s.y, 1, 1);
+            }
+          }
+
+          // --- clouds (soft dithered bands) ---
+          for (const c of clouds) {
+            c.x = (c.x + c.sp * 0.0016) % 1.2;
+            const cx = (c.x - 0.1) * W,
+              cy = c.y * H,
+              cw = c.w * W,
+              ch = Math.max(2, c.h * H);
+            const cg = bctx.createLinearGradient(0, cy - ch, 0, cy + ch);
+            const tint = mix(sky.mid, [255, 255, 255], 0.3).map(Math.round);
+            cg.addColorStop(0, `rgba(${tint.join(",")},0)`);
+            cg.addColorStop(0.5, `rgba(${tint.join(",")},${c.a})`);
+            cg.addColorStop(1, `rgba(${tint.join(",")},0)`);
+            bctx.fillStyle = cg;
+            bctx.beginPath();
+            bctx.ellipse(cx, cy, cw, ch, 0, 0, Math.PI * 2);
+            bctx.fill();
+          }
+
+          // --- celestial body: sun arcs above horizon, moon below->cool ---
+          // angle: t maps so 0.25 = rise(east/left), 0.5 noon top, 0.75 set(west/right)
+          const ang = (t - 0.25) * Math.PI * 2; // 0 at sunrise
+          const cxp = W * 0.5 - Math.cos(ang) * W * 0.42;
+          const arc = Math.sin(ang);
+          const cyp = horizonY - arc * (H * 0.5);
+          const isSun = arc > -0.06;
+          const bodyR = Math.round(H * 0.055);
+          const pulse = 1 + Math.sin(breathe * 0.6) * 0.04;
+
+          // glow halo
+          const glowR = bodyR * (isSun ? 7 : 4.2) * pulse;
+          const gcol = isSun ? sky.hor : [200, 210, 255];
+          const halo = bctx.createRadialGradient(cxp, cyp, 0, cxp, cyp, glowR);
+          halo.addColorStop(
+            0,
+            `rgba(${gcol.map(Math.round).join(",")},${isSun ? 0.5 : 0.22})`,
+          );
+          halo.addColorStop(1, `rgba(${gcol.map(Math.round).join(",")},0)`);
+          bctx.fillStyle = halo;
+          bctx.fillRect(0, 0, W, horizonY + bodyR);
+
+          // disc (square-ish pixel circle)
+          bctx.fillStyle = isSun
+            ? `rgb(${mix([255, 250, 230], sky.hor, 0.25).map(Math.round).join(",")})`
+            : `rgb(225,228,240)`;
+          pixelDisc(bctx, cxp, cyp, bodyR);
+          if (!isSun) {
+            // a couple of craters
+            bctx.fillStyle = "rgba(150,155,175,0.6)";
+            pixelDisc(
+              bctx,
+              cxp - bodyR * 0.3,
+              cyp - bodyR * 0.2,
+              Math.max(1, bodyR * 0.22),
+            );
+            pixelDisc(
+              bctx,
+              cxp + bodyR * 0.35,
+              cyp + bodyR * 0.3,
+              Math.max(1, bodyR * 0.16),
+            );
+          }
+
+          // --- distant hills (atmospheric haze layers) ---
+          drawRidge(
+            bctx,
+            horizonY,
+            H * 0.1,
+            0.45,
+            mix(sky.hor, sky.top, 0.35),
+            0.55,
+            3,
+            t * 30,
+          );
+          drawRidge(
+            bctx,
+            horizonY,
+            H * 0.16,
+            0.62,
+            mix(sky.hor, sky.top, 0.55),
+            0.8,
+            5,
+            t * 30 + 50,
+          );
+
+          // --- the planet curve / ground the figures sit on ---
+          const groundCol = mix([8, 7, 16], sky.top, 0.18 * night).map(
+            Math.round,
+          );
+          // big gentle arc (tiny-planet nod to the reference)
+          const arcR = W * 1.5;
+          const arcCx = W * 0.5;
+          const arcCy = horizonY + arcR - H * 0.1;
+          bctx.fillStyle = `rgb(${groundCol.join(",")})`;
+          bctx.beginPath();
+          bctx.moveTo(0, H);
+          bctx.lineTo(0, horizonY);
+          bctx.arc(
+            arcCx,
+            arcCy,
+            arcR,
+            Math.PI * 1.5 - 0.5,
+            Math.PI * 1.5 + 0.5,
+          );
+          bctx.lineTo(W, H);
+          bctx.closePath();
+          bctx.fill();
+          // ground top y at centre
+          const gTop = arcCy - arcR;
+
+          // rim light on the horizon edge of the planet
+          bctx.fillStyle = `rgba(${sky.hor.map(Math.round).join(",")},${0.5})`;
+          bctx.beginPath();
+          bctx.arc(
+            arcCx,
+            arcCy,
+            arcR,
+            Math.PI * 1.5 - 0.5,
+            Math.PI * 1.5 + 0.5,
+          );
+          bctx.lineWidth = 1;
+          bctx.strokeStyle = `rgba(${mix(sky.hor, [255, 255, 255], 0.3).map(Math.round).join(",")},0.4)`;
+          bctx.stroke();
+
+          // --- streetlamp (reference easter egg), to the right ---
+          const lampX = Math.round(W * 0.72),
+            lampBaseY = Math.round(
+              gTop + (groundYAt(lampX, arcCx, arcCy, arcR) - gTop),
+            );
+          const lampGroundY = groundYAt(lampX, arcCx, arcCy, arcR);
+          const lampTop = lampGroundY - Math.round(H * 0.16);
+          bctx.fillStyle = "#000";
+          bctx.fillRect(lampX, lampTop, 1, lampGroundY - lampTop); // pole
+          bctx.fillRect(lampX - 3, lampTop, 7, 2); // head bar
+          bctx.fillRect(lampX - 2, lampTop + 2, 5, 1);
+          if (night > 0.05) {
+            const lr = bctx.createRadialGradient(
+              lampX + 1,
+              lampTop + 2,
+              0,
+              lampX + 1,
+              lampTop + 2,
+              H * 0.12,
+            );
+            lr.addColorStop(0, `rgba(255,214,150,${0.55 * night})`);
+            lr.addColorStop(1, "rgba(255,214,150,0)");
+            bctx.fillStyle = lr;
+            bctx.fillRect(0, 0, W, H);
+          }
+
+          // --- the two figures, centre-left, watching ---
+          const fX = W * 0.44;
+          const fG = groundYAt(fX, arcCx, arcCy, arcR);
+          const bob1 = Math.sin(breathe * 0.9) * 0.6;
+          const bob2 = Math.sin(breathe * 0.9 + 1.1) * 0.6;
+          drawFigure(bctx, fX - 5, fG, 0, bob1);
+          drawFigure(bctx, fX + 5, fG, 1, bob2);
+
+          // tiny ground texture pixels near them
+          bctx.fillStyle = "rgba(255,255,255,0.04)";
+          for (let i = 0; i < 14; i++) {
+            const gx = Math.round(fX - 30 + ((i * 5) % 60));
+            bctx.fillRect(gx, groundYAt(gx, arcCx, arcCy, arcR) + 1, 1, 1);
+          }
+
+          // --- present buffer with post fx + aberration + vignette ---
+          let img = bctx.getImageData(0, 0, W, H);
+          post(img, state.fx);
+          bctx.putImageData(img, 0, 0);
+
+          // blit to screen (cover, nearest neighbour)
+          const sw = screen.width,
+            sh = screen.height;
+          const scale = Math.max(sw / W, sh / H);
+          const dw = Math.ceil(W * scale),
+            dh = Math.ceil(H * scale);
+          const ox = (sw - dw) / 2,
+            oy = (sh - dh) / 2;
+          sctx.clearRect(0, 0, sw, sh);
+          sctx.drawImage(buf, ox, oy, dw, dh);
+
+          // vignette (drawn on display canvas, looks smoother than per-pixel)
+          if (state.fx.vig) {
+            const vg = sctx.createRadialGradient(
+              sw / 2,
+              sh / 2,
+              sh * 0.2,
+              sw / 2,
+              sh / 2,
+              sh * 0.75,
+            );
+            vg.addColorStop(0, "rgba(0,0,0,0)");
+            vg.addColorStop(1, "rgba(0,0,0,0.45)");
+            sctx.fillStyle = vg;
+            sctx.fillRect(0, 0, sw, sh);
+          }
+
+          updateClock(t);
+        }
+
+        function pixelDisc(ctx, cx, cy, r) {
+          cx = Math.round(cx);
+          cy = Math.round(cy);
+          r = Math.round(r);
+          for (let y = -r; y <= r; y++) {
+            const w = Math.floor(Math.sqrt(r * r - y * y));
+            ctx.fillRect(cx - w, cy + y, w * 2 + 1, 1);
+          }
+        }
+        function groundYAt(x, cx, cy, r) {
+          const dx = x - cx;
+          return Math.round(cy - Math.sqrt(Math.max(0, r * r - dx * dx)));
+        }
+        function drawRidge(ctx, baseY, amp, yoff, col, alpha, seed, phase) {
+          ctx.fillStyle = `rgba(${col.map(Math.round).join(",")},${alpha})`;
+          ctx.beginPath();
+          ctx.moveTo(0, BH);
+          const top = baseY - amp - yoff * amp;
+          for (let x = 0; x <= BW; x += 2) {
+            const y =
+              top +
+              Math.sin(x * 0.018 + seed) * amp * 0.4 +
+              Math.sin(x * 0.006 + seed * 2) * amp * 0.5;
+            ctx.lineTo(x, y);
+          }
+          ctx.lineTo(BW, BH);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // ---------------------------------------------------------------------------
+        // clock label
+        // ---------------------------------------------------------------------------
+        const timeV = document.getElementById("timeV");
+        function updateClock(t) {
+          // map phase to a 24h clock where 0.25 = 06:00 (sunrise)
+          let hh = (t * 24 + 0) % 24;
+          const h = Math.floor(hh),
+            m = Math.floor((hh - h) * 60);
+          timeV.textContent =
+            String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+        }
+
+        // ---------------------------------------------------------------------------
+        // controls
+        // ---------------------------------------------------------------------------
+        const timeR = document.getElementById("timeR");
+        timeR.addEventListener("input", (e) => {
+          state.t = e.target.value / 1000;
+          if (state.flow === 0) render();
+        });
+        // keep slider synced when flowing
+        setInterval(() => {
+          if (state.flow > 0) timeR.value = Math.round(state.t * 1000);
+        }, 200);
+
+        document.getElementById("flowSeg").addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (!b) return;
+          state.flow = +b.dataset.flow;
+          [...e.currentTarget.children].forEach((c) =>
+            c.classList.toggle("on", c === b),
+          );
+        });
+        document.getElementById("palSeg").addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (!b) return;
+          state.pal = b.dataset.pal;
+          [...e.currentTarget.children].forEach((c) =>
+            c.classList.toggle("on", c === b),
+          );
+        });
+        document.getElementById("fxRow").addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (!b) return;
+          const k = b.dataset.fx;
+          state.fx[k] = !state.fx[k];
+          b.classList.toggle("on", state.fx[k]);
+        });
+
+        // gear toggles panel on small screens
+        const panel = document.getElementById("panel");
+        document.getElementById("gear").addEventListener("click", () => {
+          panel.style.opacity = panel.style.opacity === "1" ? "0" : "1";
+        });
+
+        // enter
+        document.getElementById("enterBtn").addEventListener("click", () => {
+          document.body.classList.add("entered");
+        });
+
+        // ---------------------------------------------------------------------------
+        // generative ambient pad (Web Audio) — shoegaze-ish slow chords
+        // ---------------------------------------------------------------------------
+        let audio = null,
+          audioOn = false;
+        const audioBtn = document.getElementById("audioBtn");
+        function startAudio() {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AC();
+          const master = ctx.createGain();
+          master.gain.value = 0.0;
+          master.connect(ctx.destination);
+          const swell = ctx.createGain();
+          swell.gain.value = 0.14;
+          swell.connect(master);
+          const lp = ctx.createBiquadFilter();
+          lp.type = "lowpass";
+          lp.frequency.value = 900;
+          lp.Q.value = 0.6;
+          lp.connect(swell);
+          // simple feedback delay for space
+          const dl = ctx.createDelay();
+          dl.delayTime.value = 0.38;
+          const fb = ctx.createGain();
+          fb.gain.value = 0.34;
+          dl.connect(fb);
+          fb.connect(dl);
+          dl.connect(swell);
+
+          // chord set (Hz), dreamy maj7/add9 voicings, low + airy
+          const chords = [
+            [146.83, 220.0, 277.18, 329.63], // Dadd-ish
+            [123.47, 185.0, 246.94, 293.66], // B-ish
+            [164.81, 246.94, 311.13, 392.0], // E-ish
+            [110.0, 164.81, 220.0, 277.18], // A-ish
+          ];
+          const voices = [];
+          for (let i = 0; i < 4; i++) {
+            const o1 = ctx.createOscillator();
+            o1.type = "triangle";
+            const o2 = ctx.createOscillator();
+            o2.type = "sine";
+            const g = ctx.createGain();
+            g.gain.value = 0.25;
+            o1.connect(g);
+            o2.connect(g);
+            g.connect(lp);
+            g.connect(dl);
+            o1.start();
+            o2.start();
+            voices.push({ o1, o2, g });
+          }
+          // slow tremolo on master via LFO
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = 0.06;
+          const lfoG = ctx.createGain();
+          lfoG.gain.value = 0.05;
+          lfo.connect(lfoG);
+          lfoG.connect(swell.gain);
+          lfo.start();
+
+          let ci = 0;
+          function setChord() {
+            const c = chords[ci % chords.length];
+            ci++;
+            const tnow = ctx.currentTime;
+            voices.forEach((v, idx) => {
+              const f = c[idx];
+              v.o1.frequency.setTargetAtTime(f, tnow, 1.2);
+              v.o2.frequency.setTargetAtTime(f * 1.005, tnow, 1.2); // gentle detune chorus
+            });
+          }
+          setChord();
+          const chordTimer = setInterval(setChord, 8200);
+          master.gain.setTargetAtTime(0.9, ctx.currentTime, 3.0); // fade in
+          audio = { ctx, master, chordTimer };
+        }
+        audioBtn.addEventListener("click", () => {
+          if (!audioOn) {
+            if (!audio) startAudio();
+            else
+              audio.master.gain.setTargetAtTime(
+                0.9,
+                audio.ctx.currentTime,
+                1.5,
+              );
+            if (audio.ctx.state === "suspended") audio.ctx.resume();
+            audioOn = true;
+            audioBtn.textContent = "on";
+            audioBtn.classList.add("on");
+          } else {
+            audio.master.gain.setTargetAtTime(0.0, audio.ctx.currentTime, 1.2);
+            audioOn = false;
+            audioBtn.textContent = "off";
+            audioBtn.classList.remove("on");
+          }
+        });
+
+        // ---------------------------------------------------------------------------
+        // boot
+        // ---------------------------------------------------------------------------
+        resize();
+        requestAnimationFrame(frame);
+      })();
+    </script>
+  </body>
+</html>

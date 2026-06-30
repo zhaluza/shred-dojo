@@ -47,7 +47,11 @@ export function PageHeader({
               </span>
             </div>
           )}
-          <h1 className="font-display font-semibold uppercase tracking-[0.03em] leading-none m-0 text-[clamp(1.7rem,4vw,2.6rem)]">
+          <h1
+            className="font-display font-semibold uppercase tracking-[0.03em] leading-none m-0 text-[clamp(1.7rem,4vw,2.6rem)]"
+            // --text-glow blooms the title in dark ("Dusk"), resolves to none in light.
+            style={{ textShadow: "var(--text-glow)" }}
+          >
             {title}
           </h1>
           {subtitle && (

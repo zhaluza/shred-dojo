@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useStoredDarkMode } from "./useStoredDarkMode";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -47,12 +48,12 @@ function scheduleClick(
 // App root, outside any page's themed div, so CSS variables don't resolve here.
 function getColors(isDark: boolean) {
   return {
-    bg:     isDark ? "#161d22" : "#e4eaec",
-    border: isDark ? "#2a363d" : "#c2ccd1",
-    text:   isDark ? "#e6eef2" : "#0e1316",
-    muted:  isDark ? "#7e8c94" : "#5e6a70",
-    accent: isDark ? "#4fd0e6" : "#0e7c96",
-    faint:  isDark ? "#1c262c" : "#d3dbde",
+    bg:     isDark ? "#151320" : "#ffffff",
+    border: isDark ? "#292437" : "#c9c9c4",
+    text:   isDark ? "#ece8f6" : "#111114",
+    muted:  isDark ? "#8a85a6" : "#565660",
+    accent: isDark ? "#ff5d8f" : "#d80a28",
+    faint:  isDark ? "#241f33" : "#dededa",
   };
 }
 
@@ -132,7 +133,7 @@ export function MetronomeWidget() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const isDark = useStoredDarkMode();
   const [pulse, setPulse] = useState(false);
   const [editingBpm, setEditingBpm] = useState(false);
   const [bpmInputVal, setBpmInputVal] = useState("");
@@ -176,15 +177,6 @@ export function MetronomeWidget() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Dark mode — poll localStorage every 500ms
-  useEffect(() => {
-    if (!mounted) return;
-    const sync = () => setIsDark(localStorage.getItem("shred-dojo-dark") === "true");
-    sync();
-    const id = setInterval(sync, 500);
-    return () => clearInterval(id);
-  }, [mounted]);
 
   // Auto-focus BPM input when entering edit mode
   useEffect(() => {

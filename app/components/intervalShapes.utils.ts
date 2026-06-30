@@ -25,16 +25,19 @@ export interface IntervalShape {
 
 // ─── Degree colors & names ────────────────────────────────────────────────────
 
+// Mode-independent degree fills (white label sits on each). Brightened a touch
+// so they read on the darker "Dusk" indigo ground while staying legible on the
+// "Print" white. Semantic hues preserved (3 & 5 share green, as before).
 export const DEG_COLOR: Record<PentaDegree, string> = {
-  R: "#c0392b",
-  b3: "#5a7ab0",
-  "4": "#8a6030",
-  "b5": "#6050b0",
-  "5": "#3a7a3a",
-  b7: "#7a3a7a",
-  "2": "#5a8080",
-  "3": "#3a7a3a",
-  "6": "#8a7030",
+  R: "#cf4434",
+  b3: "#6485c4",
+  "4": "#a07434",
+  "b5": "#7060c8",
+  "5": "#3f8a48",
+  b7: "#9450a0",
+  "2": "#5f9494",
+  "3": "#3f8a48",
+  "6": "#a08a3c",
 };
 
 export const DEG_NAMES: Record<PentaDegree, string> = {

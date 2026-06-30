@@ -22,6 +22,9 @@ export function CtrlButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      // Token-driven neon bloom: --glow is a soft accent shadow in dark ("Dusk")
+      // and `none` in light ("Print"), so no per-mode branching is needed.
+      style={active && !disabled ? { boxShadow: "var(--glow)" } : undefined}
       className={[
         // Blueprint control: hairline border, zero radius, cyan ink for active/hover.
         "font-display border rounded-none transition-all duration-100 cursor-pointer",

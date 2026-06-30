@@ -229,7 +229,7 @@ function StaffView({
         renderer.resize(containerWidth, 200);
         const ctx = renderer.getContext();
 
-        const textColor = isDark ? "#e8e0d0" : "#1a1612";
+        const textColor = isDark ? "#ece8f6" : "#111114";
         ctx.setFillStyle(textColor);
         ctx.setStrokeStyle(textColor);
 
