@@ -23,11 +23,11 @@ import {
   buildCagedPositions,
   FRET_DOUBLE,
   FRET_INLAYS,
+  HARMONIC_MINOR_CFG,
   mergePositions,
   ROOT_FRET,
   SCALES,
 } from "./scalePositions.utils";
-import { HARMONIC_MINOR_CFG } from "./yngwieScales.utils";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"] as const;
 
@@ -1019,6 +1019,7 @@ export function ScalePositions() {
   const [modalIdx, setModalIdx] = useState<number | null>(null);
   const [showModes, setShowModes] = useState(false);
   const [isHarmonicMinor, setIsHarmonicMinor] = useState(false);
+  const [closed3nps, setClosed3nps] = useState(false);
   const [unifiedScaletones, setUnifiedScaletones] = useState<Set<number>>(
     new Set(),
   );
@@ -1054,10 +1055,10 @@ export function ScalePositions() {
 
   // Build all positions (3nps + sym + caged)
   const allPositions = useMemo(() => {
-    const threeAndSym = buildAllPositions(cfg);
+    const threeAndSym = buildAllPositions(cfg, closed3nps);
     const caged = buildCagedPositions(cfg);
     return [...threeAndSym, ...caged];
-  }, [cfg]);
+  }, [cfg, closed3nps]);
 
   // Sort selected systems by SYSTEM_ORDER for consistent column placement
   const orderedSystems = useMemo(
@@ -1252,6 +1253,37 @@ export function ScalePositions() {
             >
               Harm. Minor
             </button>
+          </>
+        )}
+        {selectedSystems.includes("3nps") && (
+          <>
+            <div className="h-4 w-px mx-1" style={{ backgroundColor: "var(--border)" }} />
+            <span className="text-[0.58rem] tracking-[0.16em] uppercase text-[var(--muted)] mr-1">
+              3NPS
+            </span>
+            <CtrlButton
+              label="Standard"
+              active={!closed3nps}
+              onClick={() => {
+                setClosed3nps(false);
+                setSelectedIdx(null);
+                setModalIdx(null);
+                setUnifiedScaletones(new Set());
+              }}
+              small
+            />
+            <CtrlButton
+              label="Closed"
+              active={closed3nps}
+              onClick={() => {
+                setClosed3nps(true);
+                setSelectedIdx(null);
+                setModalIdx(null);
+                setUnifiedScaletones(new Set());
+              }}
+              small
+              title="Zakk Wylde closed position — compact 4–5 fret box"
+            />
           </>
         )}
         <div className="flex-1" />

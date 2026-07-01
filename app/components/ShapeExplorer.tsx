@@ -20,6 +20,7 @@ import {
   computeDisplayFret,
   FRET_DOUBLE,
   FRET_INLAYS,
+  HARMONIC_MINOR_CFG,
   ROOT_FRET,
   SCALES,
   SNAME,
@@ -31,7 +32,6 @@ import {
   type PentaScaleMode,
   type BoxNote,
 } from "./pentatonicTriads.utils";
-import { HARMONIC_MINOR_CFG } from "./yngwieScales.utils";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -573,6 +573,7 @@ export function ShapeExplorer() {
   const { isDark, toggleDark } = useDarkMode();
   const [bluesMode, setBluesMode] = useState(false);
   const [isHarmonicMinor, setIsHarmonicMinor] = useState(false);
+  const [closed3nps, setClosed3nps] = useState(false);
   const [octaveShift, setOctaveShift] = useState<0 | 12>(0);
   const [neckOpen, setNeckOpen] = useState(false);
   const [showAllShapes, setShowAllShapes] = useState(false);
@@ -583,8 +584,8 @@ export function ShapeExplorer() {
 
   // Build positions for the current scale config
   const positions3nps = useMemo(
-    () => buildAllPositions(cfg).filter((p) => p.system === "3nps"),
-    [cfg],
+    () => buildAllPositions(cfg, closed3nps).filter((p) => p.system === "3nps"),
+    [cfg, closed3nps],
   );
   const positionsCaged = useMemo(() => buildCagedPositions(cfg), [cfg]);
 
@@ -698,6 +699,7 @@ export function ShapeExplorer() {
     setViewMode("focus");
     if (sys !== "penta") setBluesMode(false);
     if (sys === "penta") setIsHarmonicMinor(false);
+    if (sys !== "3nps") setClosed3nps(false);
   }
 
   function changeMode(mode: ScaleMode) {
@@ -795,6 +797,30 @@ export function ShapeExplorer() {
                 >
                   Harmonic
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Position type — 3nps only (standard vs. Wylde "closed") */}
+          {system === "3nps" && (
+            <div className="flex flex-col gap-[0.4rem]">
+              <p className="text-[0.46rem] tracking-[0.18em] uppercase text-[var(--muted)]">
+                Position
+              </p>
+              <div className="flex gap-1">
+                <CtrlButton
+                  label="Standard"
+                  active={!closed3nps}
+                  onClick={() => setClosed3nps(false)}
+                  small
+                />
+                <CtrlButton
+                  label="Closed"
+                  active={closed3nps}
+                  onClick={() => setClosed3nps(true)}
+                  small
+                  title="Zakk Wylde closed position — compact 4–5 fret box"
+                />
               </div>
             </div>
           )}

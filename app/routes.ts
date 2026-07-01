@@ -3,8 +3,6 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 export default [
   index("routes/home.tsx"),
   route("scale-positions", "routes/scale-positions.tsx"),
-  route("lick-stash", "routes/lick-stash.tsx"),
-  route("lick-stash/:packSlug", "routes/lick-stash-pack.tsx"),
   route("pentatonic-triads", "routes/pentatonic-triads.tsx"),
   route("pentatonic-colors", "routes/pentatonic-colors.tsx"),
   route("interval-shapes", "routes/interval-shapes.tsx"),
@@ -14,8 +12,6 @@ export default [
   route("arpeggio-maps", "routes/arpeggio-maps.tsx"),
   route("circle-of-fifths", "routes/circle-of-fifths.tsx"),
   route("caged-immersion", "routes/caged-immersion.tsx"),
-  route("wylde-scales", "routes/wylde-scales.tsx"),
-  route("yngwie-scales", "routes/yngwie-scales.tsx"),
   route("scale-builder", "routes/scale-builder.tsx"),
   route("writing-scales", "routes/writing-scales.tsx"),
   route("chord-tones", "routes/chord-tones.tsx"),

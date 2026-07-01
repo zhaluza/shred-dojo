@@ -37,6 +37,17 @@ export const SCALES: Record<ScaleMode, ScaleConfig> = {
   },
 };
 
+// Harmonic minor: natural minor with a raised 7th (leading tone = 11 semitones).
+// Selectable as a 3nps variant in Shape Explorer / Systems.
+export const HARMONIC_MINOR_CFG: ScaleConfig = {
+  scale: ["R", "2", "b3", "4", "5", "b6", "7"],
+  semi: { R: 0, "2": 2, b3: 3, "3": 4, "4": 5, "b5": 6, "5": 7, b6: 8, "6": 9, b7: 10, "7": 11 },
+  penta: new Set<Degree>(["R", "b3", "4", "5", "b7"]),
+  chordTones: new Set<Degree>(["R", "b3", "5"]),
+  diaLabel: "Diatonic only (2, b6, 7)",
+  title: "Harmonic Minor",
+};
+
 export function findFret(
   degree: Degree,
   stringIdx: number,
@@ -57,11 +68,29 @@ export function findFret(
   );
 }
 
-export function build3nps(startDegIdx: number, cfg: ScaleConfig): ScaleString[] {
+/**
+ * Build a three-notes-per-string shape starting at `startDegIdx`.
+ *
+ * `closed` selects the Zakk Wylde "closed" variant: identical to standard 3nps
+ * on the E/A/D/G strings, but the B string resets its degree cursor to
+ * (startDegIdx + 4) % 7 — one step back from where standard 3nps would land.
+ * This repeats G's last degree on B, keeping the whole shape inside a compact
+ * 4–5 fret window and making the high-e string cycle back to the same three
+ * degrees as the low-E string.
+ */
+export function build3nps(
+  startDegIdx: number,
+  cfg: ScaleConfig,
+  closed = false,
+): ScaleString[] {
   let degCursor = startDegIdx;
   let refFret = ROOT_FRET + cfg.semi[cfg.scale[startDegIdx]];
 
   return SNAME.map((name, si) => {
+    if (closed && si === 4) {
+      degCursor = (startDegIdx + 4) % 7;
+    }
+
     const degrees = [0, 1, 2].map((i) => cfg.scale[(degCursor + i) % 7]);
 
     let ref = refFret;
@@ -210,10 +239,10 @@ export function buildCagedPositions(cfg: ScaleConfig): ScalePosition[] {
   });
 }
 
-export function buildAllPositions(cfg: ScaleConfig): ScalePosition[] {
+export function buildAllPositions(cfg: ScaleConfig, closed = false): ScalePosition[] {
   const positions: ScalePosition[] = [];
   for (let st = 0; st < 7; st++) {
-    const raw3nps = build3nps(st, cfg);
+    const raw3nps = build3nps(st, cfg, closed);
     const rawMin3nps = Math.min(...raw3nps.flatMap((s) => s.notes.map((n) => n.fret)));
     positions.push({
       scaletone: st + 1,

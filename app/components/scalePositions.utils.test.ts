@@ -436,3 +436,55 @@ describe("computeDisplayFret", () => {
     expect(computeDisplayFret(5, 9, 12)).toBe(14); // Upper=14
   });
 });
+
+// ---------------------------------------------------------------------------
+// Closed 3nps variant (Zakk Wylde) — build3nps(_, _, closed=true)
+// ---------------------------------------------------------------------------
+describe("build3nps closed variant (Wylde)", () => {
+  for (const scale of ["minor", "major"] as const) {
+    const cfg = SCALES[scale];
+    describe(scale, () => {
+      it("has 6 strings with exactly 3 notes each, all 7 positions", () => {
+        for (let st = 0; st < 7; st++) {
+          const strings = build3nps(st, cfg, true);
+          expect(strings).toHaveLength(6);
+          for (const str of strings) expect(str.notes).toHaveLength(3);
+        }
+      });
+
+      it("high-e string repeats the low-E string's degrees (B-string reset invariant)", () => {
+        // The closed variant resets the degree cursor at the B string so the
+        // e string cycles back to the same 3 degrees as the low E string.
+        for (let st = 0; st < 7; st++) {
+          const strings = build3nps(st, cfg, true);
+          const loE = strings[0].notes.map((n) => n.deg);
+          const hiE = strings[5].notes.map((n) => n.deg);
+          expect(hiE).toEqual(loE);
+        }
+      });
+
+      it("differs from standard 3nps only on the B and e strings", () => {
+        for (let st = 0; st < 7; st++) {
+          const std = build3nps(st, cfg, false);
+          const closed = build3nps(st, cfg, true);
+          // E/A/D/G (indices 0–3) are identical to standard 3nps.
+          for (let si = 0; si <= 3; si++) {
+            expect(closed[si].notes.map((n) => n.deg)).toEqual(
+              std[si].notes.map((n) => n.deg),
+            );
+          }
+        }
+      });
+    });
+  }
+
+  it("buildAllPositions(cfg, true) uses the closed shapes for 3nps positions", () => {
+    const cfg = SCALES.minor;
+    const positions = buildAllPositions(cfg, true).filter((p) => p.system === "3nps");
+    expect(positions).toHaveLength(7);
+    positions.forEach((p, st) => {
+      const expected = toRelative(build3nps(st, cfg, true));
+      expect(fmt(p.strings)).toBe(fmt(expected));
+    });
+  });
+});

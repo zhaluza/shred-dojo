@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from "react-router";
+import { Link } from "react-router";
 import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
 import { LIGHT_THEME, DARK_THEME } from "~/components/theme";
@@ -26,7 +26,6 @@ export function meta({ data }: Route.MetaArgs) {
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   return {
-    preview: url.searchParams.get("preview") === "true",
     siteUrl: `${url.protocol}//${url.host}`,
   };
 }
@@ -45,9 +44,7 @@ const TOOL_CATEGORIES: Category[] = [
     tag: "Reference",
     tools: [
       { to: "/shape-explorer", title: "Shape Explorer", body: "Focus on one shape or see them all in an overview grid. Pick a key and system — fret numbers reflect the real neck." },
-      { to: "/scale-positions", title: "Systems", body: "The whole neck at once: all 7 positions across 3nps, CAGED, and symmetric systems, paired or merged into one view." },
-      { to: "/wylde-scales", title: "Wylde", body: "Zakk Wylde's three-notes-per-string approach — each modal position paired with its pentatonic box." },
-      { to: "/yngwie-scales", title: "Yngwie", body: "Two harmonic-minor shapes built around the raised 7th, for neoclassical runs." },
+      { to: "/scale-positions", title: "Systems", body: "The whole neck at once: all 7 positions across 3nps, CAGED, and symmetric systems, paired or merged into one view. 3nps has a closed-position variant." },
       { to: "/scale-builder", title: "Scale Builder", body: "Five scale formulas in any key — names or notation, with reference and exercise modes." },
     ],
   },
@@ -79,7 +76,6 @@ const TOOL_CATEGORIES: Category[] = [
       { to: "/caged-immersion", title: "CAGED Immersion", body: "Guthrie Trapp's CAGED / 1-4-5 method in two modules: the core concepts and seven transposable exercises. Pick a key, turn on the drone, and play." },
       { to: "/writing-scales", title: "Writing with Scales", body: "An interactive lesson on writing with scales: see the neck as octave chunks, find any root, target chord tones, and bend major into Lydian. Pick a key — every diagram follows it." },
       { to: "/metronome", title: "Metronome", body: "A standalone practice station: a big beat-dial metronome with tap tempo, a tempo trainer that ramps for you, a timer, and a key drone." },
-      { to: "/lick-stash", title: "Lick Stash", body: "Curated lick packs by style and technique. Learn, loop, and internalize real vocabulary you can use on stage." },
       { to: "/practice-log", title: "Practice Log", body: "A running history of your practice, filled in automatically as the timer runs. Time per day, per tool, per section." },
     ],
   },
@@ -216,16 +212,10 @@ function useIntro() {
 function HomePage({
   isDark,
   toggleDark,
-  preview,
 }: {
   isDark: boolean;
   toggleDark: () => void;
-  preview: boolean;
 }) {
-  useEffect(() => {
-    if (preview) localStorage.setItem("shred-dojo-preview", "true");
-  }, [preview]);
-
   const theme = isDark ? DARK_THEME : LIGHT_THEME;
   const { shown, reduced } = useIntro();
   const introStyle = (delay: number) => ({
@@ -329,7 +319,6 @@ function HomePage({
             <div className="grid grid-cols-2 max-[600px]:grid-cols-1">
               {cat.tools.map((tool) => {
                 const isFeatured = !!tool.featured;
-                const isLocked = tool.to === "/lick-stash" && !preview;
                 const base =
                   "-mt-px -ml-px p-6 max-[700px]:p-5 border border-[var(--border)] flex flex-col relative " +
                   (isFeatured ? "col-span-2 max-[600px]:col-span-1 " : "");
@@ -338,15 +327,13 @@ function HomePage({
                   <div className="flex items-start justify-between mb-5">
                     <span
                       className="font-mono text-[0.5rem] tracking-[0.16em] uppercase"
-                      style={{ color: isLocked ? "var(--muted)" : "var(--accent)" }}
+                      style={{ color: "var(--accent)" }}
                     >
-                      {isLocked ? "Preview only" : isFeatured ? "Daily" : "Open"}
+                      {isFeatured ? "Daily" : "Open"}
                     </span>
-                    {!isLocked && (
-                      <span className="text-[0.9rem] leading-none text-[var(--faint)] group-hover:text-[var(--accent)] group-hover:translate-x-1 transition-all duration-200">
-                        →
-                      </span>
-                    )}
+                    <span className="text-[0.9rem] leading-none text-[var(--faint)] group-hover:text-[var(--accent)] group-hover:translate-x-1 transition-all duration-200">
+                      →
+                    </span>
                   </div>
                 );
                 const Title = (
@@ -356,13 +343,6 @@ function HomePage({
                 );
                 const Body = <p className="text-[0.67rem] leading-[1.7] text-[var(--muted)]">{tool.body}</p>;
 
-                if (isLocked) {
-                  return (
-                    <div key={tool.to} className={base + "opacity-40"} style={{ background: "var(--surface)" }}>
-                      {Head}{Title}{Body}
-                    </div>
-                  );
-                }
                 return (
                   <Link
                     key={tool.to}
@@ -435,7 +415,6 @@ function HomePage({
 // ---------------------------------------------------------------------------
 
 export default function Home() {
-  const { preview } = useLoaderData<typeof loader>();
   const { isDark, toggleDark } = useDarkMode();
-  return <HomePage isDark={isDark} toggleDark={toggleDark} preview={preview} />;
+  return <HomePage isDark={isDark} toggleDark={toggleDark} />;
 }

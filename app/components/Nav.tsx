@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { PickIcon } from "./Logo";
 
-type NavLink = { to: string; label: string; preview?: true };
+type NavLink = { to: string; label: string };
 type NavGroup = { label: string; links: NavLink[] };
 
 // Grouped by mode of use: three reference families (Scales / Pentatonic /
@@ -14,8 +14,6 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { to: "/shape-explorer", label: "Shape Explorer" },
       { to: "/scale-positions", label: "Systems" },
-      { to: "/wylde-scales", label: "Wylde" },
-      { to: "/yngwie-scales", label: "Yngwie" },
       { to: "/scale-builder", label: "Scale Builder" },
     ],
   },
@@ -44,7 +42,6 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/caged-immersion", label: "CAGED Immersion" },
       { to: "/writing-scales", label: "Writing Ideas" },
       { to: "/metronome", label: "Metronome" },
-      { to: "/lick-stash", label: "Lick Stash", preview: true },
       { to: "/practice-log", label: "Practice Log" },
     ],
   },
@@ -65,16 +62,8 @@ export function Nav({
   isDark: boolean;
   toggleDark: () => void;
 }) {
-  const { pathname, search } = useLocation();
-  const [isPreview, setIsPreview] = useState(false);
+  const { pathname } = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (new URLSearchParams(search).get("preview") === "true") {
-      localStorage.setItem("shred-dojo-preview", "true");
-    }
-    setIsPreview(localStorage.getItem("shred-dojo-preview") === "true");
-  }, [search]);
 
   // Close drawer on route change
   useEffect(() => {
@@ -88,9 +77,7 @@ export function Nav({
   }, [isOpen]);
 
   function isActive(to: string): boolean {
-    return to === "/lick-stash"
-      ? pathname.startsWith("/lick-stash")
-      : pathname === to;
+    return pathname === to;
   }
 
   return (
@@ -135,19 +122,7 @@ export function Nav({
                   {group.label}
                 </span>
                 <div className="flex items-center gap-3 md:gap-4">
-                  {group.links.map(({ to, label, preview: requiresPreview }) => {
-                    if (requiresPreview && !isPreview) {
-                      return (
-                        <span
-                          key={to}
-                          className="font-display text-[0.7rem] md:text-[0.75rem] tracking-[0.09em] uppercase whitespace-nowrap cursor-default select-none"
-                          style={{ color: "var(--faint)" }}
-                          title="Preview only"
-                        >
-                          {label}
-                        </span>
-                      );
-                    }
+                  {group.links.map(({ to, label }) => {
                     return (
                       <Link
                         key={to}
@@ -244,21 +219,7 @@ export function Nav({
                   >
                     {group.label}
                   </span>
-                  {group.links.map(({ to, label, preview: requiresPreview }) => {
-                    if (requiresPreview && !isPreview) {
-                      return (
-                        <span
-                          key={to}
-                          className="flex items-center px-5 min-h-[48px] font-display text-[0.82rem] tracking-[0.07em] uppercase cursor-default select-none"
-                          style={{ color: "var(--faint)" }}
-                        >
-                          {label}
-                          <span className="ml-2 text-[0.5rem] tracking-[0.1em]" style={{ color: "var(--faint)" }}>
-                            (preview)
-                          </span>
-                        </span>
-                      );
-                    }
+                  {group.links.map(({ to, label }) => {
                     const active = isActive(to);
                     return (
                       <Link
