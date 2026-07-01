@@ -11,6 +11,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { MetronomeWidget } from "./components/MetronomeWidget";
+import { PracticeStationProvider } from "./components/practiceStation";
 import { ThemeFx } from "./components/ThemeFx";
 
 export const links: Route.LinksFunction = () => [
@@ -56,13 +57,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   const { pathname } = useLocation();
   return (
-    <>
+    <PracticeStationProvider>
       <Outlet />
       <ThemeFx />
       {pathname !== "/morning-coffee" &&
         pathname !== "/pentatonic-practice" &&
         pathname !== "/metronome" && <MetronomeWidget />}
-    </>
+    </PracticeStationProvider>
   );
 }
 

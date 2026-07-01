@@ -1,49 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useStoredDarkMode } from "./useStoredDarkMode";
+import {
+  usePracticeStation,
+  effectiveSig,
+  MET_MIN_BPM,
+  MET_MAX_BPM,
+} from "./practiceStation";
+import { fmtClock } from "./Timer";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Floating metronome remote ─────────────────────────────────────────────────
+// The compact, always-visible face of the shared Practice Station engine
+// (`practiceStation.tsx`). It controls the one metronome + countdown timer, shows
+// the live countdown when a session is running, and surfaces the Save/Discard log
+// prompt on completion — so a session started on /metronome keeps clicking and
+// stays loggable from any page. Its tonic drone is an independent quick utility.
 
-const MIN_BPM = 40;
-const MAX_BPM = 240;
-const BEATS = 4;
-const LOOKAHEAD_MS = 25;
-const SCHEDULE_AHEAD_S = 0.1;
 const NOTE_NAMES = ["E", "F", "F#", "G", "Ab", "A", "Bb", "B", "C", "Db", "D", "Eb"] as const;
 const E2_HZ = 82.41;
 
-type SubDiv = 1 | 2 | 3 | 4 | 6;
-
-// ─── Audio ────────────────────────────────────────────────────────────────────
-
-function scheduleClick(
-  type: "down" | "beat" | "sub",
-  time: number,
-  ctx: AudioContext,
-  onTick?: () => void
-) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-
-  osc.type = "triangle";
-  osc.frequency.value = type === "down" ? 1100 : type === "beat" ? 750 : 500;
-  const vol = type === "down" ? 0.45 : type === "beat" ? 0.25 : 0.1;
-
-  gain.gain.setValueAtTime(0, time);
-  gain.gain.linearRampToValueAtTime(vol, time + 0.003);
-  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.055);
-  osc.start(time);
-  osc.stop(time + 0.06);
-
-  if (onTick) {
-    const msFromNow = Math.max(0, (time - ctx.currentTime) * 1000);
-    setTimeout(onTick, msFromNow);
-  }
-}
-
 // ─── Theme ────────────────────────────────────────────────────────────────────
-
 // Mirrors theme.ts chrome tokens. Hardcoded because this widget renders at the
 // App root, outside any page's themed div, so CSS variables don't resolve here.
 function getColors(isDark: boolean) {
@@ -80,20 +55,7 @@ function IconEighths() {
   );
 }
 
-function IconSixteenths() {
-  return (
-    <svg width="15" height="12" viewBox="0 0 16 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
-      <ellipse cx="2.2" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.2 12.5)" />
-      <ellipse cx="11" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 11 12.5)" />
-      <rect x="4.3" y="2" width="1.2" height="10.5" />
-      <rect x="13.1" y="2" width="1.2" height="10.5" />
-      <rect x="4.3" y="2" width="10" height="1.6" />
-      <rect x="4.3" y="5.5" width="10" height="1.6" />
-    </svg>
-  );
-}
-
-function IconEighthTriplet() {
+function IconTriplet() {
   return (
     <svg width="22" height="12" viewBox="0 0 22 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
       <text x="11" y="4" textAnchor="middle" fontSize="5" fontStyle="italic" fontFamily="sans-serif">3</text>
@@ -108,30 +70,13 @@ function IconEighthTriplet() {
   );
 }
 
-function IconSixteenthTriplet() {
-  return (
-    <svg width="22" height="12" viewBox="0 0 22 14" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
-      <text x="11" y="3" textAnchor="middle" fontSize="4.5" fontStyle="italic" fontFamily="sans-serif">3</text>
-      <rect x="1.5" y="4" width="19" height="1.5" />
-      <rect x="1.5" y="7.5" width="19" height="1.5" />
-      <rect x="1.5" y="4" width="1.2" height="8.5" />
-      <rect x="10.4" y="4" width="1.2" height="8.5" />
-      <rect x="19.3" y="4" width="1.2" height="8.5" />
-      <ellipse cx="2.1" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 2.1 12.5)" />
-      <ellipse cx="11" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 11 12.5)" />
-      <ellipse cx="19.9" cy="12.5" rx="2.3" ry="1.6" transform="rotate(-12 19.9 12.5)" />
-    </svg>
-  );
-}
-
 // ─── MetronomeWidget ──────────────────────────────────────────────────────────
 
 export function MetronomeWidget() {
+  const { met, timer } = usePracticeStation();
+  const { bpm, setBpm, subdivision, setSubdivision, isPlaying, toggle, currentSlot, handleTap, timeSig, grouping } = met;
+
   const [mounted, setMounted] = useState(false);
-  const [bpm, setBpm] = useState(120);
-  const [subdiv, setSubdiv] = useState<SubDiv>(1);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentBeat, setCurrentBeat] = useState(-1);
   const [isExpanded, setIsExpanded] = useState(false);
   const isDark = useStoredDarkMode();
   const [pulse, setPulse] = useState(false);
@@ -146,29 +91,24 @@ export function MetronomeWidget() {
     typeof window !== "undefined" ? window.innerHeight : 768
   );
 
-  // Refs — stable across renders, used by scheduler
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const nextNoteTimeRef = useRef(0);
-  const beatIndexRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bpmRef = useRef(bpm);
-  const subdivRef = useRef<SubDiv>(subdiv);
-  const isPlayingRef = useRef(false);
-  const tapTimesRef = useRef<number[]>([]);
+  bpmRef.current = bpm;
   const dragStartRef = useRef<{ y: number; bpm: number } | null>(null);
   const dragMovedRef = useRef(false);
   const bpmInputElRef = useRef<HTMLInputElement>(null);
+
+  // Independent quick-drone (its own AudioContext — separate from the metronome).
+  const droneCtxRef = useRef<AudioContext | null>(null);
   const droneOscRef = useRef<OscillatorNode | null>(null);
   const droneGainRef = useRef<GainNode | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
-  useEffect(() => { bpmRef.current = bpm; }, [bpm]);
-  useEffect(() => {
-    subdivRef.current = subdiv;
-    beatIndexRef.current = 0; // Reset to avoid out-of-bounds slot on subdivision change
-  }, [subdiv]);
+  const sig = effectiveSig(timeSig, grouping);
+  const totalBeats = sig.num;
+  const currentBeat = currentSlot >= 0 ? Math.floor(currentSlot / subdivision) : -1;
 
-  // Track window width for responsive panel sizing
+  useEffect(() => { setMounted(true); }, []);
+
+  // Track window size for responsive panel sizing.
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -178,7 +118,7 @@ export function MetronomeWidget() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto-focus BPM input when entering edit mode
+  // Auto-focus BPM input when entering edit mode.
   useEffect(() => {
     if (editingBpm && bpmInputElRef.current) {
       bpmInputElRef.current.focus();
@@ -186,80 +126,16 @@ export function MetronomeWidget() {
     }
   }, [editingBpm]);
 
-  // Visual beat callback — stable, no re-render deps
-  const onBeat = useCallback((beat: number) => {
-    setCurrentBeat(beat);
+  // Visual pulse on each beat (fires when the engine's slot lands on a beat).
+  useEffect(() => {
+    if (!isPlaying || currentSlot < 0) return;
+    if (currentSlot % subdivision !== 0) return;
     setPulse(true);
-    setTimeout(() => setPulse(false), 80);
-  }, []);
+    const id = setTimeout(() => setPulse(false), 80);
+    return () => clearTimeout(id);
+  }, [currentSlot, isPlaying, subdivision]);
 
-  // Look-ahead scheduler — self-scheduling via setTimeout
-  const runScheduler = useCallback(() => {
-    const ctx = audioCtxRef.current;
-    if (!ctx) return;
-
-    const sub = subdivRef.current;
-    const spb = 60.0 / bpmRef.current;
-    const sps = spb / sub;
-    const totalSlots = BEATS * sub;
-
-    while (nextNoteTimeRef.current < ctx.currentTime + SCHEDULE_AHEAD_S) {
-      const slot = beatIndexRef.current;
-      const isDownbeat = slot === 0;
-      const isBeat = slot % sub === 0;
-      const type = isDownbeat ? "down" : isBeat ? "beat" : "sub";
-      const visualBeat = Math.floor(slot / sub);
-
-      scheduleClick(
-        type,
-        nextNoteTimeRef.current,
-        ctx,
-        isBeat ? () => onBeat(visualBeat) : undefined
-      );
-
-      beatIndexRef.current = (beatIndexRef.current + 1) % totalSlots;
-      nextNoteTimeRef.current += sps;
-    }
-    timerRef.current = setTimeout(runScheduler, LOOKAHEAD_MS);
-  }, [onBeat]);
-
-  const start = useCallback(() => {
-    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-    const ctx = audioCtxRef.current;
-    if (ctx.state === "suspended") ctx.resume();
-
-    beatIndexRef.current = 0;
-    nextNoteTimeRef.current = ctx.currentTime + 0.05;
-    isPlayingRef.current = true;
-    setIsPlaying(true);
-    runScheduler();
-  }, [runScheduler]);
-
-  const stop = useCallback(() => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-    isPlayingRef.current = false;
-    setIsPlaying(false);
-    setCurrentBeat(-1);
-  }, []);
-
-  const togglePlay = useCallback(() => {
-    if (isPlayingRef.current) stop(); else start();
-  }, [start, stop]);
-
-  // Tap tempo — average of last 4 tap intervals
-  const handleTap = useCallback(() => {
-    const now = performance.now();
-    const taps = [...tapTimesRef.current, now].slice(-4);
-    tapTimesRef.current = taps;
-    if (taps.length >= 2) {
-      let total = 0;
-      for (let i = 1; i < taps.length; i++) total += taps[i] - taps[i - 1];
-      const avg = total / (taps.length - 1);
-      setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(60000 / avg))));
-    }
-  }, []);
-
-  // BPM drag — vertical drag on number; click (no drag) enters type mode
+  // BPM drag — vertical drag on number; click (no drag) enters type mode.
   const handleBpmMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (editingBpm) return;
@@ -271,7 +147,7 @@ export function MetronomeWidget() {
         const delta = dragStartRef.current.y - ev.clientY;
         if (Math.abs(delta) > 3) dragMovedRef.current = true;
         if (dragMovedRef.current) {
-          setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM,
+          setBpm(Math.min(MET_MAX_BPM, Math.max(MET_MIN_BPM,
             Math.round(dragStartRef.current.bpm + delta * 0.6)
           )));
         }
@@ -288,10 +164,10 @@ export function MetronomeWidget() {
       window.addEventListener("mousemove", move);
       window.addEventListener("mouseup", up);
     },
-    [bpm, editingBpm]
+    [bpm, editingBpm, setBpm]
   );
 
-  // BPM touch drag — same velocity math as mouse drag
+  // BPM touch drag — same velocity math as mouse drag.
   const handleBpmTouchStart = useCallback(
     (e: React.TouchEvent) => {
       if (editingBpm) return;
@@ -303,7 +179,7 @@ export function MetronomeWidget() {
         const delta = dragStartRef.current.y - ev.touches[0].clientY;
         if (Math.abs(delta) > 3) dragMovedRef.current = true;
         if (dragMovedRef.current) {
-          setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM,
+          setBpm(Math.min(MET_MAX_BPM, Math.max(MET_MIN_BPM,
             Math.round(dragStartRef.current.bpm + delta * 0.6)
           )));
         }
@@ -320,31 +196,29 @@ export function MetronomeWidget() {
       window.addEventListener("touchmove", move, { passive: false });
       window.addEventListener("touchend", up);
     },
-    [bpm, editingBpm]
+    [bpm, editingBpm, setBpm]
   );
 
   const commitBpmInput = useCallback(() => {
     const val = parseInt(bpmInputVal, 10);
     if (!isNaN(val) && bpmInputVal.trim() !== "") {
-      setBpm(Math.min(MAX_BPM, Math.max(MIN_BPM, val)));
+      setBpm(Math.min(MET_MAX_BPM, Math.max(MET_MIN_BPM, val)));
     }
     setEditingBpm(false);
-  }, [bpmInputVal]);
+  }, [bpmInputVal, setBpm]);
 
-  // BPM scroll wheel
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY < 0 ? 1 : -1;
-    setBpm((b) => Math.min(MAX_BPM, Math.max(MIN_BPM, b + delta)));
-  }, []);
+    setBpm(Math.min(MET_MAX_BPM, Math.max(MET_MIN_BPM, bpmRef.current + delta)));
+  }, [setBpm]);
 
-  // Drone — sustained sine wave at root note
+  // Drone — sustained sine wave at root note (independent of the metronome).
   const startDrone = useCallback((semitone: number) => {
-    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-    const ctx = audioCtxRef.current;
+    if (!droneCtxRef.current) droneCtxRef.current = new AudioContext();
+    const ctx = droneCtxRef.current;
     if (ctx.state === "suspended") ctx.resume();
 
-    // Fade out and stop any existing drone
     if (droneGainRef.current && droneOscRef.current) {
       const g = droneGainRef.current;
       g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
@@ -368,7 +242,7 @@ export function MetronomeWidget() {
   }, []);
 
   const stopDrone = useCallback(() => {
-    const ctx = audioCtxRef.current;
+    const ctx = droneCtxRef.current;
     if (!ctx || !droneGainRef.current || !droneOscRef.current) return;
     const g = droneGainRef.current;
     g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
@@ -389,14 +263,12 @@ export function MetronomeWidget() {
   }, [droneKey, startDrone, stopDrone]);
 
   useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    // Stop drone directly via refs (closure captures latest refs)
-    const ctx = audioCtxRef.current;
+    const ctx = droneCtxRef.current;
     if (ctx && droneGainRef.current && droneOscRef.current) {
       droneGainRef.current.gain.setValueAtTime(0, ctx.currentTime);
       droneOscRef.current.stop();
     }
-    audioCtxRef.current?.close();
+    droneCtxRef.current?.close();
   }, []);
 
   if (!mounted) return null;
@@ -407,16 +279,23 @@ export function MetronomeWidget() {
   const panelWidth = isMobile ? Math.min(windowWidth - 32, 280) : 216;
   const droneGridCols = isMobile || isShortViewport ? 4 : 6;
   const safeBottom = `calc(env(safe-area-inset-bottom, 0px) + ${isMobile ? 16 : 24}px)`;
-  // In landscape / short viewports, cap panel height so it doesn't overflow screen
   const panelMaxHeight = isShortViewport ? windowHeight - 60 : undefined;
 
-  const subdivOptions: Array<{ val: SubDiv; label: string; icon: React.ReactNode }> = [
+  const subdivOptions: Array<{ val: 1 | 2 | 3; label: string; icon: React.ReactNode }> = [
     { val: 1, label: "Quarter note", icon: <IconQuarter /> },
     { val: 2, label: "Eighth note", icon: <IconEighths /> },
-    { val: 4, label: "Sixteenth note", icon: <IconSixteenths /> },
-    { val: 3, label: "Eighth triplet", icon: <IconEighthTriplet /> },
-    { val: 6, label: "Sixteenth triplet", icon: <IconSixteenthTriplet /> },
+    { val: 3, label: "Triplet", icon: <IconTriplet /> },
   ];
+
+  // A session is "active" (worth surfacing in the collapsed trigger) when the timer
+  // is running, mid-countdown, or waiting on a save decision.
+  const timerActive = timer.running || timer.pending !== null || timer.remaining < timer.target;
+
+  const btnBase = {
+    fontFamily: "'Space Grotesk', sans-serif" as const,
+    textTransform: "uppercase" as const,
+    cursor: "pointer" as const,
+  };
 
   return (
     <div
@@ -458,7 +337,7 @@ export function MetronomeWidget() {
               textTransform: "uppercase",
               color: C.muted,
             }}>
-              Metronome
+              Practice Station
             </span>
             <button
               onClick={() => setIsExpanded(false)}
@@ -486,8 +365,8 @@ export function MetronomeWidget() {
             padding: "14px 12px 10px",
             alignItems: "flex-end",
           }}>
-            {Array.from({ length: BEATS }, (_, i) => {
-              const active = currentBeat === i;
+            {Array.from({ length: totalBeats }, (_, i) => {
+              const active = currentBeat === i && isPlaying;
               return (
                 <div
                   key={i}
@@ -585,13 +464,13 @@ export function MetronomeWidget() {
             </div>
             <div style={{ display: "flex", gap: 3 }}>
               {subdivOptions.map(({ val, label, icon }) => {
-                const active = subdiv === val;
+                const active = subdivision === val;
                 const hk = `sub${val}`;
                 const isHov = hoveredEl === hk;
                 return (
                   <button
                     key={val}
-                    onClick={() => setSubdiv(val)}
+                    onClick={() => setSubdivision(val)}
                     onMouseEnter={() => setHoveredEl(hk)}
                     onMouseLeave={() => setHoveredEl(null)}
                     title={label}
@@ -626,20 +505,18 @@ export function MetronomeWidget() {
               return (
                 <button
                   key={d}
-                  onClick={() => setBpm((b) => Math.min(MAX_BPM, Math.max(MIN_BPM, b + d)))}
+                  onClick={() => setBpm(bpm + d)}
                   onMouseEnter={() => setHoveredEl(hk)}
                   onMouseLeave={() => setHoveredEl(null)}
                   style={{
+                    ...btnBase,
                     flex: 1,
-                    fontFamily: "'Space Grotesk', sans-serif",
                     fontSize: "0.58rem",
                     letterSpacing: "0.04em",
-                    textTransform: "uppercase",
                     padding: isMobile ? "8px 0" : "4px 0",
                     background: "transparent",
                     border: `1px solid ${isHovered ? C.text : C.border}`,
                     color: C.text,
-                    cursor: "pointer",
                     minHeight: isMobile ? 40 : undefined,
                     transition: "border-color 80ms",
                   }}
@@ -657,16 +534,14 @@ export function MetronomeWidget() {
               onMouseEnter={() => setHoveredEl("tap")}
               onMouseLeave={() => setHoveredEl(null)}
               style={{
+                ...btnBase,
                 flex: 1,
-                fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
-                textTransform: "uppercase",
                 padding: isMobile ? "11px 0" : "7px 0",
                 background: "transparent",
                 border: `1px solid ${hoveredEl === "tap" ? C.text : C.border}`,
                 color: C.text,
-                cursor: "pointer",
                 minHeight: isMobile ? 44 : undefined,
                 transition: "border-color 80ms",
               }}
@@ -674,24 +549,186 @@ export function MetronomeWidget() {
               Tap
             </button>
             <button
-              onClick={togglePlay}
+              onClick={toggle}
               style={{
+                ...btnBase,
                 flex: 1,
-                fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "0.72rem",
                 letterSpacing: "0.1em",
-                textTransform: "uppercase",
                 padding: isMobile ? "11px 0" : "7px 0",
                 background: isPlaying ? C.text : "transparent",
                 border: `1px solid ${isPlaying ? C.text : C.border}`,
                 color: isPlaying ? C.bg : C.text,
-                cursor: "pointer",
                 transition: "background 80ms, color 80ms, border-color 80ms",
                 minHeight: isMobile ? 44 : undefined,
               }}
             >
               {isPlaying ? "Stop" : "Start"}
             </button>
+          </div>
+
+          {/* ── Timer ── */}
+          <div style={{ borderTop: `1px solid ${C.faint}`, padding: "10px 12px 13px" }}>
+            <div style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}>
+              <span style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: "0.44rem",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: C.muted,
+              }}>
+                Timer
+              </span>
+              <span style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: "1.15rem",
+                fontWeight: 600,
+                fontVariantNumeric: "tabular-nums",
+                color: timer.done ? C.accent : C.text,
+                lineHeight: 1,
+              }}>
+                {fmtClock(timer.remaining)}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                onClick={timer.toggle}
+                style={{
+                  ...btnBase,
+                  flex: 1,
+                  fontSize: "0.66rem",
+                  letterSpacing: "0.08em",
+                  padding: isMobile ? "10px 0" : "6px 0",
+                  background: timer.running ? C.accent : "transparent",
+                  border: `1px solid ${timer.running ? C.accent : C.border}`,
+                  color: timer.running ? (isDark ? C.bg : "#fff") : C.text,
+                  minHeight: isMobile ? 40 : undefined,
+                  transition: "background 80ms, color 80ms, border-color 80ms",
+                }}
+              >
+                {timer.running ? "Pause" : timer.done ? "Restart" : "Start"}
+              </button>
+              <button
+                onClick={timer.addFive}
+                style={{
+                  ...btnBase,
+                  flex: 1,
+                  fontSize: "0.66rem",
+                  letterSpacing: "0.06em",
+                  padding: isMobile ? "10px 0" : "6px 0",
+                  background: "transparent",
+                  border: `1px solid ${C.border}`,
+                  color: C.text,
+                  minHeight: isMobile ? 40 : undefined,
+                }}
+              >
+                +5
+              </button>
+              <button
+                onClick={timer.reset}
+                aria-label="Reset timer"
+                style={{
+                  ...btnBase,
+                  fontSize: "0.8rem",
+                  padding: isMobile ? "10px 12px" : "6px 10px",
+                  background: "transparent",
+                  border: `1px solid ${C.border}`,
+                  color: C.text,
+                  lineHeight: 1,
+                  minHeight: isMobile ? 40 : undefined,
+                }}
+              >
+                ↺
+              </button>
+            </div>
+
+            {/* Review — log the finished sitting from anywhere */}
+            {timer.pending && (
+              <div style={{
+                marginTop: 10,
+                padding: 10,
+                background: C.bg,
+                border: `1px solid ${C.accent}`,
+                display: "flex",
+                flexDirection: "column",
+                gap: 7,
+              }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "0.5rem",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: C.muted,
+                  }}>
+                    Practiced
+                  </span>
+                  <span style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    fontVariantNumeric: "tabular-nums",
+                    color: C.text,
+                  }}>
+                    {fmtClock(timer.pending.sec)}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={timer.label}
+                  onChange={(e) => timer.setLabel(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") timer.saveSession(); }}
+                  placeholder="Label (optional)"
+                  aria-label="Session label"
+                  style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: "0.7rem",
+                    padding: "6px 7px",
+                    background: "transparent",
+                    border: `1px solid ${C.border}`,
+                    color: C.text,
+                    outline: "none",
+                  }}
+                />
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={timer.saveSession}
+                    style={{
+                      ...btnBase,
+                      flex: 1,
+                      fontSize: "0.62rem",
+                      letterSpacing: "0.06em",
+                      padding: "7px 0",
+                      background: C.accent,
+                      border: `1px solid ${C.accent}`,
+                      color: isDark ? C.bg : "#fff",
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={timer.discardSession}
+                    style={{
+                      ...btnBase,
+                      flex: 1,
+                      fontSize: "0.62rem",
+                      letterSpacing: "0.06em",
+                      padding: "7px 0",
+                      background: "transparent",
+                      border: `1px solid ${C.border}`,
+                      color: C.text,
+                    }}
+                  >
+                    Discard
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Drone section */}
@@ -722,15 +759,13 @@ export function MetronomeWidget() {
                     onMouseEnter={() => setHoveredEl(hk)}
                     onMouseLeave={() => setHoveredEl(null)}
                     style={{
-                      fontFamily: "'Space Grotesk', sans-serif",
+                      ...btnBase,
                       fontSize: "0.6rem",
                       letterSpacing: "0.04em",
-                      textTransform: "uppercase",
                       padding: isMobile ? "8px 0" : "5px 0",
                       background: active ? C.accent : "transparent",
                       border: `1px solid ${active ? C.accent : isHovered ? C.text : C.border}`,
                       color: active ? (isDark ? C.bg : "#fff") : C.text,
-                      cursor: "pointer",
                       transition: "background 80ms, color 80ms, border-color 80ms",
                       minHeight: isMobile ? 36 : undefined,
                     }}
@@ -747,7 +782,7 @@ export function MetronomeWidget() {
       {/* ── Trigger button ──────────────────────────────────────────────── */}
       <button
         onClick={() => setIsExpanded((x) => !x)}
-        title="Metronome"
+        title="Practice Station"
         style={{
           fontFamily: "'Space Grotesk', sans-serif",
           fontSize: "0.68rem",
@@ -769,6 +804,19 @@ export function MetronomeWidget() {
       >
         <span style={{ fontSize: "0.9rem", lineHeight: 1 }}>♩</span>
         <span style={{ minWidth: "2.6ch", textAlign: "right" }}>{bpm}</span>
+        {timerActive && (
+          <span style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: "0.62rem",
+            fontVariantNumeric: "tabular-nums",
+            color: isPlaying ? C.bg : (timer.done ? C.accent : C.text),
+            borderLeft: `1px solid ${isPlaying ? C.bg : C.border}`,
+            paddingLeft: 7,
+            opacity: isPlaying ? 0.9 : 1,
+          }}>
+            {fmtClock(timer.remaining)}
+          </span>
+        )}
         {droneKey !== null && (
           <span style={{
             fontSize: "0.55rem",

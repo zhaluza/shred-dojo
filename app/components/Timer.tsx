@@ -5,6 +5,12 @@ import { CtrlButton } from "./CtrlButton";
 // Single source of truth for the Practice Station and Pentatonic Practice timers.
 // Stacked layout: MM:SS readout + progress bar, preset row + custom length,
 // Start/Pause + "+5 min" + reset. Persists its target under `storageKey`.
+//
+// The countdown *logic* lives in the `useTimer` hook so it can be lifted above the
+// router (the Practice Station runs its timer inside a persistent provider). The
+// `Timer` component is a thin wrapper that owns its own controller — used directly
+// by Pentatonic Practice and CAGED Immersion. `TimerView` renders a supplied
+// controller and is what the Practice Station uses.
 
 const TIMER_PRESETS = [1, 2, 3, 5, 10];
 const TIMER_MAX_MIN = 180;
@@ -23,15 +29,7 @@ export function fmtClock(sec: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export function Timer({
-  storageKey,
-  presets = TIMER_PRESETS,
-  maxMin = TIMER_MAX_MIN,
-  onSecond,
-  onLogSession,
-  onDiscardSession,
-  defaultLabel = "",
-}: {
+export interface TimerOptions {
   storageKey: string;
   presets?: number[];
   maxMin?: number;
@@ -43,7 +41,38 @@ export function Timer({
   onDiscardSession?: () => void;
   /** Prefill for the review bar's label field (e.g. the active section). */
   defaultLabel?: string;
-}) {
+}
+
+export interface TimerController {
+  target: number;
+  remaining: number;
+  running: boolean;
+  done: boolean;
+  pending: { sec: number } | null;
+  label: string;
+  setLabel: (s: string) => void;
+  customMin: string;
+  isPresetActive: boolean;
+  presets: number[];
+  maxMin: number;
+  toggle: () => void;
+  addFive: () => void;
+  reset: () => void;
+  setPreset: (mins: number) => void;
+  applyCustom: (raw: string) => void;
+  saveSession: () => void;
+  discardSession: () => void;
+}
+
+export function useTimer({
+  storageKey,
+  presets = TIMER_PRESETS,
+  maxMin = TIMER_MAX_MIN,
+  onSecond,
+  onLogSession,
+  onDiscardSession,
+  defaultLabel = "",
+}: TimerOptions): TimerController {
   const maxSec = maxMin * 60;
   const [target, setTarget] = useState<number>(() => readSec(storageKey, 180, 10, maxSec));
   const [remaining, setRemaining] = useState<number>(() => readSec(storageKey, 180, 10, maxSec));
@@ -227,11 +256,39 @@ export function Timer({
     setPending(null);
   };
 
+  return {
+    target,
+    remaining,
+    running,
+    done: remaining === 0,
+    pending,
+    label,
+    setLabel,
+    customMin,
+    isPresetActive: presets.some((m) => target === m * 60),
+    presets,
+    maxMin,
+    toggle,
+    addFive,
+    reset,
+    setPreset,
+    applyCustom,
+    saveSession,
+    discardSession,
+  };
+}
+
+/** Presentational timer driven by an external (possibly shared/persistent) controller. */
+export function TimerView({ controller }: { controller: TimerController }) {
+  const {
+    target, remaining, running, done, pending, label, setLabel, customMin,
+    isPresetActive, presets, maxMin, toggle, addFive, reset, setPreset,
+    applyCustom, saveSession, discardSession,
+  } = controller;
+
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
   const ss = String(remaining % 60).padStart(2, "0");
   const pct = target ? (remaining / target) * 100 : 0;
-  const done = remaining === 0;
-  const isPresetActive = presets.some((m) => target === m * 60);
 
   return (
     <div>
@@ -359,4 +416,10 @@ export function Timer({
       )}
     </div>
   );
+}
+
+/** Self-contained timer that owns its own controller (Pentatonic Practice, CAGED Immersion). */
+export function Timer(props: TimerOptions) {
+  const controller = useTimer(props);
+  return <TimerView controller={controller} />;
 }
